@@ -162,6 +162,48 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
               );
             })}
           </div>
+          
+          {/* Mobile Auth Section */}
+          <div className="pt-4 pb-3 border-t border-gray-200">
+            {user ? (
+              <div className="flex items-center px-4">
+                <div className="flex-1">
+                  <div className="text-base font-medium text-gray-800">{user.name}</div>
+                  <div className="text-sm text-gray-500">{user.email}</div>
+                </div>
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="ml-3 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="px-4 space-y-2">
+                <button
+                  onClick={() => {
+                    handleSignInClick();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    handleSignUpClick();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full bg-blue-600 text-white px-3 py-2 rounded text-base font-medium hover:bg-blue-700"
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
