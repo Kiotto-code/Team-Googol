@@ -3,6 +3,8 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  university?: string;
+  major?: string;
 }
 
 export interface Job {

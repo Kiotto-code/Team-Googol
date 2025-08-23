@@ -12,6 +12,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import type { User } from '../types';
+import AuthModal from './AuthModal';
 
 interface NavbarProps {
   user: User | null;
@@ -21,6 +22,8 @@ interface NavbarProps {
 const Navbar = ({ user, setUser }: NavbarProps) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
@@ -33,6 +36,29 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignInClick = () => {
+    setAuthMode('signin');
+    setAuthModalOpen(true);
+  };
+
+  const handleSignUpClick = () => {
+    setAuthMode('signup');
+    setAuthModalOpen(true);
+  };
+
+  const handleAuthSuccess = (user: User) => {
+    setUser(user);
+    setAuthModalOpen(false);
+  };
+
+  const handleSwitchAuthMode = () => {
+    setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+  };
+
+  const handleSignOut = () => {
+    setUser(null);
+  };
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -73,7 +99,7 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
               <div className="flex items-center space-x-4">
                 <span className="text-gray-700">Welcome, {user.name}</span>
                 <button
-                  onClick={() => setUser(null)}
+                  onClick={handleSignOut}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
                 >
                   Sign Out
@@ -81,10 +107,16 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <button className="text-gray-500 hover:text-gray-700">
+                <button 
+                  onClick={handleSignInClick}
+                  className="text-gray-500 hover:text-gray-700"
+                >
                   Sign In
                 </button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+                <button 
+                  onClick={handleSignUpClick}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                >
                   Sign Up
                 </button>
               </div>
@@ -132,6 +164,15 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        mode={authMode}
+        onSwitchMode={handleSwitchAuthMode}
+        onAuth={handleAuthSuccess}
+      />
     </nav>
   );
 };
