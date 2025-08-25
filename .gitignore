@@ -1,3 +1,5 @@
 venv
 uploads/
 data.json
+__pycache__/
+test.py
