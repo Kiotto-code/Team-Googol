@@ -376,8 +376,8 @@
         
         // Upload Item
         uploadButton.addEventListener('click', async () => {
-            if (!itemImage.files.length || !itemDescription.value.trim()) {
-                showMessage(uploadMessage, 'Please provide both an image and description', 'error');
+            if (!itemImage.files.length) {
+                showMessage(uploadMessage, 'Please provide an image', 'error');
                 return;
             }
             

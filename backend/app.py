@@ -78,10 +78,37 @@ def search_image():
             best_score = score
             best_image = fname
 
-    if best_image:
+    if best_image and best_score >= 0.2:
         return send_file(os.path.join(UPLOAD_FOLDER, best_image), mimetype='image/jpeg')
     else:
-        return jsonify({"error": "No matching image found"}), 404
+         return jsonify({
+            "error": "No matching image found",
+            "best_score": float(best_score)
+        }), 404
+
+
+# deletes the image and data based on file name
+@app.route('/delete', methods=['POST'])
+def delete_image():
+    data = request.get_json()
+    if 'filename' not in data:
+        return jsonify({"error": "No filename provided"}), 400
+
+    filename = data['filename']
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+    if os.path.exists(filepath):
+        os.remove(filepath)
+    else:
+        return jsonify({"error": "Image file not found"}), 404
+
+    if filename in image_data:
+        del image_data[filename]
+        save_data() 
+    else:
+        return jsonify({"error": "Embedding not found in data.json"}), 404
+
+    return jsonify({"message": f"{filename} deleted successfully"})
 
 if __name__ == '__main__':
     app.run(debug=True)
