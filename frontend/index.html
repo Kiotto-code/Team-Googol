@@ -300,6 +300,101 @@
             margin-top: 5px;
         }
         
+        .claim-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 8px;
+            margin-left: 8px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .claim-button:hover:not(:disabled) {
+            background-color: #005BB5;
+        }
+        
+        .claim-button:disabled {
+            background-color: #86868B;
+            cursor: not-allowed;
+        }
+        
+        .claim-status {
+            font-size: 0.85rem;
+            margin-top: 4px;
+            font-style: italic;
+        }
+        
+        .claim-status.claimed {
+            color: #FF9500;
+        }
+        
+        .claim-status.available {
+            color: #34C759;
+        }
+
+        .claims-item {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .claims-item-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .claims-item-info {
+            flex: 1;
+        }
+
+        .claims-item-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .claims-timer {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .claims-timer.expired {
+            color: #FF3B30;
+        }
+
+        .claims-timer.warning {
+            color: #FF9500;
+        }
+
+        .claims-item-description {
+            color: var(--secondary-text);
+            margin-bottom: 8px;
+        }
+
+        .claims-item-details {
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+        }
+
+        .no-claims {
+            text-align: center;
+            padding: 40px;
+            color: var(--secondary-text);
+        }
+        
         .hidden {
             display: none;
         }
@@ -359,6 +454,7 @@
         <div class="mode-selector">
             <button class="mode-button active" id="uploadMode">Upload Item</button>
             <button class="mode-button" id="searchMode">Search Item</button>
+            <button class="mode-button" id="claimsMode">My Claims</button>
         </div>
         
         <div class="form-container" id="uploadForm">
@@ -418,6 +514,24 @@
                 </div>
             </div>
         </div>
+
+        <!-- My Claims Form -->
+        <div class="form-container hidden" id="claimsForm">
+            <h2 class="form-title">My Claims</h2>
+            
+            <div class="form-group">
+                <label for="claimerName">Enter your name to view claims</label>
+                <input type="text" id="claimerName" placeholder="Your name..." required>
+            </div>
+            
+            <button class="submit-button" id="viewClaimsButton">View My Claims</button>
+            
+            <div class="results-container hidden" id="claimsResults">
+                <h3>Your Claimed Items</h3>
+                <div id="claimsMessage"></div>
+                <div id="claimsList"></div>
+            </div>
+        </div>
     </div>
     
     <footer>
@@ -428,8 +542,10 @@
         // DOM Elements
         const uploadModeButton = document.getElementById('uploadMode');
         const searchModeButton = document.getElementById('searchMode');
+        const claimsModeButton = document.getElementById('claimsMode');
         const uploadForm = document.getElementById('uploadForm');
         const searchForm = document.getElementById('searchForm');
+        const claimsForm = document.getElementById('claimsForm');
         const imageUpload = document.getElementById('imageUpload');
         const itemImage = document.getElementById('itemImage');
         const imagePreview = document.getElementById('imagePreview');
@@ -446,6 +562,11 @@
         const carouselNext = document.getElementById('carouselNext');
         const carouselIndicators = document.getElementById('carouselIndicators');
         const noResults = document.getElementById('noResults');
+        const claimerName = document.getElementById('claimerName');
+        const viewClaimsButton = document.getElementById('viewClaimsButton');
+        const claimsResults = document.getElementById('claimsResults');
+        const claimsMessage = document.getElementById('claimsMessage');
+        const claimsList = document.getElementById('claimsList');
         
         // Carousel state
         let currentSlide = 0;
@@ -455,15 +576,28 @@
         uploadModeButton.addEventListener('click', () => {
             uploadModeButton.classList.add('active');
             searchModeButton.classList.remove('active');
+            claimsModeButton.classList.remove('active');
             uploadForm.classList.remove('hidden');
             searchForm.classList.add('hidden');
+            claimsForm.classList.add('hidden');
         });
         
         searchModeButton.addEventListener('click', () => {
             searchModeButton.classList.add('active');
             uploadModeButton.classList.remove('active');
+            claimsModeButton.classList.remove('active');
             searchForm.classList.remove('hidden');
             uploadForm.classList.add('hidden');
+            claimsForm.classList.add('hidden');
+        });
+
+        claimsModeButton.addEventListener('click', () => {
+            claimsModeButton.classList.add('active');
+            uploadModeButton.classList.remove('active');
+            searchModeButton.classList.remove('active');
+            claimsForm.classList.remove('hidden');
+            uploadForm.classList.add('hidden');
+            searchForm.classList.add('hidden');
         });
         
         // Image Preview
@@ -606,6 +740,12 @@
                     <div class="carousel-caption">
                         <div>${result.description || 'No description available'}</div>
                         <div class="match-score">Match: ${(result.score * 100).toFixed(1)}%</div>
+                        ${result.can_claim ? 
+                            `<button class="claim-button" onclick="claimItem(${result.id}, '${result.filename}')">Claim This Item</button>` :
+                            result.is_claimed ? 
+                                `<div class="claim-status claimed">Already claimed by ${result.claimed_by || 'someone'}</div>` :
+                                `<div class="claim-status">Not available for claiming</div>`
+                        }
                     </div>
                 `;
                 carouselTrack.appendChild(carouselItem);
@@ -686,6 +826,214 @@
                 }
             }
         });
+
+        // Claim item function
+        async function claimItem(itemId, filename) {
+            const claimerName = prompt('Enter your name to claim this item:');
+            if (!claimerName || claimerName.trim() === '') {
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/claim', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        item_id: itemId,
+                        claimed_by: claimerName.trim()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Success! You have claimed "${filename}" for 1 hour.`);
+                    // Refresh search results to show updated claim status
+                    if (searchResultsData.length > 0) {
+                        const currentQuery = document.getElementById('searchDescription').value;
+                        performSearch(currentQuery);
+                    }
+                } else {
+                    alert(`Failed to claim item: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error claiming item:', error);
+                alert('Failed to claim item. Please try again.');
+            }
+        }
+
+        // Perform search function for refreshing results
+        async function performSearch(query) {
+            if (!query || query.trim() === '') {
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    searchResultsData = data.results || [];
+                    displaySearchResults(searchResultsData);
+                } else {
+                    showSearchError(data.error || 'No image available');
+                }
+            } catch (error) {
+                showSearchError('Network error. Please try again.');
+            }
+        }
+
+        // Claims functionality
+        let claimsTimer;
+        let userClaims = [];
+
+        viewClaimsButton.addEventListener('click', async () => {
+            const name = claimerName.value.trim();
+            
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+
+            try {
+                viewClaimsButton.disabled = true;
+                viewClaimsButton.textContent = 'Loading...';
+                
+                const response = await fetch('http://127.0.0.1:5000/items');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const myClaims = data.items.filter(item => 
+                        item.status === 'claimed' && 
+                        item.claimed_by === name
+                    );
+                    
+                    userClaims = myClaims;
+                    displayClaims(myClaims);
+                    startClaimsTimer();
+                } else {
+                    showClaimsError('Failed to load claims');
+                }
+            } catch (error) {
+                showClaimsError('Network error. Please try again.');
+            } finally {
+                viewClaimsButton.disabled = false;
+                viewClaimsButton.textContent = 'View My Claims';
+            }
+        });
+
+        function displayClaims(claims) {
+            claimsResults.classList.remove('hidden');
+            
+            if (claims.length === 0) {
+                claimsList.innerHTML = '<div class="no-claims">No claimed items found for this name.</div>';
+                claimsMessage.textContent = '';
+                return;
+            }
+
+            claimsMessage.textContent = `You have ${claims.length} claimed item${claims.length !== 1 ? 's' : ''}`;
+            
+            claimsList.innerHTML = claims.map(item => {
+                const expiresAt = new Date(item.expires_at);
+                const now = new Date();
+                const timeLeft = expiresAt - now;
+                
+                return `
+                    <div class="claims-item" data-item-id="${item.id}">
+                        <img src="${item.url}" alt="Claimed item" class="claims-item-image" 
+                             onerror="this.src='https://placehold.co/120x120/EAEAEA/9C9C9C?text=No+Image'">
+                        <div class="claims-item-info">
+                            <div class="claims-item-title">${item.filename}</div>
+                            <div class="claims-timer" data-expires="${item.expires_at}">
+                                ${formatTimeLeft(timeLeft)}
+                            </div>
+                            <div class="claims-item-description">
+                                ${item.description || 'No description available'}
+                            </div>
+                            <div class="claims-item-details">
+                                Claimed: ${new Date(item.claimed_at).toLocaleString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatTimeLeft(timeLeft) {
+            if (timeLeft <= 0) {
+                return 'Expired - Becoming available...';
+            }
+            
+            const minutes = Math.floor(timeLeft / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            if (minutes > 0) {
+                return `${minutes}m ${seconds}s remaining`;
+            } else {
+                return `${seconds}s remaining`;
+            }
+        }
+
+        function startClaimsTimer() {
+            if (claimsTimer) {
+                clearInterval(claimsTimer);
+            }
+            
+            claimsTimer = setInterval(() => {
+                const timerElements = document.querySelectorAll('.claims-timer');
+                let hasActiveClaims = false;
+                let hasExpiredClaims = false;
+                
+                timerElements.forEach(timer => {
+                    const expiresAt = new Date(timer.dataset.expires);
+                    const now = new Date();
+                    const timeLeft = expiresAt - now;
+                    
+                    timer.textContent = formatTimeLeft(timeLeft);
+                    
+                    if (timeLeft <= 0) {
+                        timer.classList.add('expired');
+                        hasExpiredClaims = true;
+                    } else if (timeLeft <= 300000) { // 5 minutes
+                        timer.classList.add('warning');
+                        timer.classList.remove('expired');
+                        hasActiveClaims = true;
+                    } else {
+                        timer.classList.remove('warning', 'expired');
+                        hasActiveClaims = true;
+                    }
+                });
+                
+                // If we have expired claims, refresh the data to show updated status
+                if (hasExpiredClaims) {
+                    setTimeout(() => {
+                        if (claimerName.value.trim()) {
+                            viewClaimsButton.click();
+                        }
+                    }, 2000); // Wait 2 seconds after expiration to refresh
+                }
+                
+                // Only stop timer if no active claims remain
+                if (!hasActiveClaims && !hasExpiredClaims) {
+                    clearInterval(claimsTimer);
+                }
+            }, 1000);
+        }
+
+        function showClaimsError(message) {
+            claimsResults.classList.remove('hidden');
+            claimsList.innerHTML = `<div class="no-claims">${message}</div>`;
+            claimsMessage.textContent = '';
+        }
     </script>
 </body>
 </html>

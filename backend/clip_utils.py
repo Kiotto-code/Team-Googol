@@ -10,17 +10,6 @@ model, preprocess = clip.load("ViT-L/14@336px", device=device)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-DATA_FILE = "data.json"
-if os.path.exists(DATA_FILE):
-    with open(DATA_FILE, 'r') as f:
-        image_data = json.load(f)
-else:
-    image_data = {}
-
-def save_data():
-    with open(DATA_FILE, 'w') as f:
-        json.dump(image_data, f)
-
 def get_image_embedding(image_path):
     image = preprocess(Image.open(image_path)).unsqueeze(0).to(device)
     with torch.no_grad():

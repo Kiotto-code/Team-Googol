@@ -1,7 +1,8 @@
 import os
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
-from clip_utils import get_image_embedding, get_text_embedding, save_data, image_data, UPLOAD_FOLDER
+from clip_utils import get_image_embedding, get_text_embedding, UPLOAD_FOLDER
+from database import add_found_item
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -25,12 +26,16 @@ def upload_image():
     if description:
         desc_emb = get_text_embedding(description).detach().cpu().numpy().flatten().tolist()
 
-    # Save in memory/dict (ensure JSON-serializable)
-    image_data[filename] = {
-        "image_embedding": img_emb,
-        "description_embedding": desc_emb,
-        "description": description
-    }
-    save_data()
-
-    return jsonify({"message": "Image uploaded successfully", "filename": filename}), 200
+    try:
+        # Save to database
+        item_id = add_found_item(filename, img_emb, description, desc_emb)
+        return jsonify({
+            "message": "Image uploaded successfully", 
+            "filename": filename,
+            "item_id": item_id
+        }), 200
+    except Exception as e:
+        # Remove uploaded file if database save fails
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        return jsonify({"error": f"Failed to save item: {str(e)}"}), 500

@@ -3,3 +3,8 @@ uploads/
 data.json
 __pycache__/
 test.py
+*.db
+
+
+migrate_data.py
+backend/db_manager.py
