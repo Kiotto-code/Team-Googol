@@ -204,11 +204,100 @@
             text-align: center;
         }
         
-        .result-image {
-            max-width: 100%;
-            max-height: 400px;
+        .carousel {
+            position: relative;
+            margin: 20px auto;
+            max-width: 500px;
+        }
+        
+        .carousel-inner {
+            position: relative;
+            overflow: hidden;
             border-radius: 8px;
-            margin-top: 20px;
+        }
+        
+        .carousel-track {
+            display: flex;
+            transition: transform 0.3s ease;
+        }
+        
+        .carousel-item {
+            min-width: 100%;
+            position: relative;
+        }
+        
+        .carousel-image {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+        
+        .carousel-caption {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .carousel-control {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .carousel-control.prev {
+            left: 10px;
+        }
+        
+        .carousel-control.next {
+            right: 10px;
+        }
+        
+        .carousel-indicators {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .carousel-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .carousel-indicator.active {
+            background: var(--primary-color);
+        }
+        
+        .match-score {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 5px;
         }
         
         .hidden {
@@ -223,6 +312,12 @@
         .error-message {
             color: #FF3B30;
             margin-top: 16px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--secondary-text);
         }
         
         footer {
@@ -244,6 +339,12 @@
             
             .subtitle {
                 font-size: 1rem;
+            }
+            
+            .carousel-control {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
             }
         }
     </style>
@@ -276,11 +377,11 @@
             </div>
             
             <div class="form-group">
-                <label for="itemDescription">Item Description</label>
-                <textarea id="itemDescription" placeholder="Describe the item, including color, size, brand, and any distinctive features..." required></textarea>
+                <label for="itemDescription">Item Description (Optional)</label>
+                <textarea id="itemDescription" placeholder="Describe the item, including color, size, brand, and any distinctive features..."></textarea>
             </div>
             
-            <button class="submit-button" id="uploadButton">Upload Item</button>
+            <button class="submit-button" id="uploadButton" type="button">Upload Item</button>
             
             <div id="uploadMessage" class="hidden"></div>
         </div>
@@ -298,7 +399,23 @@
             <div class="results-container hidden" id="searchResults">
                 <h3>Search Results</h3>
                 <div id="resultMessage"></div>
-                <img id="resultImage" class="result-image" alt="Search result">
+                
+                <div class="carousel hidden" id="resultCarousel">
+                    <div class="carousel-inner">
+                        <div class="carousel-track" id="carouselTrack">
+                            <!-- Carousel items will be added here dynamically -->
+                        </div>
+                    </div>
+                    <button class="carousel-control prev" id="carouselPrev">❮</button>
+                    <button class="carousel-control next" id="carouselNext">❯</button>
+                    <div class="carousel-indicators" id="carouselIndicators">
+                        <!-- Indicators will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <div class="no-results hidden" id="noResults">
+                    <p>No matching items found. Try a different description.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -323,7 +440,16 @@
         const searchButton = document.getElementById('searchButton');
         const searchResults = document.getElementById('searchResults');
         const resultMessage = document.getElementById('resultMessage');
-        const resultImage = document.getElementById('resultImage');
+        const resultCarousel = document.getElementById('resultCarousel');
+        const carouselTrack = document.getElementById('carouselTrack');
+        const carouselPrev = document.getElementById('carouselPrev');
+        const carouselNext = document.getElementById('carouselNext');
+        const carouselIndicators = document.getElementById('carouselIndicators');
+        const noResults = document.getElementById('noResults');
+        
+        // Carousel state
+        let currentSlide = 0;
+        let searchResultsData = [];
         
         // Mode Switching
         uploadModeButton.addEventListener('click', () => {
@@ -375,7 +501,8 @@
         });
         
         // Upload Item
-        uploadButton.addEventListener('click', async () => {
+        uploadButton.addEventListener('click', async (event) => {
+			event.preventDefault();
             if (!itemImage.files.length) {
                 showMessage(uploadMessage, 'Please provide an image', 'error');
                 return;
@@ -383,6 +510,7 @@
             
             const formData = new FormData();
             formData.append('image', itemImage.files[0]);
+            formData.append('description', itemDescription.value);
             
             try {
                 uploadButton.disabled = true;
@@ -395,6 +523,8 @@
                 
                 const data = await response.json();
                 
+				console.log('Status:', response.status);
+				console.log('Response data:', data);
                 if (response.ok) {
                     showMessage(uploadMessage, 'Item uploaded successfully!', 'success');
                     itemImage.value = '';
@@ -432,37 +562,112 @@
                     body: JSON.stringify({ query })
                 });
                 
+                const data = await response.json();
+                
                 if (response.ok) {
-                    // Check if the response is an image
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.indexOf('image') !== -1) {
-                        const blob = await response.blob();
-                        const url = URL.createObjectURL(blob);
-                        resultImage.src = url;
-                        resultMessage.textContent = 'We found a matching item!';
-                        searchResults.classList.remove('hidden');
-                    } else {
-                        const data = await response.json();
-                        if (data.error) {
-                            resultMessage.textContent = data.error;
-                            searchResults.classList.remove('hidden');
-                        }
-                    }
+                    searchResultsData = data.results || [];
+                    displaySearchResults(searchResultsData);
                 } else {
-                    const data = await response.json();
-                    resultMessage.textContent = data.error || 'No matching item found';
-                    searchResults.classList.remove('hidden');
-                    resultImage.style.display = 'none';
+                    showSearchError(data.error || 'No image available');
                 }
             } catch (error) {
-                resultMessage.textContent = 'Network error. Please try again.';
-                searchResults.classList.remove('hidden');
-                resultImage.style.display = 'none';
+                showSearchError('Network error. Please try again.');
             } finally {
                 searchButton.disabled = false;
                 searchButton.textContent = 'Search';
             }
         });
+        
+        // Display search results in carousel
+        function displaySearchResults(results) {
+            searchResults.classList.remove('hidden');
+            
+            if (results.length === 0) {
+                noResults.classList.remove('hidden');
+                resultCarousel.classList.add('hidden');
+                resultMessage.textContent = '';
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            resultCarousel.classList.remove('hidden');
+            
+            // Clear previous results
+            carouselTrack.innerHTML = '';
+            carouselIndicators.innerHTML = '';
+            
+            // Add new results
+            results.forEach((result, index) => {
+                // Create carousel item
+                const carouselItem = document.createElement('div');
+                carouselItem.className = 'carousel-item';
+                carouselItem.innerHTML = `
+                    <img src="${result.url}" alt="Found item" class="carousel-image" onerror="this.src='https://placehold.co/500x300/EAEAEA/9C9C9C?text=Image+Not+Found'">
+                    <div class="carousel-caption">
+                        <div>${result.description || 'No description available'}</div>
+                        <div class="match-score">Match: ${(result.score * 100).toFixed(1)}%</div>
+                    </div>
+                `;
+                carouselTrack.appendChild(carouselItem);
+                
+                // Create indicator
+                const indicator = document.createElement('div');
+                indicator.className = `carousel-indicator ${index === 0 ? 'active' : ''}`;
+                indicator.dataset.index = index;
+                indicator.addEventListener('click', () => {
+                    goToSlide(index);
+                });
+                carouselIndicators.appendChild(indicator);
+            });
+            
+            // Initialize carousel
+            currentSlide = 0;
+            updateCarousel();
+            
+            // Show result message
+            resultMessage.textContent = `Found ${results.length} matching item${results.length !== 1 ? 's' : ''}`;
+        }
+        
+        // Show search error
+        function showSearchError(message) {
+            searchResults.classList.remove('hidden');
+            noResults.classList.remove('hidden');
+            resultCarousel.classList.add('hidden');
+            noResults.innerHTML = `<p>${message}</p>`;
+        }
+        
+        // Carousel navigation
+        carouselPrev.addEventListener('click', () => {
+            goToSlide(currentSlide - 1);
+        });
+        
+        carouselNext.addEventListener('click', () => {
+            goToSlide(currentSlide + 1);
+        });
+        
+        // Go to specific slide
+        function goToSlide(index) {
+            if (index < 0) {
+                index = searchResultsData.length - 1;
+            } else if (index >= searchResultsData.length) {
+                index = 0;
+            }
+            
+            currentSlide = index;
+            updateCarousel();
+        }
+        
+        // Update carousel display
+        function updateCarousel() {
+            // Update track position
+            carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // Update active indicator
+            const indicators = carouselIndicators.querySelectorAll('.carousel-indicator');
+            indicators.forEach((indicator, i) => {
+                indicator.classList.toggle('active', i === currentSlide);
+            });
+        }
         
         // Helper function to show messages
         function showMessage(element, message, type) {
@@ -470,6 +675,17 @@
             element.classList.remove('hidden', 'success-message', 'error-message');
             element.classList.add(`${type}-message`);
         }
+        
+        // Add keyboard navigation for carousel
+        document.addEventListener('keydown', (e) => {
+            if (resultCarousel && !resultCarousel.classList.contains('hidden')) {
+                if (e.key === 'ArrowLeft') {
+                    goToSlide(currentSlide - 1);
+                } else if (e.key === 'ArrowRight') {
+                    goToSlide(currentSlide + 1);
+                }
+            }
+        });
     </script>
 </body>
 </html>

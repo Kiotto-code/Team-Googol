@@ -15,13 +15,9 @@ def delete_image():
 
     if os.path.exists(filepath):
         os.remove(filepath)
-    else:
-        return jsonify({"error": "Image file not found"}), 404
 
     if filename in image_data:
         del image_data[filename]
         save_data()
-    else:
-        return jsonify({"error": "Embedding not found in data.json"}), 404
 
     return jsonify({"message": f"{filename} deleted successfully"})
