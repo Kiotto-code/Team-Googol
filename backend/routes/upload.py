@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from clip_utils import get_image_embedding, get_text_embedding, save_data, image_data, UPLOAD_FOLDER
+from caption_utils import generate_caption 
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -15,22 +16,34 @@ def upload_image():
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 
-    # Optional description
+    # User optional description
     description = request.form.get('description', "")
 
-    # Compute embeddings and move to CPU + NumPy
+    # --- Generate BLIP caption ---
+    custom_prompt = "Describe the lost item including color, type, material, and any unique features."
+    # blip_caption = generate_caption(filepath, prompt=custom_prompt)
+    blip_caption = generate_caption(filepath) 
+
+    # Choose combined text: user description + BLIP caption
+    combined_caption = description + ". " + blip_caption if description else blip_caption
+
+    # --- Compute embeddings ---
     img_emb = get_image_embedding(filepath).detach().cpu().numpy().flatten().tolist()
+    desc_emb = get_text_embedding(combined_caption).detach().cpu().numpy().flatten().tolist()
 
-    desc_emb = None
-    if description:
-        desc_emb = get_text_embedding(description).detach().cpu().numpy().flatten().tolist()
-
-    # Save in memory/dict (ensure JSON-serializable)
+    # Store both raw captions and embedding
     image_data[filename] = {
         "image_embedding": img_emb,
-        "description_embedding": desc_emb,
-        "description": description
+        "description": description,
+        "blip_caption": blip_caption,
+        "description_embedding": desc_emb
     }
     save_data()
 
-    return jsonify({"message": "Image uploaded successfully", "filename": filename}), 200
+    return jsonify({
+        "message": "Image uploaded successfully",
+        "filename": filename,
+        "description": description,
+        "blip_caption": blip_caption
+    }), 200
+
