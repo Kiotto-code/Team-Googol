@@ -1,0 +1,59 @@
+{
+  "faculties": [
+    "Faculty of Engineering (FOE)",
+    "Faculty of Computing & Informatics (FCI)",
+    "Faculty of Management (FOM)",
+    "Faculty of Cinematic Arts (FCA / FCM / FAC)"
+  ],
+  "buildings": [
+    "STAD",
+    "Dewan Tun Canselor",
+    "MMU Chancellery",
+    "FMD",
+    "Indoor Sport Centre (ISC)",
+    "Central Lecture Complex (CLC)"
+  ],
+  "accommodations": [
+    "Hostel HB1",
+    "Hostel HB2",
+    "Hostel HB3",
+    "Hostel HB4",
+    "Executive Apartment (EAA)",
+    "Executive Apartment (EAB)",
+    "Non Executive Apartment (NEA)"
+  ],
+  "facilities": [
+    "Siti Hasmah Digital Library",
+    "MMU Stadium",
+    "MMU Swimming Pool Complex",
+    "Volleyball Court / Takraw Court",
+    "Mosque Al-Hidayah",
+    "e-Theatre (FCM)",
+    "Clinic Binu Sina (STAD)",
+    "Squash / Badminton Court",
+    "Gym (Indoor Sport Centre)"
+  ],
+  "food_drink": [
+    "STC Deen Cafe (STAD)",
+    "Food Court",
+    "7-Eleven",
+    "The Royal Tandoorii",
+    "Restoran Haji Tapah Bistro",
+    "D'light Bakery (Library)",
+    "Daylicious (Library)"
+  ],
+  "division_centres": [
+    "Finance",
+    "Student Affair Division",
+    "Procurement Unit",
+    "MMU Cynergy",
+    "Entrepreneurship Development Centre (EDC)",
+    "ITSD",
+    "Institute for Postgraduate Studies (IPS)",
+    "Examination & Record Unit (ERU)",
+    "Human Resource Management (Chancellery)",
+    "Graduate School of Management (Chancellery)",
+    "International Office (Chancellery)",
+    "Business Unit (Chancellery)"
+  ]
+}

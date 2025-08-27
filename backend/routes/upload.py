@@ -32,7 +32,7 @@ def upload_image():
 
     # --- Generate caption with Gemini ---
     # custom_prompt = "Describe item: color, type, material, unique features. Be concise, no filler."
-    custom_prompt = "Output as: Color: <…>; Type: <…>; Material: <…>; Features: <…>; Size : <…> Optional: Brand/Markings: <…>."
+    custom_prompt = "Output as: Color: <…>; Type: <…>; Material: <…>; Features: <…>; Optional: Brand/Markings: <…>."
     gemini_caption = generate_caption_with_gemini(filepath, prompt=custom_prompt)
 
     # Combine user description and Gemini caption

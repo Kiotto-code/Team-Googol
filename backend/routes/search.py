@@ -36,7 +36,6 @@ def search_image():
             results.append({
                 "filename": fname,
                 "description": item.get("description", ""),
-                "blip_caption": item.get("blip_caption", ""),
                 "score": final_score
             })
 
