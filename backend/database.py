@@ -63,7 +63,7 @@ def get_available_items():
         cursor = conn.cursor()
         cursor.execute('''
             SELECT * FROM FOUND_ITEMS 
-            WHERE status = 'available' OR (status = 'claimed' AND datetime('now') > expires_at)
+            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime('now'))
         ''')
         return cursor.fetchall()
 
@@ -118,7 +118,7 @@ def release_expired_claims():
         cursor.execute('''
             UPDATE FOUND_ITEMS 
             SET status = 'available', claimed_at = NULL, claimed_by = NULL, expires_at = NULL
-            WHERE status = 'claimed' AND datetime('now') > expires_at
+            WHERE status = 'claimed' AND datetime(expires_at) < datetime('now')
         ''')
         
         conn.commit()
@@ -147,7 +147,7 @@ def search_items(query_embedding, threshold=0.4):
         # Get all available items
         cursor.execute('''
             SELECT * FROM FOUND_ITEMS 
-            WHERE status = 'available' OR (status = 'claimed' AND datetime('now') > expires_at)
+            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime('now'))
         ''')
         
         items = cursor.fetchall()
