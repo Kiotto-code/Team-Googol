@@ -1,27 +1,39 @@
+import os
+import google.generativeai as genai
 from PIL import Image
-import torch
-from transformers import BlipProcessor, BlipForConditionalGeneration
+import mimetypes
 
-# Device
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# Configure Gemini
+genai.configure(api_key="AIzaSyD_idahnFwrGVOLRR0BRWllLoktughMdAo")
+model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
-# Load BLIP model & processor once
-processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to(device)
+def generate_caption_with_gemini(image_path: str, prompt: str = None) -> str:
+    """
+    Generate a caption using Gemini Vision API.
+    """
+    # Detect mime type automatically
+    mime_type, _ = mimetypes.guess_type(image_path)
+    if mime_type is None:
+        mime_type = "image/jpeg"  # default
 
-def generate_caption(image_path: str, prompt: str = None, max_tokens: int = 100) -> str:
-    raw_image = Image.open(image_path).convert("RGB")
-    # if prompt:
-    #     inputs = processor(images=raw_image, text=prompt, return_tensors="pt").to(device)
-    # else:
-    #     inputs = processor(images=raw_image, return_tensors="pt").to(device)
-        
-    custom_prompt = "Describe the item with color, type, material, and unique features:"
-    inputs = processor(images=raw_image ,return_tensors="pt").to(device)
+    with open(image_path, "rb") as f:
+        img_bytes = f.read()
 
-    out = model.generate(
-        **inputs,
-        max_new_tokens=max_tokens,
+    # Create the proper Gemini image input format
+    image_blob = {"mime_type": mime_type, "data": img_bytes}
+
+    query = prompt if prompt else "Describe this image accurately."
+
+    # Send both prompt and image blob	
+    # response = model.generate_content([query, image_blob])
+    
+    response = model.generate_content(
+        [query, image_blob],
+        generation_config={
+            "max_output_tokens": 60,  # limits response length
+            "temperature": 0.7,              # controls creativity
+            "top_p": 0.9                     # nucleus sampling
+        }
     )
-    caption = processor.decode(out[0], skip_special_tokens=True)
-    return caption
+
+    return response.text.strip()

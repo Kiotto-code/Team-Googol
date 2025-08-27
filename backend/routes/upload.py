@@ -2,7 +2,8 @@ import os
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from clip_utils import get_image_embedding, get_text_embedding, save_data, image_data, UPLOAD_FOLDER
-from caption_utils import generate_caption 
+from caption_utils import generate_caption_with_gemini
+from upload_utils import is_lighting_good
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -15,27 +16,37 @@ def upload_image():
     filename = secure_filename(file.filename)
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
+    
+    good, brightness, contrast = is_lighting_good(filepath)
+    if not good:
+        # Optionally remove the file if lighting is bad
+        os.remove(filepath)
+        return jsonify({
+            "error": "Lighting is not good enough, please re-upload.",
+            "brightness": brightness,
+            "contrast": contrast
+        }), 400
 
     # User optional description
     description = request.form.get('description', "")
 
-    # --- Generate BLIP caption ---
-    custom_prompt = "Describe the lost item including color, type, material, and any unique features."
-    # blip_caption = generate_caption(filepath, prompt=custom_prompt)
-    blip_caption = generate_caption(filepath) 
+    # --- Generate caption with Gemini ---
+    # custom_prompt = "Describe item: color, type, material, unique features. Be concise, no filler."
+    custom_prompt = "Output as: Color: <…>; Type: <…>; Material: <…>; Features: <…>; Size : <…> Optional: Brand/Markings: <…>."
+    gemini_caption = generate_caption_with_gemini(filepath, prompt=custom_prompt)
 
-    # Choose combined text: user description + BLIP caption
-    combined_caption = description + ". " + blip_caption if description else blip_caption
+    # Combine user description and Gemini caption
+    combined_caption = description + ". " + gemini_caption if description else gemini_caption
 
-    # --- Compute embeddings ---
+    # Compute embeddings
     img_emb = get_image_embedding(filepath).detach().cpu().numpy().flatten().tolist()
     desc_emb = get_text_embedding(combined_caption).detach().cpu().numpy().flatten().tolist()
 
-    # Store both raw captions and embedding
+    # Store in memory
     image_data[filename] = {
         "image_embedding": img_emb,
         "description": description,
-        "blip_caption": blip_caption,
+        "gemini_caption": gemini_caption,
         "description_embedding": desc_emb
     }
     save_data()
@@ -44,6 +55,5 @@ def upload_image():
         "message": "Image uploaded successfully",
         "filename": filename,
         "description": description,
-        "blip_caption": blip_caption
+        "gemini_caption": gemini_caption
     }), 200
-
