@@ -28,6 +28,17 @@ def init_database():
             )
         ''')
         
+        # Create COLLECTED_ITEMS table for items collected by collection system
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS COLLECTED_ITEMS (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT NOT NULL UNIQUE,
+                box_id TEXT,
+                imgtaken_timestamp REAL,
+                uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
         conn.commit()
 
 @contextmanager
@@ -199,6 +210,34 @@ def search_items(query_embedding, threshold=0.4):
                 })
         
         return results
+
+
+# COLLECT
+def collect_found_item(filename, imgtaken_timestamp, box_id):
+    """Collect a found item."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO COLLECTED_ITEMS (filename, imgtaken_timestamp, box_id)
+            VALUES (?, ?, ?)
+        ''', (filename, imgtaken_timestamp, box_id))
+        conn.commit()
+        return cursor.lastrowid
+
+def get_collected_items():
+    """Get all collected items."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM COLLECTED_ITEMS ORDER BY uploaded_at DESC')
+        return cursor.fetchall()
+
+def clear_all_items():
+    """Clear all items from the FOUND_ITEMS table."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM FOUND_ITEMS')
+        conn.commit()
+        return cursor.rowcount
 
 # Initialize database when module is imported
 init_database()

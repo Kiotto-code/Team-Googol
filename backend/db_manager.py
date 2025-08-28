@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 from database import (
     get_all_items, get_available_items, claim_item, 
-    release_expired_claims, delete_item, init_database
+    release_expired_claims, delete_item, init_database, clear_all_items
 )
 
 def list_items(available_only=False):
@@ -58,6 +58,15 @@ def delete_item_cli(filename):
     else:
         print(f"Item not found: {filename}")
 
+def clear_all_items_cli():
+    """Clear all items from the database."""
+    response = input("Are you sure you want to delete ALL items? This cannot be undone. (y/N): ")
+    if response.lower() in ['y', 'yes']:
+        deleted_count = clear_all_items()
+        print(f"Successfully deleted {deleted_count} items from the database.")
+    else:
+        print("Operation cancelled.")
+
 def main():
     parser = argparse.ArgumentParser(description="Lost & Found Database Management Tool")
     
@@ -80,6 +89,9 @@ def main():
     delete_parser = subparsers.add_parser('delete', help='Delete an item')
     delete_parser.add_argument('filename', help='Filename of the item to delete')
     
+    # Clear command
+    subparsers.add_parser('clear', help='Clear all items from the database')
+    
     # Init command
     subparsers.add_parser('init', help='Initialize database')
     
@@ -97,6 +109,8 @@ def main():
         release_expired_cli()
     elif args.command == 'delete':
         delete_item_cli(args.filename)
+    elif args.command == 'clear':
+        clear_all_items_cli()
     elif args.command == 'init':
         init_database()
         print("Database initialized.")

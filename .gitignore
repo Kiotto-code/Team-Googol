@@ -2,10 +2,12 @@ venv
 uploads/
 data.json
 __pycache__/
-test.py
 *.db
 
+# Moved to tests/ folder - these entries can be removed later
+migrate_data.py
+api_utils.py
+test_collect.py
 
-# migrate_data.py
-# backend/db_manager.py
-# api_utils.py
+# Database manager is a utility tool, not part of main app
+backend/db_manager.py
