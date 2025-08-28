@@ -28,6 +28,8 @@ def init_database():
             )
         ''')
         
+        init_boxes_table()
+        
         # Create COLLECTED_ITEMS table for items collected by collection system
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS COLLECTED_ITEMS (
@@ -238,6 +240,71 @@ def clear_all_items():
         cursor.execute('DELETE FROM FOUND_ITEMS')
         conn.commit()
         return cursor.rowcount
+
+# BOX
+def init_boxes_table():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS BOXES (
+                id TEXT PRIMARY KEY,
+                status TEXT DEFAULT 'available',
+                capacity INTEGER DEFAULT 0,
+                current_load INTEGER DEFAULT 0,
+                last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+
+def add_box(box_id, capacity=0, status="available"):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO BOXES (id, capacity, status, current_load, last_updated)
+            VALUES (?, ?, ?, 0, ?)
+        ''', (box_id, capacity, status, datetime.now().isoformat()))
+        conn.commit()
+        return box_id
+
+
+def update_box_status(box_id, status=None, current_load=None):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        fields, values = [], []
+        
+        if status is not None:
+            fields.append("status = ?")
+            values.append(status)
+        if current_load is not None:
+            fields.append("current_load = ?")
+            values.append(current_load)
+        
+        values.append(datetime.now().isoformat())  # last_updated
+        values.append(box_id)
+        
+        cursor.execute(f'''
+            UPDATE BOXES 
+            SET {", ".join(fields)}, last_updated = ?
+            WHERE id = ?
+        ''', tuple(values))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def get_box_status(box_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM BOXES WHERE id = ?', (box_id,))
+        return cursor.fetchone()
+
+
+def get_all_boxes():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM BOXES ORDER BY id')
+        return cursor.fetchall()
+
+
 
 # Initialize database when module is imported
 init_database()
