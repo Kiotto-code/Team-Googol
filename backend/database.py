@@ -61,10 +61,11 @@ def get_available_items():
     """Get all available (unclaimed) items."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        current_time = datetime.now().isoformat()
         cursor.execute('''
             SELECT * FROM FOUND_ITEMS 
-            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime('now'))
-        ''')
+            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime(?))
+        ''', (current_time,))
         return cursor.fetchall()
 
 def get_all_items():
@@ -99,7 +100,7 @@ def claim_item(item_id, claimed_by):
         
         # Claim the item
         claimed_at = datetime.now()
-        expires_at = claimed_at + timedelta(hours=1)
+        expires_at = claimed_at + timedelta(minutes=1)
         
         cursor.execute('''
             UPDATE FOUND_ITEMS 
@@ -115,11 +116,14 @@ def release_expired_claims():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
+        # Use Python's current time instead of SQLite's UTC time for consistency
+        current_time = datetime.now().isoformat()
+        
         cursor.execute('''
             UPDATE FOUND_ITEMS 
             SET status = 'available', claimed_at = NULL, claimed_by = NULL, expires_at = NULL
-            WHERE status = 'claimed' AND datetime(expires_at) < datetime('now')
-        ''')
+            WHERE status = 'claimed' AND datetime(expires_at) < datetime(?)
+        ''', (current_time,))
         
         conn.commit()
         return cursor.rowcount
@@ -145,10 +149,11 @@ def search_items(query_embedding, threshold=0.4):
         cursor = conn.cursor()
         
         # Get all available items
+        current_time = datetime.now().isoformat()
         cursor.execute('''
             SELECT * FROM FOUND_ITEMS 
-            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime('now'))
-        ''')
+            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime(?))
+        ''', (current_time,))
         
         items = cursor.fetchall()
         results = []

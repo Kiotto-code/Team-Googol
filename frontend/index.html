@@ -765,7 +765,7 @@
             updateCarousel();
             
             // Show result message
-            resultMessage.textContent = `Found ${results.length} matching item${results.length !== 1 ? 's' : ''}`;
+            resultMessage.textContent = `Found ${results.length} matching item${results.length > 1 ? 's' : ''}`;
         }
         
         // Show search error
