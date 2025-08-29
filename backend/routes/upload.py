@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from clip_utils import get_image_embedding, get_text_embedding, save_data, image_data, UPLOAD_FOLDER
 from caption_utils import generate_caption_with_gemini
-from upload_utils import is_lighting_good
+from upload_utils import is_lighting_good, check_framing
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -17,15 +17,24 @@ def upload_image():
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
     
+    # Lighting check
     good, brightness, contrast = is_lighting_good(filepath)
     if not good:
-        # Optionally remove the file if lighting is bad
         os.remove(filepath)
         return jsonify({
             "error": "Lighting is not good enough, please re-upload.",
             "brightness": brightness,
             "contrast": contrast
         }), 400
+        
+    # Framing check
+    framing_good, framing_msg = check_framing(filepath)
+    if not framing_good:
+        os.remove(filepath)
+        return jsonify({
+            "error": "Framing issue: " + framing_msg,
+        }), 400
+
 
     # User optional description
     description = request.form.get('description', "")
