@@ -5,6 +5,7 @@ from routes.search import search_bp
 from routes.delete import delete_bp
 from routes.claim import claim_bp
 from routes.collect import collect_bp
+from routes.box import box_bp
 from flask import send_from_directory
 from clip_utils import UPLOAD_FOLDER
 from scheduler import start_cleanup_scheduler
@@ -19,6 +20,7 @@ app.register_blueprint(search_bp)
 app.register_blueprint(delete_bp)
 app.register_blueprint(claim_bp)
 app.register_blueprint(collect_bp)
+app.register_blueprint(box_bp)
 
 # Start the cleanup scheduler
 start_cleanup_scheduler()

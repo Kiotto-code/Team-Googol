@@ -245,29 +245,47 @@ def clear_all_items():
 def init_boxes_table():
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        
+        # Check if door_status column exists
+        cursor.execute("PRAGMA table_info(BOXES)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'door_status' not in columns:
+            # Add door_status column to existing table
+            cursor.execute('ALTER TABLE BOXES ADD COLUMN door_status TEXT DEFAULT "closed"')
+            print("Added door_status column to BOXES table")
+        
+        # Create table if it doesn't exist
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS BOXES (
                 id TEXT PRIMARY KEY,
                 status TEXT DEFAULT 'available',
-                capacity INTEGER DEFAULT 0,
+                door_status TEXT DEFAULT 'closed',
+                capacity INTEGER DEFAULT 1,
                 current_load INTEGER DEFAULT 0,
                 last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         conn.commit()
 
-def add_box(box_id, capacity=0, status="available"):
+def add_box(box_id, capacity=1, status="available", door_status="closed"):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT OR REPLACE INTO BOXES (id, capacity, status, current_load, last_updated)
-            VALUES (?, ?, ?, 0, ?)
-        ''', (box_id, capacity, status, datetime.now().isoformat()))
+            INSERT OR REPLACE INTO BOXES (id, capacity, status, door_status, current_load, last_updated)
+            VALUES (?, ?, ?, ?, 0, ?)
+        ''', (box_id, capacity, status, door_status, datetime.now().isoformat()))
         conn.commit()
         return box_id
+    
+def delete_box(box_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM BOXES WHERE id = ?', (box_id,))
+        conn.commit()
+        return cursor.rowcount  # number of rows deleted
 
-
-def update_box_status(box_id, status=None, current_load=None):
+def update_box_status(box_id, status=None, door_status=None, current_load=None):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         fields, values = [], []
@@ -275,6 +293,9 @@ def update_box_status(box_id, status=None, current_load=None):
         if status is not None:
             fields.append("status = ?")
             values.append(status)
+        if door_status is not None:
+            fields.append("door_status = ?")
+            values.append(door_status)
         if current_load is not None:
             fields.append("current_load = ?")
             values.append(current_load)
