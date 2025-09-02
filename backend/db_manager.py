@@ -6,10 +6,9 @@ Database management CLI tool for the Lost & Found system.
 import argparse
 import json
 from datetime import datetime
-from backend.database import (
+from database import (
     get_all_items, get_available_items, claim_item, 
-    release_expired_claims, delete_item, init_database, clear_all_items,
-    delete_box
+    release_expired_claims, delete_item, init_database, clear_all_items
 )
 
 def list_items(available_only=False):
@@ -68,14 +67,6 @@ def clear_all_items_cli():
     else:
         print("Operation cancelled.")
 
-def del_box(box_id):
-    """Delete a box by ID."""
-    deleted = delete_box(box_id)
-    if deleted:
-        print(f"Successfully deleted box: {box_id}")
-    else:
-        print(f"Box not found: {box_id}")
-
 def main():
     parser = argparse.ArgumentParser(description="Lost & Found Database Management Tool")
     
@@ -123,9 +114,6 @@ def main():
     elif args.command == 'init':
         init_database()
         print("Database initialized.")
-    elif args.command == 'delbox':
-        del_box(args.box_id)
-        print(f"box_id: {args.box_id} deleted")
 
 if __name__ == "__main__":
     main()

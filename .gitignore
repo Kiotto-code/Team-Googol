@@ -4,10 +4,6 @@ data.json
 __pycache__/
 *.db
 
-# Moved to tests/ folder - these entries can be removed later
-migrate_data.py
-api_utils.py
-test_collect.py
-
 # Database manager is a utility tool, not part of main app
-backend/db_manager.py
+tests/
+docs/
