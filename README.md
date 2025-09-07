@@ -18,23 +18,23 @@ FINDR is a smart automated box + AI-powered web app that simplifies the lost-and
 
 ## 🚀 Key Features
 
-📷 Accessibility – Easy item drop off and easy item search anytime, anywhere
-🤖 AI Matching – Lost item descriptions are matched with stored items using CLIP embeddings + ChromaDB.
-🔐 Secure Retrieval – RFID card authentication ensures only the rightful owner can unlock the box.
-📊 Transparency – Snapshots and logs track every deposit and retrieval.
-🌍 Scalability – Multiple FINDR boxes can be deployed across campus.
+- 📷 Accessibility – Easy item drop off and easy item search anytime, anywhere
+- 🤖 AI Matching – Lost item descriptions are matched with stored items using CLIP embeddings + ChromaDB.
+- 🔐 Secure Retrieval – RFID card authentication ensures only the rightful owner can unlock the box.
+- 📊 Transparency – Snapshots and logs track every deposit and retrieval.
+- 🌍 Scalability – Multiple FINDR boxes can be deployed across campus.
 
 ## 🛠️ Hardware Components
 
-ESP32-CAM - Captures images and handles communication with the server.
-LCD Display (LCD1) - Displays QR code for user login and shows the status of the box.
-PCF8575 I/O - Provides 16 additional GPIO pins to the ESP32 via I2C for connecting to low-speed devices.
-IR Sensor - Detects presence or movement of a person in front of the box.
-Ultrasonic Sensor - Detects and measures items placed inside the box.
-RFID Sensor - Allows users to unlock the box using their student card.
-Switch Sensor - Detects whether the box is open or closed.
-Buzzer - Alerts the user if the box remains open.
-DC-DC Step-Down Converter - Provides regulated power supply to the entire circuit.
+- ESP32-CAM - Captures images and handles communication with the server.
+- LCD Display (LCD1) - Displays QR code for user login and shows the status of the box.
+- PCF8575 I/O - Provides 16 additional GPIO pins to the ESP32 via I2C for connecting to low-speed devices.
+- IR Sensor - Detects presence or movement of a person in front of the box.
+- Ultrasonic Sensor - Detects and measures items placed inside the box.
+- RFID Sensor - Allows users to unlock the box using their student card.
+- Switch Sensor - Detects whether the box is open or closed.
+- Buzzer - Alerts the user if the box remains open.
+- DC-DC Step-Down Converter - Provides regulated power supply to the entire circuit.
 
 ## 📺 Prototype Video
 [![Watch the video](https://img.youtube.com/vi/-d-M06xUAgM/0.jpg)](https://youtu.be/-d-M06xUAgM)
