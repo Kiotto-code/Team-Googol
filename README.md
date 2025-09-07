@@ -16,7 +16,7 @@ FINDR is a smart automated box + AI-powered web app that simplifies the lost-and
 └── requirements.txt  # Python dependencies
 ```
 
-##🚀 Key Features
+## 🚀 Key Features
 
 📷 Accessibility – Easy item drop off and easy item search anytime, anywhere
 🤖 AI Matching – Lost item descriptions are matched with stored items using CLIP embeddings + ChromaDB.
