@@ -114,6 +114,10 @@ python backend/migrate_data.py
 ## Documentation
 
 Complete documentation is available in the `docs/` folder:
-- **[Item Status Guide](docs/item-status-guide.md)** - Updated user management and item lifecycle
-- **[Box Status Guide](docs/box-status-guide.md)** - Physical box management
-- **[System Architecture](system-architecture-diagram.md)** - Complete system overview with separated user flow
+- **[System Architecture](docs/system-architecture-diagram.md)** - Complete system overview with separated user flow
+
+## Presentaticon Deck
+
+- **[Flow Chart](https://www.mermaidchart.com/app/projects/dd0eea15-bc63-4a02-a0c7-3440051f175d/diagrams/5ef3004c-5b21-40b7-9589-12ee9d861a6f/version/v0.1/edit)** - Complete System Flow Chart
+
+- **[Schematic Diagram](docs\FINDR_schematic_diagram.jpg)** - Schematic Diagram for this diagram
