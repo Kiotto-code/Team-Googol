@@ -1,6 +1,6 @@
-# Lost & Found System
+# FINDR - Smart Lost & Found System
 
-A web-based lost and found system using CLIP embeddings for intelligent image search, with separated user management for finders and collectors.
+FINDR is a smart automated box + AI-powered web app that simplifies the lost-and-found process on university campuses. Users can deposit found items securely and owners can search, match, and retrieve their belongings through an AI-driven system with RFID-based authentication.
 
 ## Project Structure
 
@@ -16,14 +16,28 @@ A web-based lost and found system using CLIP embeddings for intelligent image se
 └── requirements.txt  # Python dependencies
 ```
 
-## Key Features
+##🚀 Key Features
 
-- **Separated User Management**: Distinct FINDERS and COLLECTORS tables with role-specific features
-- **RFID Integration**: Quick finder identification via RFID tags
-- **Student ID Support**: University system integration for collectors
-- **Smart Search**: CLIP-powered visual and text search with user attribution
-- **Collection System**: API for automated item collection with finder tracking
-- **Reputation System**: Track finder reliability and collector verification status
+📷 Accessibility – Easy item drop off and easy item search anytime, anywhere
+🤖 AI Matching – Lost item descriptions are matched with stored items using CLIP embeddings + ChromaDB.
+🔐 Secure Retrieval – RFID card authentication ensures only the rightful owner can unlock the box.
+📊 Transparency – Snapshots and logs track every deposit and retrieval.
+🌍 Scalability – Multiple FINDR boxes can be deployed across campus.
+
+## 🛠️ Hardware Components
+
+ESP32-CAM - Captures images and handles communication with the server.
+LCD Display (LCD1) - Displays QR code for user login and shows the status of the box.
+PCF8575 I/O - Provides 16 additional GPIO pins to the ESP32 via I2C for connecting to low-speed devices.
+IR Sensor - Detects presence or movement of a person in front of the box.
+Ultrasonic Sensor - Detects and measures items placed inside the box.
+RFID Sensor - Allows users to unlock the box using their student card.
+Switch Sensor - Detects whether the box is open or closed.
+Buzzer - Alerts the user if the box remains open.
+DC-DC Step-Down Converter - Provides regulated power supply to the entire circuit.
+
+## 📺 Prototype Video
+[![Watch the video](https://img.youtube.com/vi/-d-M06xUAgM/0.jpg)](https://youtu.be/-d-M06xUAgM)
 
 ## Quick Start
 
@@ -103,16 +117,3 @@ Complete documentation is available in the `docs/` folder:
 - **[Item Status Guide](docs/item-status-guide.md)** - Updated user management and item lifecycle
 - **[Box Status Guide](docs/box-status-guide.md)** - Physical box management
 - **[System Architecture](system-architecture-diagram.md)** - Complete system overview with separated user flow
-
-## Features
-
-- **Separated User Management**: FINDERS and COLLECTORS tables with specific roles
-- **RFID Integration**: Quick finder identification and tracking
-- **Student ID Support**: University integration for collector verification
-- **Smart Search**: CLIP-powered visual and text search with user attribution
-- **Collection System**: API for automated item collection with finder tracking
-- **Claim Management**: Temporary claims with automatic expiration
-- **Reputation System**: Track finder reliability and collector verification status
-- **Foreign Key Relationships**: Proper database relationships between users and items
-- **Image Processing**: Secure file handling and storage
-- **Database Migration**: Automatic upgrade from single USERS table to separated architecture

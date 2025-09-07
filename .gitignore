@@ -3,7 +3,9 @@ uploads/
 data.json
 __pycache__/
 *.db
-
+.env
+test.html
+test.py
 # Database manager is a utility tool, not part of main app
 tests/
 docs/
