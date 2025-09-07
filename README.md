@@ -39,6 +39,10 @@ FINDR is a smart automated box + AI-powered web app that simplifies the lost-and
 ## 📺 Prototype Video
 [![Watch the video](https://img.youtube.com/vi/-d-M06xUAgM/0.jpg)](https://youtu.be/-d-M06xUAgM)
 
+## 📑 Prototype Slides
+[View the full report (PDF)](./Team_Googol_Slides.pdf)
+
+
 ## Quick Start
 
 1. **Setup Environment:**
@@ -116,8 +120,10 @@ python backend/migrate_data.py
 Complete documentation is available in the `docs/` folder:
 - **[System Architecture](docs/system-architecture-diagram.md)** - Complete system overview with separated user flow
 
-## Presentaticon Deck
+## Presentation Deck
 
 - **[Flow Chart](https://www.mermaidchart.com/app/projects/dd0eea15-bc63-4a02-a0c7-3440051f175d/diagrams/5ef3004c-5b21-40b7-9589-12ee9d861a6f/version/v0.1/edit)** - Complete System Flow Chart
 
-- **[Schematic Diagram](docs\FINDR_schematic_diagram.jpg)** - Schematic Diagram for this diagram
+- **[Item upload and query pipeline](https://www.mermaidchart.com/app/projects/a605fc72-a4c5-45d0-abd0-827c4456da58/diagrams/9ac1802e-2a3a-4f5b-bafa-9e888fa3b06f/version/v0.1/edit)** - How we implement AI in image processing/query
+
+- **[Schematic Diagram](docs/FINDR_schematic_diagram.jpg)** - Schematic Diagram for this diagram
