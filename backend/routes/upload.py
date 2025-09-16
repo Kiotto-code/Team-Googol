@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from clip_utils import get_image_embedding, get_text_embedding, save_data, image_data, UPLOAD_FOLDER
 from caption_utils import generate_caption_with_gemini
 from upload_utils import is_lighting_good, check_framing
+from database import add_found_item
 
 upload_bp = Blueprint('upload', __name__)
 

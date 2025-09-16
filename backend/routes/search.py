@@ -1,7 +1,8 @@
 import os
 import numpy as np
 from flask import Blueprint, request, jsonify, send_file
-from clip_utils import get_text_embedding, image_data, UPLOAD_FOLDER
+from clip_utils import get_text_embedding, UPLOAD_FOLDER
+from database import search_items, release_expired_claims
 
 search_bp = Blueprint('search', __name__)
 
@@ -12,6 +13,11 @@ def search_image():
         return jsonify({"error": "No query provided"}), 400
     
     query = data['query']
+    
+    
+    # Clean up expired claims before searching
+    release_expired_claims()
+
     # Get normalized query embedding
     query_emb = get_text_embedding(query).detach().cpu().numpy().flatten()
 
@@ -49,5 +55,8 @@ def search_image():
     # Add URLs
     for r in results:
         r["url"] = f"http://127.0.0.1:5000/uploads/{r['filename']}"
+        # Add claim status information for frontend
+        r["can_claim"] = r["status"] == "available"
+        r["is_claimed"] = r["status"] == "claimed"
 
     return jsonify({"results": results})
