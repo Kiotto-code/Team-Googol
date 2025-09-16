@@ -45,6 +45,8 @@ FINDR is a smart automated box + AI-powered web app that simplifies the lost-and
 
 ## Quick Start
 
+- Python Version : Python 3.10.12
+
 1. **Setup Environment:**
    ```bash
    source .venv/bin/activate
