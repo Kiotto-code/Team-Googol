@@ -12,3 +12,4 @@ test.py
 # Database manager is a utility tool, not part of main app
 tests/
 docs/
+
