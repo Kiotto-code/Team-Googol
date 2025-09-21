@@ -3,13 +3,13 @@ uploads/
 data.json
 __pycache__/
 test.py
-.env
+.venv
 test.html
 *.db
-.env
+.venv_wsl
 test.html
 test.py
 # Database manager is a utility tool, not part of main app
 tests/
 docs/
-
+*.md

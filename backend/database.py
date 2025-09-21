@@ -289,7 +289,7 @@ def collect_found_item(filename, imgtaken_timestamp, box_id, finder_id=None):
         
         # Update finder stats if provided
         if finder_id:
-            update_finder_stats(finder_id, items_found_increment=1, reputation_increment=1)
+            update_finder_stats(finder_id, items_found_increment=1)
             
         conn.commit()
         return cursor.lastrowid
@@ -326,8 +326,6 @@ def init_users_table():
                 user_type TEXT DEFAULT 'both',  -- 'finder', 'collector', 'both'
                 items_found INTEGER DEFAULT 0,  -- Count of items they've found
                 items_claimed INTEGER DEFAULT 0,  -- Count of items they've claimed
-                reputation_score INTEGER DEFAULT 0,  -- Based on successful matches
-                verification_status TEXT DEFAULT 'unverified',  -- 'verified', 'unverified', 'pending'
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 last_active DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -422,7 +420,7 @@ def add_finder(name, email=None, phone=None, rfid_tag=None):
     """Add a new finder to the system (backward compatibility)."""
     return add_user(name, email, phone, rfid_tag, None, 'finder')
 
-def add_collector(name, email=None, phone=None, student_id=None, id_number=None):
+def add_collector(name, email=None, phone=None, student_id=None):
     """Add a new collector to the system (backward compatibility)."""
     return add_user(name, email, phone, None, student_id, 'collector')
 
@@ -482,40 +480,29 @@ def get_collector_by_student_id(student_id):
     """Get collector information by student ID (backward compatibility)."""
     return get_user_by_student_id(student_id)
 
-def update_user_stats(user_id, items_found_increment=0, items_claimed_increment=0, 
-                     reputation_increment=0, verification_status=None):
+def update_user_stats(user_id, items_found_increment=0, items_claimed_increment=0):
     """Update user statistics."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        update_query = '''
+        cursor.execute('''
             UPDATE USERS 
             SET items_found = items_found + ?, 
                 items_claimed = items_claimed + ?,
-                reputation_score = reputation_score + ?,
                 last_active = ?
-        '''
-        params = [items_found_increment, items_claimed_increment, reputation_increment, 
-                 datetime.now().isoformat()]
-        
-        if verification_status:
-            update_query += ', verification_status = ?'
-            params.append(verification_status)
-            
-        update_query += ' WHERE user_id = ?'
-        params.append(user_id)
-        
-        cursor.execute(update_query, params)
+            WHERE user_id = ?
+        ''', (items_found_increment, items_claimed_increment, 
+              datetime.now().isoformat(), user_id))
         conn.commit()
         return cursor.rowcount > 0
 
 # Backward compatibility functions
 def update_finder_stats(finder_id, items_found_increment=0, reputation_increment=0):
     """Update finder statistics (backward compatibility)."""
-    return update_user_stats(finder_id, items_found_increment, 0, reputation_increment)
+    return update_user_stats(finder_id, items_found_increment, 0)
 
 def update_collector_stats(collector_id, items_claimed_increment=0, verification_status=None):
     """Update collector statistics (backward compatibility)."""
-    return update_user_stats(collector_id, 0, items_claimed_increment, 0, verification_status)
+    return update_user_stats(collector_id, 0, items_claimed_increment)
 
 # Get all functions for admin/reporting
 def get_all_finders():
