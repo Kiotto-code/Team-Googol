@@ -6,14 +6,15 @@ from contextlib import contextmanager
 import logging
 import numpy as np
 
-DATABASE_PATH = 'lost_and_found.db'
+# Use absolute path to ensure consistent database location
+DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lost_and_found.db')
 
 def init_database():
     """Initialize the database with the required tables."""
     with sqlite3.connect(DATABASE_PATH) as conn:
         cursor = conn.cursor()
         
-        # Initialize user tables first (FINDERS and COLLECTORS)
+        # Initialize unified USERS table
         init_users_table()
         init_boxes_table()
         
@@ -27,12 +28,12 @@ def init_database():
                 description_embedding TEXT,
                 status TEXT DEFAULT 'available',
                 claimed_at DATETIME,
-                claimed_by INTEGER,  -- References COLLECTORS.collector_id
-                finder_id INTEGER,   -- References FINDERS.finder_id 
+                claimed_by INTEGER,  -- References USERS.user_id
+                finder_id INTEGER,   -- References USERS.user_id 
                 uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 expires_at DATETIME,
-                FOREIGN KEY (claimed_by) REFERENCES COLLECTORS (collector_id),
-                FOREIGN KEY (finder_id) REFERENCES FINDERS (finder_id)
+                FOREIGN KEY (claimed_by) REFERENCES USERS (user_id),
+                FOREIGN KEY (finder_id) REFERENCES USERS (user_id)
             )
         ''')
         
@@ -42,10 +43,10 @@ def init_database():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 filename TEXT NOT NULL UNIQUE,
                 box_id TEXT,
-                finder_id INTEGER,  -- References FINDERS.finder_id (system or person who found it)
+                finder_id INTEGER,  -- References USERS.user_id (system or person who found it)
                 imgtaken_timestamp REAL,
                 uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (finder_id) REFERENCES FINDERS (finder_id)
+                FOREIGN KEY (finder_id) REFERENCES USERS (user_id)
             )
         ''')
         
@@ -288,7 +289,7 @@ def collect_found_item(filename, imgtaken_timestamp, box_id, finder_id=None):
         
         # Update finder stats if provided
         if finder_id:
-            update_finder_stats(finder_id, items_found_increment=1, reputation_increment=1)
+            update_finder_stats(finder_id, items_found_increment=1)
             
         conn.commit()
         return cursor.lastrowid
@@ -308,201 +309,200 @@ def clear_all_items():
         conn.commit()
         return cursor.rowcount
 
-# USER MANAGEMENT - Separated into FINDERS and COLLECTORS tables
-def init_finders_table():
-    """Initialize the FINDERS table for people who find and report items."""
+# USER MANAGEMENT - Unified USERS table
+def init_users_table():
+    """Initialize unified USERS table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS FINDERS (
-                finder_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS USERS (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE,
                 phone TEXT,
                 rfid_tag TEXT UNIQUE,
+                student_id TEXT UNIQUE,
+                user_type TEXT DEFAULT 'both',  -- 'finder', 'collector', 'both'
                 items_found INTEGER DEFAULT 0,  -- Count of items they've found
-                reputation_score INTEGER DEFAULT 0,  -- Based on successful matches
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                last_active DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        conn.commit()
-
-def init_collectors_table():
-    """Initialize the COLLECTORS table for people who lost items and want to claim them."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS COLLECTORS (
-                collector_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE,
-                phone TEXT,
-                student_id TEXT UNIQUE,  -- For university students
-                id_number TEXT,  -- National ID or other identification
                 items_claimed INTEGER DEFAULT 0,  -- Count of items they've claimed
-                verification_status TEXT DEFAULT 'unverified',  -- 'verified', 'unverified', 'pending'
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 last_active DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Migrate from old FINDERS/COLLECTORS tables if they exist
+        migrate_separated_tables_to_users()
+        
         conn.commit()
 
-def init_users_table():
-    """Initialize both FINDERS and COLLECTORS tables."""
-    init_finders_table()
-    init_collectors_table()
-    
-    # Migrate existing USERS table if it exists
-    migrate_users_to_separated_tables()
-
-def migrate_users_to_separated_tables():
-    """Migrate existing USERS table data to FINDERS and COLLECTORS tables."""
+def migrate_separated_tables_to_users():
+    """Migrate existing FINDERS and COLLECTORS tables to unified USERS table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
-        # Check if old USERS table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='USERS'")
-        if cursor.fetchone():
-            print("Migrating existing USERS table to FINDERS and COLLECTORS...")
+        # Check if old FINDERS table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='FINDERS'")
+        has_finders = cursor.fetchone() is not None
+        
+        # Check if old COLLECTORS table exists  
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='COLLECTORS'")
+        has_collectors = cursor.fetchone() is not None
+        
+        if has_finders or has_collectors:
+            print("Migrating FINDERS and COLLECTORS tables to unified USERS table...")
             
-            # Get all existing users
-            cursor.execute('SELECT * FROM USERS')
-            existing_users = cursor.fetchall()
-            
-            for user in existing_users:
-                user_dict = dict(user)
-                user_type = user_dict.get('user_type', 'both')
-                
-                # Add to FINDERS if they are finder or both
-                if user_type in ['finder', 'both']:
+            # Migrate FINDERS
+            if has_finders:
+                cursor.execute('SELECT * FROM FINDERS')
+                finders = cursor.fetchall()
+                for finder in finders:
+                    finder_dict = dict(finder)
                     cursor.execute('''
-                        INSERT OR IGNORE INTO FINDERS (name, email, rfid_tag, created_at, last_active)
-                        VALUES (?, ?, ?, ?, ?)
-                    ''', (user_dict['name'], user_dict['email'], user_dict['rfid_tag'],
-                          user_dict['created_at'], user_dict['last_active']))
-                
-                # Add to COLLECTORS if they are collector or both
-                if user_type in ['collector', 'both']:
-                    cursor.execute('''
-                        INSERT OR IGNORE INTO COLLECTORS (name, email, created_at, last_active)
-                        VALUES (?, ?, ?, ?)
-                    ''', (user_dict['name'], user_dict['email'],
-                          user_dict['created_at'], user_dict['last_active']))
+                        INSERT OR IGNORE INTO USERS (name, email, phone, rfid_tag, user_type, created_at, last_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''', (finder_dict.get('name'), finder_dict.get('email'), finder_dict.get('phone'),
+                          finder_dict.get('rfid_tag'), 'finder', 
+                          finder_dict.get('created_at'), finder_dict.get('last_active')))
             
-            # Rename old table for backup
-            cursor.execute('ALTER TABLE USERS RENAME TO USERS_BACKUP')
-            print("Migration completed. Old USERS table renamed to USERS_BACKUP")
+            # Migrate COLLECTORS
+            if has_collectors:
+                cursor.execute('SELECT * FROM COLLECTORS')
+                collectors = cursor.fetchall()
+                for collector in collectors:
+                    collector_dict = dict(collector)
+                    # Check if user already exists (in case they were both finder and collector)
+                    cursor.execute('SELECT user_id FROM USERS WHERE email = ?', (collector_dict.get('email'),))
+                    existing_user = cursor.fetchone()
+                    
+                    if existing_user:
+                        # Update existing user to be 'both'
+                        cursor.execute('''
+                            UPDATE USERS SET user_type = 'both', student_id = ?
+                            WHERE user_id = ?
+                        ''', (collector_dict.get('student_id'), existing_user[0]))
+                    else:
+                        # Insert new collector
+                        cursor.execute('''
+                            INSERT OR IGNORE INTO USERS (name, email, phone, student_id, user_type, created_at, last_active)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (collector_dict.get('name'), collector_dict.get('email'), collector_dict.get('phone'),
+                              collector_dict.get('student_id'), 'collector',
+                              collector_dict.get('created_at'), collector_dict.get('last_active')))
             
+            # Rename old tables for backup
+            if has_finders:
+                cursor.execute('ALTER TABLE FINDERS RENAME TO FINDERS_BACKUP')
+                print("FINDERS table renamed to FINDERS_BACKUP")
+            if has_collectors:
+                cursor.execute('ALTER TABLE COLLECTORS RENAME TO COLLECTORS_BACKUP') 
+                print("COLLECTORS table renamed to COLLECTORS_BACKUP")
+            
+            print("Migration to unified USERS table completed")
+        
         conn.commit()
 
-# FINDER management functions
+# USER management functions (unified)
+def add_user(name, email=None, phone=None, rfid_tag=None, student_id=None, user_type='both'):
+    """Add a new user to the system."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO USERS (name, email, phone, rfid_tag, student_id, user_type, created_at, last_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (name, email, phone, rfid_tag, student_id, user_type,
+              datetime.now().isoformat(), datetime.now().isoformat()))
+        conn.commit()
+        return cursor.lastrowid
+
+# Backward compatibility functions for existing code
 def add_finder(name, email=None, phone=None, rfid_tag=None):
-    """Add a new finder to the system."""
+    """Add a new finder to the system (backward compatibility)."""
+    return add_user(name, email, phone, rfid_tag, None, 'finder')
+
+def add_collector(name, email=None, phone=None, student_id=None):
+    """Add a new collector to the system (backward compatibility)."""
+    return add_user(name, email, phone, None, student_id, 'collector')
+
+def get_user_by_id(user_id):
+    """Get user information by user ID."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO FINDERS (name, email, phone, rfid_tag, created_at, last_active)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (name, email, phone, rfid_tag, 
-              datetime.now().isoformat(), datetime.now().isoformat()))
-        conn.commit()
-        return cursor.lastrowid
+        cursor.execute('SELECT * FROM USERS WHERE user_id = ?', (user_id,))
+        return cursor.fetchone()
 
+# Backward compatibility functions
 def get_finder_by_id(finder_id):
-    """Get finder information by finder ID."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM FINDERS WHERE finder_id = ?', (finder_id,))
-        return cursor.fetchone()
-
-def get_finder_by_email(email):
-    """Get finder information by email."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM FINDERS WHERE email = ?', (email,))
-        return cursor.fetchone()
-
-def get_finder_by_rfid(rfid_tag):
-    """Get finder information by RFID tag."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM FINDERS WHERE rfid_tag = ?', (rfid_tag,))
-        return cursor.fetchone()
-
-def update_finder_stats(finder_id, items_found_increment=0, reputation_increment=0):
-    """Update finder statistics."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE FINDERS 
-            SET items_found = items_found + ?, 
-                reputation_score = reputation_score + ?,
-                last_active = ?
-            WHERE finder_id = ?
-        ''', (items_found_increment, reputation_increment, 
-              datetime.now().isoformat(), finder_id))
-        conn.commit()
-        return cursor.rowcount > 0
-
-# COLLECTOR management functions  
-def add_collector(name, email=None, phone=None, student_id=None, id_number=None):
-    """Add a new collector (item claimer) to the system."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO COLLECTORS (name, email, phone, student_id, id_number, created_at, last_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (name, email, phone, student_id, id_number,
-              datetime.now().isoformat(), datetime.now().isoformat()))
-        conn.commit()
-        return cursor.lastrowid
+    """Get finder information by ID (backward compatibility)."""
+    return get_user_by_id(finder_id)
 
 def get_collector_by_id(collector_id):
-    """Get collector information by collector ID."""
+    """Get collector information by ID (backward compatibility)."""
+    return get_user_by_id(collector_id)
+
+def get_user_by_email(email):
+    """Get user information by email."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM COLLECTORS WHERE collector_id = ?', (collector_id,))
+        cursor.execute('SELECT * FROM USERS WHERE email = ?', (email,))
         return cursor.fetchone()
+
+# Backward compatibility functions
+def get_finder_by_email(email):
+    """Get finder information by email (backward compatibility)."""
+    return get_user_by_email(email)
 
 def get_collector_by_email(email):
-    """Get collector information by email.""" 
+    """Get collector information by email (backward compatibility)."""
+    return get_user_by_email(email)
+
+def get_user_by_rfid(rfid_tag):
+    """Get user information by RFID tag."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM COLLECTORS WHERE email = ?', (email,))
+        cursor.execute('SELECT * FROM USERS WHERE rfid_tag = ?', (rfid_tag,))
         return cursor.fetchone()
 
+# Backward compatibility function
+def get_finder_by_rfid(rfid_tag):
+    """Get finder information by RFID tag (backward compatibility)."""
+    return get_user_by_rfid(rfid_tag)
+
+def get_user_by_student_id(student_id):
+    """Get user information by student ID."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM USERS WHERE student_id = ?', (student_id,))
+        return cursor.fetchone()
+
+# Backward compatibility function
 def get_collector_by_student_id(student_id):
-    """Get collector information by student ID."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM COLLECTORS WHERE student_id = ?', (student_id,))
-        return cursor.fetchone()
+    """Get collector information by student ID (backward compatibility)."""
+    return get_user_by_student_id(student_id)
 
-def update_collector_stats(collector_id, items_claimed_increment=0, verification_status=None):
-    """Update collector statistics and verification status."""
+def update_user_stats(user_id, items_found_increment=0, items_claimed_increment=0):
+    """Update user statistics."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        if verification_status:
-            cursor.execute('''
-                UPDATE COLLECTORS 
-                SET items_claimed = items_claimed + ?, 
-                    verification_status = ?,
-                    last_active = ?
-                WHERE collector_id = ?
-            ''', (items_claimed_increment, verification_status,
-                  datetime.now().isoformat(), collector_id))
-        else:
-            cursor.execute('''
-                UPDATE COLLECTORS 
-                SET items_claimed = items_claimed + ?, 
-                    last_active = ?
-                WHERE collector_id = ?
-            ''', (items_claimed_increment, datetime.now().isoformat(), collector_id))
+        cursor.execute('''
+            UPDATE USERS 
+            SET items_found = items_found + ?, 
+                items_claimed = items_claimed + ?,
+                last_active = ?
+            WHERE user_id = ?
+        ''', (items_found_increment, items_claimed_increment, 
+              datetime.now().isoformat(), user_id))
         conn.commit()
         return cursor.rowcount > 0
+
+# Backward compatibility functions
+def update_finder_stats(finder_id, items_found_increment=0, reputation_increment=0):
+    """Update finder statistics (backward compatibility)."""
+    return update_user_stats(finder_id, items_found_increment, 0)
+
+def update_collector_stats(collector_id, items_claimed_increment=0, verification_status=None):
+    """Update collector statistics (backward compatibility)."""
+    return update_user_stats(collector_id, 0, items_claimed_increment)
 
 # Get all functions for admin/reporting
 def get_all_finders():
