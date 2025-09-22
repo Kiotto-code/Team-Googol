@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timedelta
 from contextlib import contextmanager
 import logging
+import numpy as np
 
 DATABASE_PATH = 'lost_and_found.db'
 
@@ -233,7 +234,6 @@ def search_items(query_embedding, threshold=0.4):
         items = cursor.fetchall()
         results = []
         
-        import numpy as np
         query_emb = np.array(query_embedding, dtype=np.float32)
         
         for item in items:
@@ -248,7 +248,7 @@ def search_items(query_embedding, threshold=0.4):
                 desc_score = float(np.dot(query_emb, desc_emb) / (np.linalg.norm(query_emb) * np.linalg.norm(desc_emb)))
             
             # Combine scores
-            final_score = (img_score + desc_score) / 2 if desc_score != 0 else img_score
+            final_score = (0.6 * desc_score + 0.4 * img_score)
             
             if final_score > threshold:
                 # Update status if claim expired

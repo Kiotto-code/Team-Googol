@@ -14,7 +14,8 @@ from scheduler import start_cleanup_scheduler
 import atexit
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5500"}})
+# CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5500"}})
+CORS(app) 
 
 # Register routes
 app.register_blueprint(upload_bp)

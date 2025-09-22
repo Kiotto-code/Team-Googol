@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from flask import Blueprint, request, jsonify, send_file
-from clip_utils import get_text_embedding, UPLOAD_FOLDER
+from clip_utils import get_text_embedding, UPLOAD_FOLDER, image_data
 from database import search_items, release_expired_claims
 
 search_bp = Blueprint('search', __name__)
@@ -14,36 +14,35 @@ def search_image():
     
     query = data['query']
     
-    
     # Clean up expired claims before searching
     release_expired_claims()
 
     # Get normalized query embedding
     query_emb = get_text_embedding(query).detach().cpu().numpy().flatten()
 
-    results = []
+    results = search_items(query_emb, threshold=0.4)
 
-    for fname, item in image_data.items():
-        # Image embedding
-        img_emb = np.array(item["image_embedding"], dtype=np.float32)
-        img_score = float(np.dot(query_emb, img_emb))  # embeddings already normalized
+    # for fname, item in image_data.items():
+    #     # Image embedding
+    #     img_emb = np.array(item["image_embedding"], dtype=np.float32)
+    #     img_score = float(np.dot(query_emb, img_emb))  # embeddings already normalized
 
-        # Description embedding (combined user + BLIP)
-        desc_score = 0.0
-        if item.get("description_embedding") is not None:
-            desc_emb = np.array(item["description_embedding"], dtype=np.float32)
-            desc_score = float(np.dot(query_emb, desc_emb))
+    #     # Description embedding (combined user + BLIP)
+    #     desc_score = 0.0
+    #     if item.get("description_embedding") is not None:
+    #         desc_emb = np.array(item["description_embedding"], dtype=np.float32)
+    #         desc_score = float(np.dot(query_emb, desc_emb))
 
-        # Weighted combination: prioritize description embedding (user + BLIP)
-        final_score = (0.6 * desc_score + 0.4 * img_score) if desc_score != 0 else img_score
+    #     # Weighted combination: prioritize description embedding (user + BLIP)
+    #     final_score = (0.6 * desc_score + 0.4 * img_score) if desc_score != 0 else img_score
 
-        # Filter by threshold
-        if final_score > 0.4:
-            results.append({
-                "filename": fname,
-                "description": item.get("description", ""),
-                "score": final_score
-            })
+    #     # Filter by threshold
+    #     if final_score > 0.4:
+    #         results.append({
+    #             "filename": fname,
+    #             "description": item.get("description", ""),
+    #             "score": final_score
+    #         })
 
     # Check if nothing found
     if not results:

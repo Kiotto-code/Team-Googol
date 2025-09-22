@@ -28,13 +28,13 @@ def upload_image():
             "contrast": contrast
         }), 400
         
-    # Framing check
-    framing_good, framing_msg = check_framing(filepath)
-    if not framing_good:
-        os.remove(filepath)
-        return jsonify({
-            "error": "Framing issue: " + framing_msg,
-        }), 400
+    # Framing check (need to test more)
+    # framing_good, framing_msg = check_framing(filepath)
+    # if not framing_good:
+    #     os.remove(filepath)
+    #     return jsonify({
+    #         "error": "Framing issue: " + framing_msg,
+    #     }), 400
 
 
     # User optional description
@@ -53,17 +53,28 @@ def upload_image():
     desc_emb = get_text_embedding(combined_caption).detach().cpu().numpy().flatten().tolist()
 
     # Store in memory
-    image_data[filename] = {
-        "image_embedding": img_emb,
-        "description": description,
-        "gemini_caption": gemini_caption,
-        "description_embedding": desc_emb
-    }
-    save_data()
+    # image_data[filename] = {
+    #     "image_embedding": img_emb,
+    #     "description": description,
+    #     "gemini_caption": gemini_caption,
+    #     "description_embedding": desc_emb
+    # }
+    # save_data()
 
-    return jsonify({
-        "message": "Image uploaded successfully",
-        "filename": filename,
-        "description": description,
-        "gemini_caption": gemini_caption
-    }), 200
+
+    try:
+        # Save to database
+        item_id = add_found_item(filename, img_emb, description, desc_emb)
+        return jsonify({
+                "message": "Image uploaded successfully", 
+                "filename": filename,
+                "description": description,
+                "gemini_caption": gemini_caption,
+                "item_id": item_id
+            }), 200
+            
+    except Exception as e:
+            # Remove uploaded file if database save fails
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            return jsonify({"error": f"Failed to save item: {str(e)}"}), 500
