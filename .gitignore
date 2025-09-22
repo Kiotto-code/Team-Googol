@@ -1,12 +1,12 @@
+.venv
+.venv_wsl
 venv
 uploads/
 data.json
 __pycache__/
 test.py
-.venv
 test.html
 *.db
-.venv_wsl
 test.html
 test.py
 # Database manager is a utility tool, not part of main app
