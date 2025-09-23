@@ -1,0 +1,117 @@
+
+
+POST /box/register
+
+Description:
+Register a new box in the system.
+
+Example Request:
+ ```
+{
+  "location": "Lobby A1",
+  "status": true,
+  "door_status": false,
+  "load": 0
+} ```
+
+Success Response:
+ ```
+{
+  "message": "Box registered successfully",
+  "box_id": 1,
+  "location": "Lobby A1",
+  "status": true,
+  "door_status": false,
+  "load": 0
+} ```
+
+GET /box/status?box_id=1
+
+Description:
+Get the current status and details of a specific box.
+
+Example Request:
+
+GET /box/status?box_id=1
+
+Success Response:
+ ```
+{
+  "box_id": 1,
+  "status": true,
+  "door_status": false,
+  "location": "Lobby A1",
+  "load": 0,
+  "last_accessed": "2025-09-24T12:34:56"
+} ```
+
+POST /box/status?box_id=1
+
+Description:
+Update the status or details of a specific box.
+
+Example Request:
+ ```
+{
+  "status": false,
+  "door_status": true,
+  "location": "Lobby A2",
+  "load": 3
+} ```
+
+
+Success Response:
+ ```
+{
+  "message": "Box updated successfully",
+  "box_id": 1,
+  "status": false,
+  "door_status": true,
+  "location": "Lobby A2",
+  "load": 3,
+  "last_accessed": "2025-09-24T12:45:30",
+  "is_empty": false,
+  "is_occupied": true,
+  "door_open": true
+} ```
+
+POST /box/open
+
+Description:
+Open the door of a specific box.
+
+Example Request:
+ ```
+{
+  "box_id": 1
+} ```
+
+Success Response:
+ ```
+{
+  "message": "Box opened successfully",
+  "box_id": 1,
+  "door_status": true,
+  "last_accessed": "2025-09-24T12:50:10"
+} ```
+
+POST /box/close
+
+Description:
+Close the door of a specific box.
+
+Example Request:
+ ```
+{
+  "box_id": 1
+} ```
+
+
+Success Response:
+ ```
+{
+  "message": "Box closed successfully",
+  "box_id": 1,
+  "door_status": false,
+  "last_accessed": "2025-09-24T12:52:20"
+} ```

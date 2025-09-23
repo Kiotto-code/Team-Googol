@@ -545,49 +545,67 @@ def init_boxes_table():
             print("Added door_status column to BOXES table")
         
         conn.commit()
+    
+from datetime import datetime
 
-def add_box(box_id, capacity=1, status="available", door_status="closed"):
+def add_box(location, status=True, door_status=False, load=0):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT OR REPLACE INTO BOXES (id, capacity, status, door_status, current_load, last_updated)
-            VALUES (?, ?, ?, ?, 0, ?)
-        ''', (box_id, capacity, status, door_status, datetime.now().isoformat()))
+            INSERT INTO BOXES (status, location, load, door_status, last_accessed)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            1 if status else 0,          # store as boolean (SQLite uses int 0/1)
+            location,
+            load,
+            1 if door_status else 0,     # store as boolean
+            datetime.now().isoformat()   # last_accessed
+        ))
         conn.commit()
-        return box_id
-    
+        return cursor.lastrowid  # return the new auto-incremented box_id
+
+
 def delete_box(box_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM BOXES WHERE id = ?', (box_id,))
+        cursor.execute('DELETE FROM BOXES WHERE box_id = ?', (box_id,))
         conn.commit()
         return cursor.rowcount  # number of rows deleted
 
-def update_box_status(box_id, status=None, door_status=None, current_load=None):
+from datetime import datetime
+
+def update_box(box_id, status=None, door_status=None, location=None, load=None):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         fields, values = [], []
         
         if status is not None:
             fields.append("status = ?")
-            values.append(status)
+            values.append(1 if status else 0)  # store as boolean
         if door_status is not None:
             fields.append("door_status = ?")
-            values.append(door_status)
-        if current_load is not None:
-            fields.append("current_load = ?")
-            values.append(current_load)
-        
-        values.append(datetime.now().isoformat())  # last_updated
-        values.append(box_id)
-        
-        cursor.execute(f'''
-            UPDATE BOXES 
-            SET {", ".join(fields)}, last_updated = ?
-            WHERE id = ?
-        ''', tuple(values))
+            values.append(1 if door_status else 0)
+        if location is not None:
+            fields.append("location = ?")
+            values.append(location)
+        if load is not None:
+            fields.append("load = ?")
+            values.append(load)
+
+        # Always update last_accessed timestamp
+        fields.append("last_accessed = ?")
+        values.append(datetime.now().isoformat())
+
+        values.append(box_id)  # for WHERE clause
+
+        sql = f'''
+            UPDATE BOXES
+            SET {", ".join(fields)}
+            WHERE box_id = ?
+        '''
+        cursor.execute(sql, tuple(values))
         conn.commit()
-        return cursor.rowcount > 0
+        return cursor.rowcount  # number of rows updated
 
 
 def get_box_status(box_id):

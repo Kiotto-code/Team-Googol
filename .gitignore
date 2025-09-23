@@ -14,3 +14,5 @@ tests/
 docs/
 GUIDANCE/
 *.md
+.env
+lost_and_found.db
