@@ -2,6 +2,7 @@
 .venv_wsl
 venv
 uploads/
+esp32_uploads/
 data.json
 __pycache__/
 test.py
