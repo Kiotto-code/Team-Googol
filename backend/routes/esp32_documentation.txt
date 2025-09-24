@@ -1,0 +1,56 @@
+===========================================
+POST /esp32/upload/image
+===========================================
+Description:
+Upload a JPEG image from an ESP32-CAM device. 
+The image will be stored on the server with an auto-incrementing image ID and timestamp in the filename.
+
+Example Request (Form-Data):
+Key: file
+
+Value: <image.jpg> (binary JPEG file)
+
+cURL Example:
+
+curl -X POST http://localhost:5000/esp32/upload/image \
+  -F "file=@test_image.jpg"
+
+
+Success Response:
+
+{
+  "message": "ESP32 image uploaded successfully",
+  "filename": "15_20250924_013020.jpg",
+  "path": "/uploads/esp32/15_20250924_013020.jpg",
+  "image_id": 15
+}
+
+
+Error Responses:
+
+{ "error": "No file part in request" }   // if file key is missing
+{ "error": "No selected file" }          // if file is empty
+{ "error": "Only .jpg/.jpeg files are allowed" }  // if wrong format
+
+
+============================================
+File name format: <image_id>_<timestamp>.jpg
+===========================================
+
+Components: 
+
+<image_id>
+An auto-incrementing integer that uniquely identifies each uploaded image.
+Starts from 1 and increases by 1 for every new upload.
+Example: 1, 2, 3, …, 105, etc.
+
+<timestamp>
+The server timestamp when the image was uploaded.
+Format: YYYYMMDD_HHMMSS
+
+YYYY → 4-digit year (e.g., 2025)
+MM → 2-digit month (01–12)
+DD → 2-digit day (01–31)
+HH → 2-digit hour in 24-hour format (00–23)
+MM → 2-digit minute (00–59)
+SS → 2-digit second (00–59)
