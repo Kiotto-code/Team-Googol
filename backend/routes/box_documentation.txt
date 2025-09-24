@@ -118,3 +118,32 @@ Success Response:
   "door_status": false,
   "last_accessed": "2025-09-24T12:52:20"
 } 
+
+===========================================
+POST /box/all
+===========================================
+Description:
+Gets all the boxes details
+
+Success Response:
+
+{
+  "boxes": [
+    {
+      "box_id": 1,
+      "status": true,
+      "door_status": false,
+      "location": "Lobby",
+      "load": 0,
+      "last_accessed": "2025-09-24 15:45:12"
+    },
+    {
+      "box_id": 2,
+      "status": false,
+      "door_status": true,
+      "location": "Warehouse",
+      "load": 3,
+      "last_accessed": "2025-09-24 15:50:01"
+    }
+  ]
+}

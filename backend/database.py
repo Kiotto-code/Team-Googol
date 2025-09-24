@@ -611,16 +611,92 @@ def update_box(box_id, status=None, door_status=None, location=None, load=None):
 def get_box_status(box_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM BOXES WHERE id = ?', (box_id,))
+        cursor.execute('SELECT * FROM BOXES WHERE box_id = ?', (box_id,))
         return cursor.fetchone()
 
 
 def get_all_boxes():
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM BOXES ORDER BY id')
+        cursor.execute('SELECT * FROM BOXES ORDER BY box_id')
         return cursor.fetchall()
 
+def add_case(box_id, receiver_id=None, receiver_image_url=None, item_id=None, 
+             status="available", case_close_at=None):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO CASES (box_id, receiver_image_url, receiver_id, item_id, status, case_close_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            box_id,
+            receiver_image_url,
+            receiver_id,
+            item_id,
+            status,
+            case_close_at,
+            datetime.now().isoformat()  # created_at
+        ))
+        conn.commit()
+        return cursor.lastrowid  # return the new auto-incremented found_id
 
+def update_case(found_id, box_id=None, receiver_id=None, receiver_image_url=None, 
+                item_id=None, status=None, case_close_at=None):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        fields, values = [], []
+
+        if box_id is not None:
+            fields.append("box_id = ?")
+            values.append(box_id)
+        if receiver_id is not None:
+            fields.append("receiver_id = ?")
+            values.append(receiver_id)
+        if receiver_image_url is not None:
+            fields.append("receiver_image_url = ?")
+            values.append(receiver_image_url)
+        if item_id is not None:
+            fields.append("item_id = ?")
+            values.append(item_id)
+        if status is not None:
+            fields.append("status = ?")
+            values.append(status)
+        if case_close_at is not None:
+            fields.append("case_close_at = ?")
+            values.append(case_close_at)
+
+        # nothing to update
+        if not fields:
+            return 0  
+
+        values.append(found_id)  # WHERE clause
+
+        sql = f'''
+            UPDATE Cases
+            SET {", ".join(fields)}
+            WHERE found_id = ?
+        '''
+        cursor.execute(sql, tuple(values))
+        conn.commit()
+        return cursor.rowcount  # number of rows updated
+    
+def delete_case(case_id):
+	with get_db_connection() as conn:
+		cursor = conn.cursor()
+		cursor.execute('DELETE FROM CASES WHERE found_id = ?', (case_id,))
+		conn.commit()
+		return cursor.rowcount  # number of rows deleted
+
+def get_case(case_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM CASES WHERE found_id = ?', (case_id,))
+        return cursor.fetchone()
+    
+def get_all_case():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM CASES ORDER BY found_id')
+        return cursor.fetchall()
 
 # Database is initialized when needed - removed automatic initialization

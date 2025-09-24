@@ -5,15 +5,17 @@ uploads/
 esp32_uploads/
 data.json
 __pycache__/
-test.py
-test.html
 *.db
+
+# Testing files for ethan
+test.py*
 test.html
 test.py
+cases.txt
+
 # Database manager is a utility tool, not part of main app
 tests/
 docs/
 GUIDANCE/
 *.md
 .env
-lost_and_found.db

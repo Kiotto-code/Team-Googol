@@ -178,6 +178,30 @@ def close_box():
     except Exception as e:
         return jsonify({"error": f"Failed to close box '{box_id}': {str(e)}"}), 500
     
+@box_bp.route('/box/all', methods=['GET'])
+def get_boxes():
+    """Get information about all boxes in the system."""
+    try:
+        boxes = get_all_boxes()  # should return a list of rows/dicts from DB
+        boxes_data = []
+        
+        for box in boxes:
+            boxes_data.append({
+                "box_id": box["box_id"],                  # INTEGER
+                "status": bool(box["status"]),            # BOOLEAN
+                "door_status": bool(box["door_status"]),  # BOOLEAN
+                "location": box["location"],              # VARCHAR
+                "load": box["load"],                      # INTEGER
+                "last_accessed": box["last_accessed"],    # TIMESTAMP
+            })
+        
+        return jsonify({
+            "boxes": boxes_data,
+            "total_boxes": len(boxes_data)
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to get boxes: {str(e)}"}), 500
+    
 
 # @box_bp.route('/box/<box_id>/door/open', methods=['POST'])
 # def open_door(box_id):
@@ -271,33 +295,6 @@ def close_box():
 #         }), 200
 #     except Exception as e:
 #         return jsonify({"error": f"Failed to complete collection: {str(e)}"}), 500
-
-@box_bp.route('/boxes', methods=['GET'])
-def get_boxes():
-    """Get information about all boxes in the system."""
-    try:
-        boxes = get_all_boxes()
-        boxes_data = []
-        
-        for box in boxes:
-            boxes_data.append({
-                "box_id": box['id'],
-                "status": box['status'],
-                "door_status": box['door_status'],
-                "capacity": box['capacity'],
-                "current_load": box['current_load'],
-                "last_updated": box['last_updated'],
-                "is_full": box['current_load'] >= box['capacity'],
-                "should_open": box['status'] == 'collect_request',
-                "door_open": box['door_status'] == 'open'
-            })
-        
-        return jsonify({
-            "boxes": boxes_data,
-            "total_boxes": len(boxes_data)
-        }), 200
-    except Exception as e:
-        return jsonify({"error": f"Failed to get boxes: {str(e)}"}), 500
 
 # @box_bp.route('/box/<box_id>/items', methods=['GET'])
 # def get_box_items(box_id):
