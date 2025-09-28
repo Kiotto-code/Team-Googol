@@ -10,6 +10,7 @@ from routes.box import box_bp
 from routes.users import users_bp
 from routes.esp32 import esp32_bp
 from routes.case import case_bp
+from routes.frontend import page_bp
 from flask import send_from_directory
 from clip_utils import UPLOAD_FOLDER
 from scheduler import start_cleanup_scheduler
@@ -30,6 +31,7 @@ app.register_blueprint(box_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(esp32_bp)
 app.register_blueprint(case_bp)
+app.register_blueprint(page_bp)
 
 # Start the cleanup scheduler
 start_cleanup_scheduler()
