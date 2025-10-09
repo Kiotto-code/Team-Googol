@@ -121,6 +121,8 @@ python backend/migrate_data.py
 
 Complete documentation is available in the `docs/` folder:
 - **[System Architecture](docs/system-architecture-diagram.md)** - Complete system overview with separated user flow
+- **[API Endpoints](docs/api_endpoints.md)** - Full REST API reference for backend services
+- **[API Testing Guide](docs/api_testing_guide.md)** - Comprehensive guide for testing all API endpoints
 
 ## Presentation Deck
 

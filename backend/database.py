@@ -614,6 +614,46 @@ def get_box_status(box_id):
         cursor.execute('SELECT * FROM BOXES WHERE box_id = ?', (box_id,))
         return cursor.fetchone()
 
+def update_box_status(box_id, status=None, current_load=None, door_status=None, capacity=None):
+    """Update one or more attributes of a box.
+
+    Parameters:
+        box_id (str/int): Identifier of the box row to update.
+        status (str): New status string (e.g., 'available', 'collect_request').
+        current_load (int): Updated current item load.
+        door_status (str): 'open' or 'closed'.
+        capacity (int): Max capacity of the box.
+    Returns:
+        int: Number of rows updated (0 if box not found or nothing to update).
+    """
+    fields = []
+    values = []
+    if status is not None:
+        fields.append('status = ?')
+        values.append(status)
+    if current_load is not None:
+        fields.append('current_load = ?')
+        values.append(current_load)
+    if door_status is not None:
+        fields.append('door_status = ?')
+        values.append(door_status)
+    if capacity is not None:
+        fields.append('capacity = ?')
+        values.append(capacity)
+
+    # Always update last_updated if we are changing something
+    if not fields:
+        return 0
+    fields.append('last_updated = CURRENT_TIMESTAMP')
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        sql = f"UPDATE BOXES SET {', '.join(fields)} WHERE id = ? OR box_id = ?"  # support either column name in case of schema variation
+        values.extend([box_id, box_id])
+        cursor.execute(sql, tuple(values))
+        conn.commit()
+        return cursor.rowcount
+
 
 def get_all_boxes():
     with get_db_connection() as conn:
