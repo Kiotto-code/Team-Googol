@@ -15,6 +15,14 @@ cases.txt
 
 # Database manager is a utility tool, not part of main app
 tests/
+!tests/
+!tests/**
+!tests/__init__.py
+!tests/README.md
+!tests/run_tests.py
+!tests/utils.py
+!tests/db_manager.py
+!tests/test_endpoints.py
 docs/
 GUIDANCE/
 *.md

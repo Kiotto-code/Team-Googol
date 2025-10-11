@@ -1,109 +1,100 @@
-from flask import Blueprint, request, jsonify
-from database import claim_item, get_all_items, release_expired_claims, get_collector_by_email, get_collector_by_student_id
+from flask import Blueprint, jsonify, request
 
-claim_bp = Blueprint('claim', __name__)
+from database import (
+    claim_case,
+    get_case,
+    get_user_by_email,
+    get_user_by_student_id,
+    list_cases,
+    release_expired_cases,
+)
 
-@claim_bp.route('/claim', methods=['POST'])
-def claim_found_item():
-    """Claim a found item for 1 hour.
-    Accepts JSON or form data. You can provide one of: collector_id, email, or student_id.
-    For convenience, if a 'claimed_by' field looks like an email, it's treated as 'email'.
-    """
-    # Support JSON or form submissions
+claim_bp = Blueprint("claim", __name__)
+
+
+@claim_bp.route("/claim", methods=["POST"])
+def claim_case_endpoint():
     data = request.get_json(silent=True) or request.form.to_dict() or {}
 
-    item_id = data.get('item_id')
-    if not item_id:
-        return jsonify({"error": "No item_id provided"}), 400
+    case_id = data.get("case_id") or data.get("found_id")
+    if not case_id:
+        return jsonify({"error": "case_id is required"}), 400
 
-    # Accept either collector_id directly, email, or student_id to look up collector
-    collector_id = data.get('collector_id')
-    email = data.get('email')
-    student_id = data.get('student_id')
-
-    # Backward-compat: if frontend sent 'claimed_by' and it looks like an email, use it
-    claimed_by = data.get('claimed_by')
-    if not email and claimed_by and isinstance(claimed_by, str) and '@' in claimed_by:
-        email = claimed_by
-
-    if not collector_id and not email and not student_id:
-        return jsonify({
-            "error": "Either collector_id, email, or student_id must be provided",
-            "hint": "Send JSON like { item_id, email } or { item_id, collector_id }"
-        }), 400
-
-    # If email provided, look up collector
-    if email and not collector_id:
-        collector = get_collector_by_email(email)
-        if not collector:
-            return jsonify({
-                "error": "Email not registered in system",
-                "email": email,
-                "suggestion": "Please register this email first using /collector/register"
-            }), 400
-        # Unified USERS schema uses 'user_id'
-        collector_id = collector['user_id']
-
-    # If student_id provided, look up collector
-    if student_id and not collector_id:
-        collector = get_collector_by_student_id(student_id)
-        if not collector:
-            return jsonify({
-                "error": "Student ID not registered in system",
-                "student_id": student_id,
-                "suggestion": "Please register this student ID first using /collector/register"
-            }), 400
-        # Unified USERS schema uses 'user_id'
-        collector_id = collector['user_id']
-
-    # Clean up expired claims first (best-effort; ignore transient lock errors)
     try:
-        released_count = release_expired_claims()
-        if released_count > 0:
-            print(f"Released {released_count} expired claims")
-    except Exception as e:
-        print(f"Warning: release_expired_claims skipped due to: {e}")
+        case_id = int(case_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "case_id must be an integer"}), 400
 
-    success, message = claim_item(item_id, collector_id)
+    receiver_id = data.get("receiver_id")
+    email = data.get("email")
+    student_id = data.get("student_id")
+
+    if receiver_id:
+        try:
+            receiver_id = int(receiver_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "receiver_id must be an integer"}), 400
+
+    if not receiver_id and not email and not student_id:
+        return jsonify({"error": "Provide receiver_id, email, or student_id"}), 400
+
+    if not receiver_id and email:
+        user = get_user_by_email(email)
+        if not user:
+            return jsonify({"error": "email not registered", "email": email}), 404
+        receiver_id = user["user_id"]
+
+    if not receiver_id and student_id:
+        user = get_user_by_student_id(student_id)
+        if not user:
+            return jsonify({"error": "student id not registered", "student_id": student_id}), 404
+        receiver_id = user["user_id"]
+
+    release_expired_cases()
+    success, message = claim_case(case_id, receiver_id)
 
     if success:
+        case = get_case(case_id)
         return jsonify({
             "message": message,
-            "collector_id": collector_id,
-            "item_id": item_id
-        }), 200
-    else:
-        return jsonify({"error": message}), 400
-
-@claim_bp.route('/items', methods=['GET'])
-def list_all_items():
-    """List all items in the FOUND_ITEMS table with their status."""
-    # Clean up expired claims first
-    release_expired_claims()
-    
-    items = get_all_items()
-    
-    result = []
-    for item in items:
-        result.append({
-            'id': item['id'],
-            'filename': item['filename'],
-            'description': item['description'],
-            'status': item['status'],
-            'claimed_by': item['claimed_by'],
-            'claimed_at': item['claimed_at'],
-            'expires_at': item['expires_at'],
-            'uploaded_at': item['uploaded_at'],
-            'url': f"http://127.0.0.1:5000/uploads/{item['filename']}"
+            "case_id": case_id,
+            "receiver_id": receiver_id,
+            "case_status": case["status"] if case else "claimed",
+            "case_close_at": case["case_close_at"] if case else None,
         })
-    
-    return jsonify({"items": result})
 
-@claim_bp.route('/release-expired', methods=['POST'])
+    return jsonify({"error": message}), 400
+
+
+@claim_bp.route("/cases", methods=["GET"])
+def list_all_cases():
+    release_expired_cases()
+    cases = list_cases()
+
+    response = []
+    for case in cases:
+        response.append(
+            {
+                "case_id": case["found_id"],
+                "status": case["status"],
+                "box_id": case["box_id"],
+                "item_id": case["item_id"],
+                "receiver_id": case["reciver_id"],
+                "case_close_at": case["case_close_at"],
+                "created_at": case["created_at"],
+                "item_description": case["description"],
+                "item_image_url": case["image_url"],
+                "box_location": case["location"],
+            }
+        )
+
+    return jsonify({"cases": response, "total": len(response)})
+
+
+@claim_bp.route("/release-expired", methods=["POST"])
 def release_expired():
-    """Manually release expired claims (for maintenance)."""
-    released_count = release_expired_claims()
+    released_count = release_expired_cases()
     return jsonify({
         "message": f"Released {released_count} expired claims",
-        "released_count": released_count
+        "released_count": released_count,
     })

@@ -1,80 +1,76 @@
 import os
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
-from clip_utils import get_image_embedding, get_text_embedding, save_data, image_data, UPLOAD_FOLDER
+
 from caption_utils import generate_caption_with_gemini
-from upload_utils import is_lighting_good, check_framing
-from database import add_found_item
+from database import create_item
+from upload_utils import is_lighting_good
+from clip_utils import UPLOAD_FOLDER
 
-upload_bp = Blueprint('upload', __name__)
+upload_bp = Blueprint("upload", __name__)
 
-@upload_bp.route('/upload', methods=['POST'])
+
+@upload_bp.route("/upload", methods=["POST"])
 def upload_image():
-    if 'image' not in request.files:
+    if "image" not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
 
-    file = request.files['image']
-    filename = secure_filename(file.filename)
+    file = request.files["image"]
+    filename = secure_filename(file.filename) or "uploaded_item.jpg"
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
-    
-    # Lighting check
+
     good, brightness, contrast = is_lighting_good(filepath)
     if not good:
         os.remove(filepath)
-        return jsonify({
-            "error": "Lighting is not good enough, please re-upload.",
-            "brightness": brightness,
-            "contrast": contrast
-        }), 400
-        
-    # Framing check (need to test more)
-    # framing_good, framing_msg = check_framing(filepath)
-    # if not framing_good:
-    #     os.remove(filepath)
-    #     return jsonify({
-    #         "error": "Framing issue: " + framing_msg,
-    #     }), 400
+        return (
+            jsonify(
+                {
+                    "error": "Lighting is not good enough, please re-upload.",
+                    "brightness": brightness,
+                    "contrast": contrast,
+                }
+            ),
+            400,
+        )
 
+    description = request.form.get("description", "")
+    finder_user_id = request.form.get("finder_user_id")
+    finder_img_url = request.form.get("finder_img_url")
+    box_id = request.form.get("box_id")  # forwarded for clients that associate immediately
 
-    # User optional description
-    description = request.form.get('description', "")
+    finder_id_value = None
+    if finder_user_id:
+        try:
+            finder_id_value = int(finder_user_id)
+        except ValueError:
+            os.remove(filepath)
+            return jsonify({"error": "finder_user_id must be an integer"}), 400
 
-    # --- Generate caption with Gemini ---
-    # custom_prompt = "Describe item: color, type, material, unique features. Be concise, no filler."
-    custom_prompt = "Output as: Color: <…>; Type: <…>; Material: <…>; Features: <…>; Optional: Brand/Markings: <…>."
+    custom_prompt = (
+        "Output as: Color: <…>; Type: <…>; Material: <…>; Features: <…>; Optional: Brand/Markings: <…>."
+    )
     gemini_caption = generate_caption_with_gemini(filepath, prompt=custom_prompt)
-
-    # Combine user description and Gemini caption
-    combined_caption = description + ". " + gemini_caption if description else gemini_caption
-
-    # Compute embeddings
-    img_emb = get_image_embedding(filepath).detach().cpu().numpy().flatten().tolist()
-    desc_emb = get_text_embedding(combined_caption).detach().cpu().numpy().flatten().tolist()
-
-    # Store in memory
-    # image_data[filename] = {
-    #     "image_embedding": img_emb,
-    #     "description": description,
-    #     "gemini_caption": gemini_caption,
-    #     "description_embedding": desc_emb
-    # }
-    # save_data()
-
+    combined_caption = f"{description}. {gemini_caption}" if description else gemini_caption
 
     try:
-        # Save to database
-        item_id = add_found_item(filename, img_emb, description, desc_emb)
-        return jsonify({
-                "message": "Image uploaded successfully", 
-                "filename": filename,
-                "description": description,
-                "gemini_caption": gemini_caption,
-                "item_id": item_id
-            }), 200
-            
-    except Exception as e:
-            # Remove uploaded file if database save fails
-            if os.path.exists(filepath):
-                os.remove(filepath)
-            return jsonify({"error": f"Failed to save item: {str(e)}"}), 500
+        item_id = create_item(
+            description=combined_caption,
+            image_url=filename,
+            finder_user_id=finder_id_value,
+            finder_img_url=finder_img_url,
+        )
+
+        response = {
+            "message": "Image uploaded successfully",
+            "filename": filename,
+            "description": combined_caption,
+            "item_id": item_id,
+        }
+        if box_id:
+            response["box_id"] = box_id
+        return jsonify(response)
+    except Exception as exc:  # pragma: no cover - sqlite safety net
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        return jsonify({"error": f"Failed to save item: {exc}"}), 500

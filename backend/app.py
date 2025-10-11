@@ -1,5 +1,8 @@
-from flask import Flask
+import os
+import atexit
+from flask import Flask, send_from_directory
 from flask_cors import CORS
+
 from routes.upload import upload_bp
 from routes.search import search_bp
 from routes.delete import delete_bp
@@ -11,10 +14,8 @@ from routes.users import users_bp
 from routes.esp32 import esp32_bp
 from routes.case import case_bp
 from routes.frontend import page_bp
-from flask import send_from_directory
 from clip_utils import UPLOAD_FOLDER
-from scheduler import start_cleanup_scheduler
-import atexit
+from scheduler import start_cleanup_scheduler, stop_cleanup_scheduler
 
 app = Flask(__name__)
 # CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5500"}})
@@ -33,11 +34,10 @@ app.register_blueprint(esp32_bp)
 app.register_blueprint(case_bp)
 app.register_blueprint(page_bp)
 
-# Start the cleanup scheduler
-start_cleanup_scheduler()
-
-# Ensure cleanup scheduler stops when the app shuts down
-atexit.register(lambda: __import__('scheduler').stop_cleanup_scheduler())
+_scheduler_disabled = os.environ.get("DISABLE_SCHEDULER", "").lower() in {"1", "true", "yes"}
+if not _scheduler_disabled:
+    start_cleanup_scheduler()
+    atexit.register(stop_cleanup_scheduler)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):

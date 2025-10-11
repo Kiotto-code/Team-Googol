@@ -1,6 +1,6 @@
 import threading
 import time
-from database import release_expired_claims
+from database import release_expired_cases
 import logging
 
 # Configure logging
@@ -34,7 +34,7 @@ class ClaimCleanupScheduler:
         """Main loop for cleaning up expired claims."""
         while self.running:
             try:
-                released_count = release_expired_claims()
+                released_count = release_expired_cases()
                 if released_count > 0:
                     logger.info(f"Released {released_count} expired claims")
             except Exception as e:

@@ -1,61 +1,55 @@
-import os
-import numpy as np
-from flask import Blueprint, request, jsonify, send_file
-from clip_utils import get_text_embedding, UPLOAD_FOLDER, image_data
-from database import search_items, release_expired_claims
+from flask import Blueprint, jsonify, request
 
-search_bp = Blueprint('search', __name__)
+from database import release_expired_cases, search_cases
 
-@search_bp.route('/search', methods=['POST'])
-def search_image():
-    data = request.get_json()
-    if 'query' not in data:
-        return jsonify({"error": "No query provided"}), 400
-    
-    query = data['query']
-    
-    # Clean up expired claims before searching
-    release_expired_claims()
+search_bp = Blueprint("search", __name__)
 
-    # Get normalized query embedding
-    query_emb = get_text_embedding(query).detach().cpu().numpy().flatten()
 
-    results = search_items(query_emb, threshold=0.4)
+@search_bp.route("/search", methods=["POST"])
+def search_items():
+    payload = request.get_json() or {}
+    query = (payload.get("query") or "").strip()
+    if not query:
+        return jsonify({"error": "query is required"}), 400
 
-    # for fname, item in image_data.items():
-    #     # Image embedding
-    #     img_emb = np.array(item["image_embedding"], dtype=np.float32)
-    #     img_score = float(np.dot(query_emb, img_emb))  # embeddings already normalized
+    release_expired_cases()
+    rows = search_cases(query)
 
-    #     # Description embedding (combined user + BLIP)
-    #     desc_score = 0.0
-    #     if item.get("description_embedding") is not None:
-    #         desc_emb = np.array(item["description_embedding"], dtype=np.float32)
-    #         desc_score = float(np.dot(query_emb, desc_emb))
+    if not rows:
+        return jsonify({"message": "No matching cases found"}), 404
 
-    #     # Weighted combination: prioritize description embedding (user + BLIP)
-    #     final_score = (0.6 * desc_score + 0.4 * img_score) if desc_score != 0 else img_score
+    def _to_bool(value):
+        if value is None:
+            return None
+        return bool(value)
 
-    #     # Filter by threshold
-    #     if final_score > 0.4:
-    #         results.append({
-    #             "filename": fname,
-    #             "description": item.get("description", ""),
-    #             "score": final_score
-    #         })
+    results = []
+    for row in rows:
+        results.append(
+            {
+                "case_id": row["found_id"],
+                "status": row["status"] or "available",
+                "case_close_at": row["case_close_at"],
+                "created_at": row["created_at"],
+                "receiver_id": row["reciver_id"],
+                "receiver_image_url": row["reciver_image_url"],
+                "item": {
+                    "item_id": row["item_id"],
+                    "description": row["description"],
+                    "image_url": row["image_url"],
+                    "finder_user_id": row["finder_user_id"],
+                    "finder_img_url": row["finder_img_url"],
+                    "finder_name": row["finder_name"],
+                },
+                "box": {
+                    "box_id": row["box_id"],
+                    "location": row["location"],
+                    "status": _to_bool(row["box_status"]),
+                    "load": row["load"],
+                    "door_status": _to_bool(row["door_status"]),
+                    "last_accessed": row["last_accessed"],
+                },
+            }
+        )
 
-    # Check if nothing found
-    if not results:
-        return jsonify({"message": "Image not found"}), 400
-
-    # Sort by similarity descending
-    results.sort(key=lambda x: x["score"], reverse=True)
-
-    # Add URLs
-    for r in results:
-        r["url"] = f"http://127.0.0.1:5000/uploads/{r['filename']}"
-        # Add claim status information for frontend
-        r["can_claim"] = r["status"] == "available"
-        r["is_claimed"] = r["status"] == "claimed"
-
-    return jsonify({"results": results})
+    return jsonify({"results": results, "count": len(results)})

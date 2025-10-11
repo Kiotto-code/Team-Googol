@@ -1,9 +1,9 @@
 import os
 from datetime import datetime
-from flask import request, jsonify, Blueprint
+from flask import Blueprint, jsonify, request
 
 esp32_bp = Blueprint("esp32", __name__)
-ESP32_UPLOAD_FOLDER = "esp32_uploads"
+ESP32_UPLOAD_FOLDER = os.environ.get("ESP32_UPLOAD_FOLDER", "esp32_uploads")
 os.makedirs(ESP32_UPLOAD_FOLDER, exist_ok=True)
 
 def get_next_image_id():
