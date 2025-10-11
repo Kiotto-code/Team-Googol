@@ -11,8 +11,11 @@ DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lost_a
 
 def init_database():
     """Initialize the database with the required tables."""
-    with sqlite3.connect(DATABASE_PATH) as conn:
+    with sqlite3.connect(DATABASE_PATH, timeout=15.0) as conn:
         cursor = conn.cursor()
+        cursor.execute('PRAGMA journal_mode=WAL;')
+        cursor.execute('PRAGMA busy_timeout=15000;')
+        cursor.execute('PRAGMA foreign_keys=ON;')
         
         # Initialize unified USERS table
         init_users_table()
@@ -106,10 +109,17 @@ def migrate_user_references():
 
 @contextmanager
 def get_db_connection():
-    """Context manager for database connections."""
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row  # This enables column access by name
+    """Context manager for database connections with better concurrency.
+    - WAL journal mode improves read/write concurrency
+    - busy_timeout and connect timeout reduce 'database is locked' errors
+    """
+    conn = sqlite3.connect(DATABASE_PATH, timeout=15.0)
     try:
+        # Concurrency-friendly pragmas
+        conn.execute('PRAGMA journal_mode=WAL;')
+        conn.execute('PRAGMA busy_timeout=15000;')
+        conn.execute('PRAGMA foreign_keys=ON;')
+        conn.row_factory = sqlite3.Row  # This enables column access by name
         yield conn
     finally:
         conn.close()
@@ -181,11 +191,16 @@ def claim_item(item_id, claimed_by_collector_id):
             SET status = 'claimed', claimed_at = ?, claimed_by = ?, expires_at = ?
             WHERE id = ?
         ''', (claimed_at.isoformat(), claimed_by_collector_id, expires_at.isoformat(), item_id))
-        
-        # Update collector's last active timestamp and stats
-        update_collector_stats(claimed_by_collector_id, items_claimed_increment=1)
-        
+
+        # Commit the item update first to release the write lock quickly
         conn.commit()
+
+        # Update collector's last active timestamp and stats (best-effort, separate transaction)
+        try:
+            update_collector_stats(claimed_by_collector_id, items_claimed_increment=1)
+        except Exception as e:
+            # Do not fail the claim if stats update hits a transient lock
+            print(f"Warning: update_collector_stats skipped due to: {e}")
         return True, "Item claimed successfully"
 
 def release_expired_claims():

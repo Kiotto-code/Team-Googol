@@ -520,8 +520,8 @@
             <h2 class="form-title">My Claims</h2>
             
             <div class="form-group">
-                <label for="claimerName">Enter your name to view claims</label>
-                <input type="text" id="claimerName" placeholder="Your name..." required>
+                <label for="claimerName">Enter your email to view claims</label>
+                <input type="text" id="claimerName" placeholder="you@example.com" required>
             </div>
             
             <button class="submit-button" id="viewClaimsButton">View My Claims</button>
@@ -829,7 +829,7 @@
 
         // Claim item function
         async function claimItem(itemId, filename) {
-            const claimerName = prompt('Enter your name to claim this item:');
+            const claimerName = prompt('Enter your email to claim this item:');
             if (!claimerName || claimerName.trim() === '') {
                 return;
             }
@@ -842,7 +842,7 @@
                     },
                     body: JSON.stringify({
                         item_id: itemId,
-                        claimed_by: claimerName.trim()
+                        email: claimerName.trim()
                     })
                 });
 
@@ -897,24 +897,34 @@
         let userClaims = [];
 
         viewClaimsButton.addEventListener('click', async () => {
-            const name = claimerName.value.trim();
+            const email = claimerName.value.trim();
             
-            if (!name) {
-                alert('Please enter your name');
+            if (!email) {
+                alert('Please enter your email');
                 return;
             }
 
             try {
                 viewClaimsButton.disabled = true;
                 viewClaimsButton.textContent = 'Loading...';
-                
+
+                // Resolve email to user_id
+                const userRes = await fetch(`http://127.0.0.1:5000/user/by-email/${encodeURIComponent(email)}`);
+                if (!userRes.ok) {
+                    const msg = userRes.status === 404 ? 'Email not found. Please register first.' : 'Failed to resolve user.';
+                    showClaimsError(msg);
+                    return;
+                }
+                const user = await userRes.json();
+                const userId = user.user_id;
+
+                // Fetch all items and filter by claimed_by user_id
                 const response = await fetch('http://127.0.0.1:5000/items');
                 const data = await response.json();
                 
-                if (response.ok) {
+                if (response.ok && Array.isArray(data.items)) {
                     const myClaims = data.items.filter(item => 
-                        item.status === 'claimed' && 
-                        item.claimed_by === name
+                        item.status === 'claimed' && Number(item.claimed_by) === Number(userId)
                     );
                     
                     userClaims = myClaims;
@@ -935,7 +945,7 @@
             claimsResults.classList.remove('hidden');
             
             if (claims.length === 0) {
-                claimsList.innerHTML = '<div class="no-claims">No claimed items found for this name.</div>';
+                claimsList.innerHTML = '<div class="no-claims">No claimed items found for this email.</div>';
                 claimsMessage.textContent = '';
                 return;
             }
