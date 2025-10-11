@@ -12,12 +12,23 @@ def claim_found_item():
     # Support JSON or form submissions
     data = request.get_json(silent=True) or request.form.to_dict() or {}
 
-    item_id = data.get('item_id')
-    if not item_id:
+    item_id_value = data.get('item_id')
+    if not item_id_value:
         return jsonify({"error": "No item_id provided"}), 400
 
+    try:
+        item_id = int(item_id_value)
+    except (TypeError, ValueError):
+        return jsonify({"error": "item_id must be an integer"}), 400
+
     # Accept either collector_id directly, email, or student_id to look up collector
-    collector_id = data.get('collector_id')
+    collector_id_value = data.get('collector_id')
+    collector_id = None
+    if collector_id_value not in (None, ''):
+        try:
+            collector_id = int(collector_id_value)
+        except (TypeError, ValueError):
+            return jsonify({"error": "collector_id must be an integer"}), 400
     email = data.get('email')
     student_id = data.get('student_id')
 
@@ -64,6 +75,9 @@ def claim_found_item():
     except Exception as e:
         print(f"Warning: release_expired_claims skipped due to: {e}")
 
+    if collector_id is None:
+        return jsonify({"error": "Unable to determine collector_id"}), 400
+
     success, message = claim_item(item_id, collector_id)
 
     if success:
@@ -85,16 +99,17 @@ def list_all_items():
     
     result = []
     for item in items:
+        image_name = item.get('image_url') or item.get('filename')
         result.append({
-            'id': item['id'],
-            'filename': item['filename'],
-            'description': item['description'],
-            'status': item['status'],
-            'claimed_by': item['claimed_by'],
-            'claimed_at': item['claimed_at'],
-            'expires_at': item['expires_at'],
-            'uploaded_at': item['uploaded_at'],
-            'url': f"http://127.0.0.1:5000/uploads/{item['filename']}"
+            'id': item['item_id'],
+            'filename': image_name,
+            'description': item.get('description'),
+            'status': item.get('status'),
+            'claimed_by': item.get('claimed_by'),
+            'claimed_at': item.get('claimed_at'),
+            'expires_at': item.get('expires_at'),
+            'uploaded_at': item.get('created_at'),
+            'url': f"http://127.0.0.1:5000/uploads/{image_name}"
         })
     
     return jsonify({"items": result})

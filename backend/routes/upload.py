@@ -64,11 +64,17 @@ def upload_image():
 
     try:
         # Save to database
-        item_id = add_found_item(filename, img_emb, description, desc_emb)
+        item_id = add_found_item(
+            image_url=filename,
+            image_embedding=img_emb,
+            description=combined_caption,
+            description_embedding=desc_emb,
+            status='available'
+        )
         return jsonify({
-                "message": "Image uploaded successfully", 
+                "message": "Image uploaded successfully",
                 "filename": filename,
-                "description": description,
+                "description": combined_caption,
                 "gemini_caption": gemini_caption,
                 "item_id": item_id
             }), 200

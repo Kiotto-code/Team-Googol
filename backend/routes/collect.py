@@ -3,7 +3,7 @@ import time
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from clip_utils import COLLECTOR_FOLDER
-from database import collect_found_item, get_box_status, update_box_status, get_finder_by_rfid
+from database import collect_found_item, get_box_status, get_finder_by_rfid, update_box
 
 collect_bp = Blueprint('collect', __name__)
 
@@ -14,7 +14,13 @@ def collect_image():
 
     # Get form data
     imgtaken_timestamp = request.form.get('timestamp', "")
-    box_id = request.form.get('box_id', "")
+    box_id_raw = request.form.get('box_id', "")
+    box_id = None
+    if box_id_raw:
+        try:
+            box_id = int(box_id_raw)
+        except ValueError:
+            return jsonify({"error": "box_id must be an integer"}), 400
     finder_rfid = request.form.get('finder_rfid', "")  # RFID tag of the person who found the item
     collector_img = request.files['image']
     
@@ -23,7 +29,7 @@ def collect_image():
     if finder_rfid:
         finder = get_finder_by_rfid(finder_rfid)
         if finder:
-            finder_id = finder['finder_id']
+            finder_id = finder['user_id']
         else:
             return jsonify({
                 "error": "Finder RFID not registered in system",
@@ -53,18 +59,20 @@ def collect_image():
     try:
         # Save to database with finder information
         item_id = collect_found_item(filename, img_timestamp, box_id, finder_id)
-        
+
         # Update box load if box_id is provided
-        if box_id:
+        if box_id is not None:
             box_info = get_box_status(box_id)
             if box_info:
-                new_load = box_info['current_load'] + 1
-                update_box_status(box_id, current_load=new_load)
-                
-                # If box is full, request collection
-                if new_load >= box_info['capacity']:
-                    update_box_status(box_id, status='collect_request')
-        
+                current_load = box_info['load'] or 0
+                new_load = current_load + 1
+                update_box(
+                    box_id,
+                    status=False if new_load else True,
+                    door_status=False,
+                    load=new_load
+                )
+
         return jsonify({
             "message": "Image collected successfully",
             "filename": filename,

@@ -1,9 +1,18 @@
-import os
 from flask import Blueprint, request, jsonify
 from database import (
-    add_box, update_box, get_box_status, 
+    add_box, update_box, get_box_status,
     get_all_boxes, get_collected_items
 )
+
+
+def _to_bool(value, default=False):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes", "open", "available"}
+    return bool(value)
 
 box_bp = Blueprint('box', __name__)
 
@@ -18,9 +27,13 @@ def register_box():
         return jsonify({"error": "location is required"}), 400
 
     location = str(data["location"]).strip()
-    status = data.get("status", True)         # default available
-    door_status = data.get("door_status", False)  # default closed
-    load = data.get("load", 0)                # default empty
+    status = _to_bool(data.get("status"), True)         # default available
+    door_status = _to_bool(data.get("door_status"), False)  # default closed
+    load_value = data.get("load", 0)
+    try:
+        load = int(load_value)
+    except (TypeError, ValueError):
+        return jsonify({"error": "load must be an integer"}), 400
 
     try:
         new_box_id = add_box(location, status, door_status, load)
@@ -28,8 +41,8 @@ def register_box():
             "message": "Box registered successfully",
             "box_id": new_box_id,
             "location": location,
-            "status": bool(status),
-            "door_status": bool(door_status),
+            "status": status,
+            "door_status": door_status,
             "load": load
         }), 201  # 201 = created
     except Exception as e:
@@ -40,9 +53,14 @@ def register_box():
 def get_box_info():
     """Get the current status and information of a specific box."""
     try:
-        box_id = request.args.get("box_id")
-        if not box_id:
+        box_id_value = request.args.get("box_id")
+        if not box_id_value:
             return jsonify({"error": "box_id query parameter is required"}), 400
+
+        try:
+            box_id = int(box_id_value)
+        except (TypeError, ValueError):
+            return jsonify({"error": "box_id must be an integer"}), 400
 
         box_info = get_box_status(box_id)  # should return a dict from DB row
 
@@ -68,9 +86,14 @@ def get_box_info():
 @box_bp.route('/box/status', methods=['POST'])
 def update_box_info():
     """Update the status or details of a specific box."""
-    box_id = request.args.get("box_id")
-    if not box_id:
+    box_id_value = request.args.get("box_id")
+    if not box_id_value:
         return jsonify({"error": "box_id query parameter is required"}), 400
+
+    try:
+        box_id_int = int(box_id_value)
+    except (TypeError, ValueError):
+        return jsonify({"error": "box_id must be an integer"}), 400
 
     data = request.get_json()
     if not data:
@@ -80,7 +103,13 @@ def update_box_info():
     status = data.get("status")
     door_status = data.get("door_status")
     location = data.get("location")
-    load = data.get("load")
+    load_value = data.get("load")
+    parsed_load = None
+    if load_value is not None:
+        try:
+            parsed_load = int(load_value)
+        except (TypeError, ValueError):
+            return jsonify({"error": "load must be an integer"}), 400
 
     # Validate input
     if all(v is None for v in [status, door_status, location, load]):
@@ -90,19 +119,22 @@ def update_box_info():
 
     try:
         # Update in DB (this also updates last_accessed automatically)
+        parsed_status = None if status is None else _to_bool(status)
+        parsed_door_status = None if door_status is None else _to_bool(door_status)
+
         success = update_box(
-            box_id=box_id,
-            status=status,
-            door_status=door_status,
+            box_id=box_id_int,
+            status=parsed_status,
+            door_status=parsed_door_status,
             location=location,
-            load=load
+            load=parsed_load
         )
 
         if not success:
             return jsonify({"error": f"Box with id '{box_id}' not found"}), 404
 
         # Fetch updated row
-        updated_box = get_box_status(box_id)
+        updated_box = get_box_status(box_id_int)
 
         response = {
             "message": "Box updated successfully",
@@ -130,7 +162,10 @@ def open_box():
     if not data or not data.get("box_id"):
         return jsonify({"error": "box_id is required"}), 400
 
-    box_id = data["box_id"]
+    try:
+        box_id = int(data["box_id"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "box_id must be an integer"}), 400
 
     try:
         success = update_box(box_id=box_id, door_status=True)
@@ -158,7 +193,10 @@ def close_box():
     if not data or not data.get("box_id"):
         return jsonify({"error": "box_id is required"}), 400
 
-    box_id = data["box_id"]
+    try:
+        box_id = int(data["box_id"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "box_id must be an integer"}), 400
 
     try:
         success = update_box(box_id=box_id, door_status=False)

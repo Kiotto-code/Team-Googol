@@ -53,7 +53,9 @@ def search_image():
 
     # Add URLs
     for r in results:
-        r["url"] = f"http://127.0.0.1:5000/uploads/{r['filename']}"
+        image_name = r.get("image_url") or r.get("filename")
+        r["filename"] = image_name
+        r["url"] = f"http://127.0.0.1:5000/uploads/{image_name}"
         # Add claim status information for frontend
         r["can_claim"] = r["status"] == "available"
         r["is_claimed"] = r["status"] == "claimed"

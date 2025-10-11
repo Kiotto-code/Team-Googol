@@ -26,16 +26,16 @@ def list_items(available_only=False):
     
     print("-" * 80)
     for item in items:
-        print(f"ID: {item['id']}")
-        print(f"Filename: {item['filename']}")
-        print(f"Description: {item['description'] or 'N/A'}")
-        print(f"Status: {item['status']}")
-        print(f"Uploaded: {item['uploaded_at']}")
-        
-        if item['status'] == 'claimed':
-            print(f"Claimed by: {item['claimed_by']}")
-            print(f"Claimed at: {item['claimed_at']}")
-            print(f"Expires at: {item['expires_at']}")
+        print(f"ID: {item['item_id']}")
+        print(f"Filename: {item.get('image_url') or item.get('filename')}")
+        print(f"Description: {item.get('description') or 'N/A'}")
+        print(f"Status: {item.get('status')}")
+        print(f"Uploaded: {item.get('created_at')}")
+
+        if item.get('status') == 'claimed':
+            print(f"Claimed by: {item.get('claimed_by')}")
+            print(f"Claimed at: {item.get('claimed_at')}")
+            print(f"Expires at: {item.get('expires_at')}")
         
         print("-" * 80)
 
