@@ -27,16 +27,16 @@ def _ensure_user_table(cursor: sqlite3.Cursor) -> None:
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS User (
-            user_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-            name        TEXT NOT NULL,
-            password    TEXT,
-            phone_number TEXT,
-            email       TEXT UNIQUE,
-            student_id  TEXT,
-            rfid_tag    TEXT UNIQUE,
-            items_found INTEGER DEFAULT 0,
-            items_find  INTEGER DEFAULT 0,
-            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            user_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            name         TEXT NOT NULL,
+            password     TEXT,
+            phone_number INTEGER,
+            email        TEXT UNIQUE,
+            student_id   INTEGER,
+            rfid_tag     TEXT UNIQUE,
+            items_found  INTEGER DEFAULT 0,
+            items_find   INTEGER DEFAULT 0,
+            created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
@@ -53,23 +53,23 @@ def _ensure_item_table(cursor: sqlite3.Cursor) -> None:
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS Item (
-            item_id                INTEGER PRIMARY KEY AUTOINCREMENT,
-            description            TEXT,
-            image_url              TEXT,
-            image_embedding        TEXT NOT NULL,
-            description_embedding  TEXT,
-            status                 TEXT DEFAULT 'available',
-            finder_user_id         INTEGER,
-            finder_img_url         TEXT,
-            claimed_by_user_id     INTEGER,
-            claimed_at             TIMESTAMP,
-            expires_at             TIMESTAMP,
-            created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (finder_user_id) REFERENCES User(user_id),
-            FOREIGN KEY (claimed_by_user_id) REFERENCES User(user_id)
+            item_id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            description           TEXT,
+            image_url             TEXT,
+            image_embedding       TEXT,
+            description_embedding TEXT,
+            status                TEXT,
+            finder_user_id        INTEGER,
+            finder_img_url        TEXT,
+            created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (finder_user_id) REFERENCES User(user_id)
         )
         """
     )
+
+    _add_column_if_missing(cursor, "Item", "claimed_by_user_id", "INTEGER")
+    _add_column_if_missing(cursor, "Item", "claimed_at", "TIMESTAMP")
+    _add_column_if_missing(cursor, "Item", "expires_at", "TIMESTAMP")
 
 
 def _ensure_box_table(cursor: sqlite3.Cursor) -> None:
@@ -77,41 +77,41 @@ def _ensure_box_table(cursor: sqlite3.Cursor) -> None:
         """
         CREATE TABLE IF NOT EXISTS Box (
             box_id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            status        TEXT DEFAULT 'available',
+            status        INTEGER,
             location      TEXT,
-            load          INTEGER DEFAULT 0,
-            door_status   INTEGER DEFAULT 0,
-            last_accessed TIMESTAMP,
-            capacity      INTEGER DEFAULT 1,
-            last_updated  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            load          INTEGER,
+            door_status   INTEGER,
+            last_accessed TIMESTAMP
         )
         """
     )
+
+    _add_column_if_missing(cursor, "Box", "capacity", "INTEGER DEFAULT 1")
+    _add_column_if_missing(cursor, "Box", "last_updated", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
 
 
 def _ensure_case_table(cursor: sqlite3.Cursor) -> None:
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS Case (
-            found_id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            box_id              INTEGER,
-            reciver_image_url   TEXT,
-            reciver_id          INTEGER,
-            item_id             INTEGER,
-            status              TEXT,
-            case_close_at       TIMESTAMP,
-            created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            collector_image_url TEXT,
-            collector_timestamp REAL,
-            finder_user_id      INTEGER,
+            found_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            box_id            INTEGER,
+            reciver_image_url TEXT,
+            reciver_id        INTEGER,
+            item_id           INTEGER,
+            status            TEXT,
+            case_close_at     TIMESTAMP,
+            created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (box_id) REFERENCES Box(box_id),
             FOREIGN KEY (reciver_id) REFERENCES User(user_id),
-            FOREIGN KEY (item_id) REFERENCES Item(item_id),
-            FOREIGN KEY (finder_user_id) REFERENCES User(user_id)
+            FOREIGN KEY (item_id) REFERENCES Item(item_id)
         )
         """
     )
 
+    _add_column_if_missing(cursor, "Case", "collector_image_url", "TEXT")
+    _add_column_if_missing(cursor, "Case", "collector_timestamp", "REAL")
+    _add_column_if_missing(cursor, "Case", "finder_user_id", "INTEGER")
     _add_column_if_missing(cursor, "Case", "receiver_image_url", "TEXT")
     _add_column_if_missing(cursor, "Case", "receiver_id", "INTEGER")
 
