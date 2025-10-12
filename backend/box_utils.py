@@ -25,14 +25,14 @@ def validate_door_status(door_status):
     """Validate if door status is valid."""
     return door_status in VALID_DOOR_STATUSES
 
-def get_next_status_after_item_added(current_status, current_load, capacity):
+def get_next_status_after_item_added(current_status, current_load):
     """Determine next status after an item is added."""
     if current_load >= 1:  # For 1-item boxes, full when load = 1
         return "full"
     else:
         return "available"
 
-def should_request_collection(status, current_load, capacity):
+def should_request_collection(status, current_load):
     """Determine if box should request collection."""
     return current_load >= 1  # For 1-item boxes, request collection when 1 item is stored
 
@@ -47,13 +47,12 @@ def get_recommended_door_action(status, door_status):
 def format_box_info(box_data):
     """Format box information for display."""
     return {
-        "box_id": box_data['id'],
+        "box_id": box_data.get('box_id', box_data.get('id')),
         "status": box_data['status'],
         "door_status": box_data['door_status'],
-        "capacity": box_data['capacity'],
-        "current_load": box_data['current_load'],
-        "last_updated": box_data['last_updated'],
-        "is_full": box_data['current_load'] >= 1,  # Full when 1 item
+        "current_load": box_data.get('load', box_data.get('current_load', 0)),
+        "last_updated": box_data.get('last_accessed', box_data.get('last_updated')),
+        "is_full": box_data.get('load', box_data.get('current_load', 0)) >= 1,
         "needs_collection": box_data['status'] == "collect_request",
         "door_should_be_open": box_data['status'] == "collect_request",
         "status_description": get_status_description(box_data['status']),

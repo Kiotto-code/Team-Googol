@@ -1,8 +1,5 @@
 from flask import Blueprint, request, jsonify
-from datetime import datetime
-from database import add_case, update_case
-from routes.box import update_box
-from routes.case import update_case
+from database import add_case, update_case, update_box
 
 case_bp = Blueprint("case_bp", __name__)
 

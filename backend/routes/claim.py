@@ -77,7 +77,7 @@ def claim_found_item():
 
 @claim_bp.route('/items', methods=['GET'])
 def list_all_items():
-    """List all items in the FOUND_ITEMS table with their status."""
+    """List all items tracked in the Item/Case tables with their status."""
     # Clean up expired claims first
     release_expired_claims()
     

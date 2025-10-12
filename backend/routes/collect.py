@@ -58,11 +58,12 @@ def collect_image():
         if box_id:
             box_info = get_box_status(box_id)
             if box_info:
-                new_load = box_info['current_load'] + 1
+                current_load = box_info['load']
+                new_load = current_load + 1
                 update_box_status(box_id, current_load=new_load)
-                
-                # If box is full, request collection
-                if new_load >= box_info['capacity']:
+
+                # For single-item boxes, mark as needing collection when load >= 1
+                if new_load >= 1:
                     update_box_status(box_id, status='collect_request')
         
         return jsonify({
