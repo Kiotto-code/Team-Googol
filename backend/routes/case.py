@@ -91,7 +91,7 @@ def deposit_complete():
     found_id = data["found_id"]
 
     try:
-        # 1. Update BOXES → mark full (status=False) and load=1
+        # 1. Update Box table → mark full (status=False) and load=1
         update_box(
             box_id=box_id,
             status=False, # False = not available
@@ -99,7 +99,7 @@ def deposit_complete():
             load=1
         )
 
-        # 2. Update CASES → mark status as 'available_to_claim'
+        # 2. Update Case table → mark status as 'available_to_claim'
         update_case(
             found_id=found_id,
             status="available_to_claim"

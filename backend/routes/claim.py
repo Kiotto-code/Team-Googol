@@ -41,7 +41,7 @@ def claim_found_item():
                 "email": email,
                 "suggestion": "Please register this email first using /collector/register"
             }), 400
-        # Unified USERS schema uses 'user_id'
+        # Unified User table uses 'user_id'
         collector_id = collector['user_id']
 
     # If student_id provided, look up collector
@@ -53,7 +53,7 @@ def claim_found_item():
                 "student_id": student_id,
                 "suggestion": "Please register this student ID first using /collector/register"
             }), 400
-        # Unified USERS schema uses 'user_id'
+        # Unified User table uses 'user_id'
         collector_id = collector['user_id']
 
     # Clean up expired claims first (best-effort; ignore transient lock errors)
@@ -77,7 +77,7 @@ def claim_found_item():
 
 @claim_bp.route('/items', methods=['GET'])
 def list_all_items():
-    """List all items in the FOUND_ITEMS table with their status."""
+    """List all items in the Item table with their status."""
     # Clean up expired claims first
     release_expired_claims()
     

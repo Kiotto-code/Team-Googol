@@ -1,8 +1,22 @@
 from flask import Blueprint, request, jsonify
 from database import (
-    add_finder, get_finder_by_id, get_finder_by_email, get_finder_by_rfid, get_all_finders,
-    add_collector, get_collector_by_id, get_collector_by_email, get_collector_by_student_id, get_all_collectors,
-    update_finder_stats, update_collector_stats
+    add_finder,
+    get_finder_by_id,
+    get_finder_by_email,
+    get_finder_by_rfid,
+    get_all_finders,
+    add_collector,
+    get_collector_by_id,
+    get_collector_by_email,
+    get_collector_by_student_id,
+    get_all_collectors,
+    update_finder_stats,
+    update_collector_stats,
+    get_user_by_id,
+    get_user_by_email,
+    get_user_by_rfid,
+    get_all_users,
+    update_user_last_active
 )
 
 users_bp = Blueprint('users', __name__)
