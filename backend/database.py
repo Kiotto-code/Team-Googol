@@ -774,9 +774,37 @@ def clear_all_items():
 # USER MANAGEMENT - Unified User table helpers
 
 
-def add_user(name, email=None, phone=None, rfid_tag=None, student_id=None, user_type='both'):
+def _resolve_phone_value(phone=None, phone_number=None):
+    """Prefer the explicit phone_number field when supplied."""
+    if phone_number is not None and str(phone_number).strip():
+        return phone_number
+    return phone
+
+
+def _normalize_user_type(user_type: str | None) -> str:
+    if not user_type:
+        return 'both'
+    normalized = str(user_type).strip().lower()
+    if normalized not in {'finder', 'collector', 'both'}:
+        return 'both'
+    return normalized
+
+
+def add_user(
+    name,
+    email=None,
+    phone=None,
+    rfid_tag=None,
+    student_id=None,
+    user_type='both',
+    *,
+    phone_number=None,
+):
     """Add a new user to the system."""
     now = datetime.now().isoformat()
+    phone_value = _resolve_phone_value(phone, phone_number)
+    normalized_type = _normalize_user_type(user_type)
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -784,20 +812,37 @@ def add_user(name, email=None, phone=None, rfid_tag=None, student_id=None, user_
             INSERT INTO User (name, email, phone, rfid_tag, student_id, user_type, created_at, last_active)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''',
-            (name, email, phone, rfid_tag, student_id, user_type, now, now),
+            (name, email, phone_value, rfid_tag, student_id, normalized_type, now, now),
         )
         conn.commit()
         return cursor.lastrowid
 
 
-def add_finder(name, email=None, phone=None, rfid_tag=None):
+def add_finder(name, email=None, phone=None, rfid_tag=None, *, phone_number=None):
     """Backward compatibility helper for creating finder users."""
-    return add_user(name, email, phone, rfid_tag, None, 'finder')
+    return add_user(
+        name,
+        email,
+        phone,
+        rfid_tag,
+        None,
+        'finder',
+        phone_number=phone_number,
+    )
 
 
-def add_collector(name, email=None, phone=None, student_id=None):
+def add_collector(name, email=None, phone=None, student_id=None, *, phone_number=None, id_number=None):
     """Backward compatibility helper for creating collector users."""
-    return add_user(name, email, phone, None, student_id, 'collector')
+    student_identifier = student_id if student_id is not None else id_number
+    return add_user(
+        name,
+        email,
+        phone,
+        None,
+        student_identifier,
+        'collector',
+        phone_number=phone_number,
+    )
 
 
 def get_user_by_id(user_id):
@@ -826,6 +871,64 @@ def get_user_by_student_id(student_id):
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM User WHERE student_id = ?', (student_id,))
         return cursor.fetchone()
+
+
+def _role_clause(role: str) -> tuple[str, tuple]:
+    normalized = _normalize_user_type(role)
+    if normalized == 'finder':
+        return "user_type IN ('finder', 'both')", tuple()
+    if normalized == 'collector':
+        return "user_type IN ('collector', 'both')", tuple()
+    if normalized == 'both':
+        return "user_type = 'both'", tuple()
+    raise ValueError(f"Unsupported role: {role}")
+
+
+def user_has_role(user_row, role: str) -> bool:
+    if user_row is None:
+        return False
+
+    if isinstance(user_row, dict):
+        user_type = user_row.get('user_type')
+    else:
+        user_type = user_row['user_type']
+
+    normalized = _normalize_user_type(user_type)
+    target = _normalize_user_type(role)
+
+    if target == 'finder':
+        return normalized in {'finder', 'both'}
+    if target == 'collector':
+        return normalized in {'collector', 'both'}
+    if target == 'both':
+        return normalized == 'both'
+    return False
+
+
+def get_all_users(role: str | None = None):
+    """Retrieve all users, optionally filtering by role."""
+    base_query = "SELECT * FROM User"
+    params: tuple = tuple()
+
+    if role:
+        clause, params = _role_clause(role)
+        base_query = f"{base_query} WHERE {clause}"
+
+    query = f"{base_query} ORDER BY created_at DESC"
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        return cursor.fetchall()
+
+
+def count_users_by_role(role: str) -> int:
+    clause, params = _role_clause(role)
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM User WHERE {clause}", params)
+        result = cursor.fetchone()
+        return int(result[0]) if result else 0
 
 
 def get_finder_by_id(finder_id):
@@ -879,29 +982,11 @@ def update_collector_stats(collector_id, items_claimed_increment=0, verification
 
 
 def get_all_finders():
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT * FROM User
-            WHERE user_type IN ('finder', 'both')
-            ORDER BY created_at DESC
-            """
-        )
-        return cursor.fetchall()
+    return get_all_users('finder')
 
 
 def get_all_collectors():
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT * FROM User
-            WHERE user_type IN ('collector', 'both')
-            ORDER BY created_at DESC
-            """
-        )
-        return cursor.fetchall()
+    return get_all_users('collector')
 
 
 # BOX MANAGEMENT

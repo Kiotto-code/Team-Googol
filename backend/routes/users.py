@@ -3,21 +3,14 @@ from flask import Blueprint, request, jsonify
 from database import (
     add_collector,
     add_finder,
-    get_all_collectors,
-    get_all_finders,
+    count_users_by_role,
     get_all_users,
-    get_collector_by_email,
-    get_collector_by_id,
-    get_collector_by_student_id,
-    get_finder_by_email,
-    get_finder_by_id,
-    get_finder_by_rfid,
     get_user_by_email,
     get_user_by_id,
     get_user_by_rfid,
-    update_collector_stats,
-    update_finder_stats,
+    get_user_by_student_id,
     update_user_stats,
+    user_has_role,
 )
 
 users_bp = Blueprint('users', __name__)
@@ -28,19 +21,19 @@ def _row_to_dict(row):
 
 
 def _serialize_finder(row):
-    data = _row_to_dict(row)
-    if not data:
+    data = _normalize_user_payload(row)
+    if not data or not user_has_role(data, 'finder'):
         return None
 
-    finder_id = data.get('finder_id', data.get('user_id'))
     return {
-        "finder_id": finder_id,
+        "finder_id": data['user_id'],
         "name": data.get('name'),
         "email": data.get('email'),
         "phone": data.get('phone'),
+        "phone_number": data.get('phone'),
         "rfid_tag": data.get('rfid_tag'),
         "items_found": data.get('items_found', 0),
-        "reputation_score": data.get('reputation_score', 0),
+        "reputation_score": _derive_reputation_score(data),
         "created_at": data.get('created_at'),
         "last_active": data.get('last_active'),
         "user_type": 'finder',
@@ -48,23 +41,68 @@ def _serialize_finder(row):
 
 
 def _serialize_collector(row):
+    data = _normalize_user_payload(row)
+    if not data or not user_has_role(data, 'collector'):
+        return None
+
+    student_id = data.get('student_id')
+
+    return {
+        "collector_id": data['user_id'],
+        "name": data.get('name'),
+        "email": data.get('email'),
+        "phone": data.get('phone'),
+        "phone_number": data.get('phone'),
+        "student_id": student_id,
+        "id_number": student_id,
+        "items_claimed": data.get('items_claimed', 0),
+        "verification_status": _derive_verification_status(data),
+        "created_at": data.get('created_at'),
+        "last_active": data.get('last_active'),
+        "user_type": 'collector',
+    }
+
+
+def _normalize_user_payload(row):
     data = _row_to_dict(row)
     if not data:
         return None
 
-    collector_id = data.get('collector_id', data.get('user_id'))
+    phone_value = data.get('phone') or data.get('phone_number')
+    data['phone'] = phone_value
+    data.setdefault('phone_number', phone_value)
+    data.setdefault('items_found', 0)
+    data.setdefault('items_claimed', 0)
+    data['user_type'] = (data.get('user_type') or 'both').lower()
+    return data
+
+
+def _derive_reputation_score(user):
+    # Simple derived metric that keeps legacy output available
+    return int(user.get('items_found', 0) or 0)
+
+
+def _derive_verification_status(user):
+    return 'verified' if (user.get('items_claimed') or 0) > 0 else 'unverified'
+
+
+def _serialize_general_user(user):
+    if not user:
+        return None
+
     return {
-        "collector_id": collector_id,
-        "name": data.get('name'),
-        "email": data.get('email'),
-        "phone": data.get('phone'),
-        "student_id": data.get('student_id'),
-        "id_number": data.get('id_number'),
-        "items_claimed": data.get('items_claimed', 0),
-        "verification_status": data.get('verification_status'),
-        "created_at": data.get('created_at'),
-        "last_active": data.get('last_active'),
-        "user_type": 'collector',
+        "user_id": user.get('user_id'),
+        "name": user.get('name'),
+        "email": user.get('email'),
+        "phone": user.get('phone'),
+        "phone_number": user.get('phone'),
+        "rfid_tag": user.get('rfid_tag'),
+        "student_id": user.get('student_id'),
+        "user_type": user.get('user_type'),
+        "items_found": user.get('items_found', 0),
+        "items_claimed": user.get('items_claimed', 0),
+        "created_at": user.get('created_at'),
+        "last_active": user.get('last_active')
     }
 
 # FINDER routes
@@ -77,26 +115,27 @@ def register_finder():
     
     name = data['name']
     email = data.get('email')
-    phone = data.get('phone')
+    phone = data.get('phone') or data.get('phone_number')
     rfid_tag = data.get('rfid_tag')
-    
+
     try:
         # Check if email already exists
-        if email and get_finder_by_email(email):
+        if email and get_user_by_email(email):
             return jsonify({"error": "Email already exists"}), 409
-        
+
         # Check if RFID tag already exists
-        if rfid_tag and get_finder_by_rfid(rfid_tag):
+        if rfid_tag and get_user_by_rfid(rfid_tag):
             return jsonify({"error": "RFID tag already exists"}), 409
-        
-        finder_id = add_finder(name, email, phone, rfid_tag)
-        
+
+        finder_id = add_finder(name, email, phone, rfid_tag, phone_number=phone)
+
         return jsonify({
             "message": "Finder registered successfully",
             "finder_id": finder_id,
             "name": name,
             "email": email,
             "phone": phone,
+            "phone_number": phone,
             "rfid_tag": rfid_tag,
             "user_type": "finder"
         }), 201
@@ -107,7 +146,8 @@ def register_finder():
 def get_finder_info(finder_id):
     """Get finder information by finder ID."""
     try:
-        finder = _serialize_finder(get_finder_by_id(finder_id))
+        finder_row = get_user_by_id(finder_id)
+        finder = _serialize_finder(finder_row)
         if not finder:
             return jsonify({"error": "Finder not found"}), 404
 
@@ -119,7 +159,8 @@ def get_finder_info(finder_id):
 def get_finder_by_rfid_tag(rfid_tag):
     """Get finder information by RFID tag."""
     try:
-        finder = _serialize_finder(get_finder_by_rfid(rfid_tag))
+        finder_row = get_user_by_rfid(rfid_tag)
+        finder = _serialize_finder(finder_row)
         if not finder:
             return jsonify({"error": "Finder not found"}), 404
 
@@ -131,7 +172,7 @@ def get_finder_by_rfid_tag(rfid_tag):
 def get_all_finders_list():
     """Get all finders in the system."""
     try:
-        finders = [_serialize_finder(row) for row in get_all_finders()]
+        finders = [_serialize_finder(row) for row in get_all_users('finder')]
         finders_data = [finder for finder in finders if finder]
 
         return jsonify({
@@ -151,27 +192,35 @@ def register_collector():
     
     name = data['name']
     email = data.get('email')
-    phone = data.get('phone')
-    student_id = data.get('student_id')
-    id_number = data.get('id_number')
-    
+    phone = data.get('phone') or data.get('phone_number')
+    student_id = data.get('student_id') or data.get('id_number')
+    id_number = student_id
+
     try:
         # Check if email already exists
-        if email and get_collector_by_email(email):
+        if email and get_user_by_email(email):
             return jsonify({"error": "Email already exists"}), 409
-        
+
         # Check if student ID already exists
-        if student_id and get_collector_by_student_id(student_id):
+        if student_id and get_user_by_student_id(student_id):
             return jsonify({"error": "Student ID already exists"}), 409
-        
-        collector_id = add_collector(name, email, phone, student_id)
-        
+
+        collector_id = add_collector(
+            name,
+            email,
+            phone,
+            student_id,
+            phone_number=phone,
+            id_number=id_number,
+        )
+
         return jsonify({
             "message": "Collector registered successfully",
             "collector_id": collector_id,
             "name": name,
             "email": email,
             "phone": phone,
+            "phone_number": phone,
             "student_id": student_id,
             "id_number": id_number,
             "user_type": "collector"
@@ -183,7 +232,8 @@ def register_collector():
 def get_collector_info(collector_id):
     """Get collector information by collector ID."""
     try:
-        collector = _serialize_collector(get_collector_by_id(collector_id))
+        collector_row = get_user_by_id(collector_id)
+        collector = _serialize_collector(collector_row)
         if not collector:
             return jsonify({"error": "Collector not found"}), 404
 
@@ -195,7 +245,8 @@ def get_collector_info(collector_id):
 def get_collector_by_student(student_id):
     """Get collector information by student ID."""
     try:
-        collector = _serialize_collector(get_collector_by_student_id(student_id))
+        collector_row = get_user_by_student_id(student_id)
+        collector = _serialize_collector(collector_row)
         if not collector:
             return jsonify({"error": "Collector not found"}), 404
 
@@ -207,7 +258,7 @@ def get_collector_by_student(student_id):
 def get_all_collectors_list():
     """Get all collectors in the system."""
     try:
-        collectors = [_serialize_collector(row) for row in get_all_collectors()]
+        collectors = [_serialize_collector(row) for row in get_all_users('collector')]
         collectors_data = [collector for collector in collectors if collector]
         
         return jsonify({
@@ -224,10 +275,12 @@ def search_user():
     email = request.args.get('email')
     if not email:
         return jsonify({"error": "email parameter is required"}), 400
-    
+
     try:
+        user_row = get_user_by_email(email)
+
         # Check finders first
-        finder = _serialize_finder(get_finder_by_email(email))
+        finder = _serialize_finder(user_row)
         if finder:
             return jsonify({
                 "found": True,
@@ -238,7 +291,7 @@ def search_user():
             }), 200
 
         # Check collectors
-        collector = _serialize_collector(get_collector_by_email(email))
+        collector = _serialize_collector(user_row)
         if collector:
             return jsonify({
                 "found": True,
@@ -260,12 +313,12 @@ def search_user():
 def get_user_stats():
     """Get statistics about users in the system."""
     try:
-        finders = [f for f in (_serialize_finder(row) for row in get_all_finders()) if f]
-        collectors = [c for c in (_serialize_collector(row) for row in get_all_collectors()) if c]
+        finders = [f for f in (_serialize_finder(row) for row in get_all_users('finder')) if f]
+        collectors = [c for c in (_serialize_collector(row) for row in get_all_users('collector')) if c]
 
         return jsonify({
-            "total_finders": len(finders),
-            "total_collectors": len(collectors),
+            "total_finders": count_users_by_role('finder'),
+            "total_collectors": count_users_by_role('collector'),
             "active_finders": len([f for f in finders if f['items_found'] > 0]),
             "active_collectors": len([c for c in collectors if c['items_claimed'] > 0]),
             "verified_collectors": len([c for c in collectors if c['verification_status'] == 'verified'])
@@ -282,15 +335,8 @@ def get_user_by_id_route(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        return jsonify({
-            "user_id": user['user_id'],
-            "name": user['name'],
-            "email": user['email'],
-            "rfid_tag": user['rfid_tag'],
-            "user_type": user['user_type'],
-            "created_at": user['created_at'],
-            "last_active": user['last_active']
-        }), 200
+        normalized = _normalize_user_payload(user)
+        return jsonify(_serialize_general_user(normalized)), 200
     except Exception as e:
         return jsonify({"error": f"Failed to get user: {str(e)}"}), 500
 
@@ -302,15 +348,8 @@ def get_user_by_email_route(email):
         if not user:
             return jsonify({"error": "User not found"}), 404
         
-        return jsonify({
-            "user_id": user['user_id'],
-            "name": user['name'],
-            "email": user['email'],
-            "rfid_tag": user['rfid_tag'],
-            "user_type": user['user_type'],
-            "created_at": user['created_at'],
-            "last_active": user['last_active']
-        }), 200
+        normalized = _normalize_user_payload(user)
+        return jsonify(_serialize_general_user(normalized)), 200
     except Exception as e:
         return jsonify({"error": f"Failed to get user: {str(e)}"}), 500
 
@@ -322,15 +361,8 @@ def get_user_by_rfid_route(rfid_tag):
         if not user:
             return jsonify({"error": "User not found"}), 404
         
-        return jsonify({
-            "user_id": user['user_id'],
-            "name": user['name'],
-            "email": user['email'],
-            "rfid_tag": user['rfid_tag'],
-            "user_type": user['user_type'],
-            "created_at": user['created_at'],
-            "last_active": user['last_active']
-        }), 200
+        normalized = _normalize_user_payload(user)
+        return jsonify(_serialize_general_user(normalized)), 200
     except Exception as e:
         return jsonify({"error": f"Failed to get user: {str(e)}"}), 500
 
@@ -338,20 +370,9 @@ def get_user_by_rfid_route(rfid_tag):
 def get_users():
     """Get all users in the system."""
     try:
-        users = get_all_users()
-        users_data = []
-        
-        for user in users:
-            users_data.append({
-                "user_id": user['user_id'],
-                "name": user['name'],
-                "email": user['email'],
-                "rfid_tag": user['rfid_tag'],
-                "user_type": user['user_type'],
-                "created_at": user['created_at'],
-                "last_active": user['last_active']
-            })
-        
+        users = [_normalize_user_payload(row) for row in get_all_users()]
+        users_data = [_serialize_general_user(user) for user in users if user]
+
         return jsonify({
             "users": users_data,
             "total_users": len(users_data)
@@ -366,7 +387,7 @@ def update_user_activity(user_id):
         success = update_user_stats(user_id)
         if not success:
             return jsonify({"error": "User not found"}), 404
-        
+
         return jsonify({
             "message": "User activity updated successfully",
             "user_id": user_id
