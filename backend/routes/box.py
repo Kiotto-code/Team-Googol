@@ -213,7 +213,7 @@ def get_boxes():
 #             return jsonify({"error": "Box not found"}), 404
         
 #         # Open the door
-#         success = update_box_status(box_id, door_status='open')
+#         success = update_box(box_id, door_status='open')
 #         if not success:
 #             return jsonify({"error": "Failed to open door"}), 500
         
@@ -236,7 +236,7 @@ def get_boxes():
 #             return jsonify({"error": "Box not found"}), 404
         
 #         # Close the door
-#         success = update_box_status(box_id, door_status='closed')
+#         success = update_box(box_id, door_status='closed')
 #         if not success:
 #             return jsonify({"error": "Failed to close door"}), 500
         
@@ -258,7 +258,7 @@ def get_boxes():
 #             return jsonify({"error": "Box not found"}), 404
         
 #         # Update status to request collection and open door
-#         success = update_box_status(box_id, status='collect_request', door_status='open')
+#         success = update_box(box_id, status='collect_request', door_status='open')
 #         if not success:
 #             return jsonify({"error": "Failed to update box status"}), 500
         
@@ -282,7 +282,7 @@ def get_boxes():
 #             return jsonify({"error": "Box not found"}), 404
         
 #         # Reset box status, load, and close door
-#         success = update_box_status(box_id, status='available', door_status='closed', current_load=0)
+#         success = update_box(box_id, status='available', door_status='closed', current_load=0)
 #         if not success:
 #             return jsonify({"error": "Failed to update box status"}), 500
         
