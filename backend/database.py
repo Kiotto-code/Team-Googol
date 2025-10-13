@@ -16,6 +16,7 @@ def init_database():
         conn.execute('PRAGMA journal_mode=WAL;')
         conn.execute('PRAGMA busy_timeout=15000;')
         conn.execute('PRAGMA foreign_keys=ON;')
+        conn.row_factory = sqlite3.Row
 
         _create_base_schema(conn)
         _migrate_legacy_schema(conn)
