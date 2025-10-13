@@ -10,102 +10,307 @@ import numpy as np
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lost_and_found.db')
 
 def init_database():
-    """Initialize the database with the required tables."""
+    """Create the new normalized schema and migrate any legacy data."""
     with sqlite3.connect(DATABASE_PATH, timeout=15.0) as conn:
-        cursor = conn.cursor()
-        cursor.execute('PRAGMA journal_mode=WAL;')
-        cursor.execute('PRAGMA busy_timeout=15000;')
-        cursor.execute('PRAGMA foreign_keys=ON;')
-        
-        # Initialize unified USERS table
-        init_users_table()
-        init_boxes_table()
-        
-        # Create FOUND_ITEMS table for found items (renamed from CASE to avoid SQL reserved word)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS FOUND_ITEMS (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                filename TEXT NOT NULL UNIQUE,
-                description TEXT,
-                image_embedding TEXT NOT NULL,
-                description_embedding TEXT,
-                status TEXT DEFAULT 'available',
-                claimed_at DATETIME,
-                claimed_by INTEGER,  -- References USERS.user_id
-                finder_id INTEGER,   -- References USERS.user_id 
-                uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                expires_at DATETIME,
-                FOREIGN KEY (claimed_by) REFERENCES USERS (user_id),
-                FOREIGN KEY (finder_id) REFERENCES USERS (user_id)
-            )
-        ''')
-        
-        # Create COLLECTED_ITEMS table for items collected by collection system
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS COLLECTED_ITEMS (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                filename TEXT NOT NULL UNIQUE,
-                box_id TEXT,
-                finder_id INTEGER,  -- References USERS.user_id (system or person who found it)
-                imgtaken_timestamp REAL,
-                uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (finder_id) REFERENCES USERS (user_id)
-            )
-        ''')
-        
-        # Add migration for existing columns if needed
-        migrate_user_references()
-        
+        conn.execute('PRAGMA journal_mode=WAL;')
+        conn.execute('PRAGMA busy_timeout=15000;')
+        conn.execute('PRAGMA foreign_keys=ON;')
+
+        _create_base_schema(conn)
+        _migrate_legacy_schema(conn)
+
         conn.commit()
 
-def migrate_user_references():
-    """Migrate existing user references to new separated table structure."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        # Check if we need to migrate FOUND_ITEMS claimed_by from TEXT to INTEGER
-        cursor.execute("PRAGMA table_info(FOUND_ITEMS)")
-        columns = {col[1]: col[2] for col in cursor.fetchall()}
-        
-        # Add finder_id column first if it doesn't exist
-        if 'finder_id' not in columns:
-            cursor.execute('ALTER TABLE FOUND_ITEMS ADD COLUMN finder_id INTEGER')
-            print("Added finder_id column to FOUND_ITEMS")
-            # Refresh columns info
-            cursor.execute("PRAGMA table_info(FOUND_ITEMS)")
-            columns = {col[1]: col[2] for col in cursor.fetchall()}
-        
-        if 'claimed_by' in columns and 'TEXT' in columns['claimed_by']:
-            print("Migrating FOUND_ITEMS claimed_by column...")
-            # Add new column
-            cursor.execute('ALTER TABLE FOUND_ITEMS ADD COLUMN claimed_by_temp INTEGER')
-            # Copy numeric values only (ignore old text values)
-            cursor.execute('''
-                UPDATE FOUND_ITEMS 
-                SET claimed_by_temp = CAST(claimed_by AS INTEGER) 
-                WHERE claimed_by IS NOT NULL AND claimed_by != '' 
-                AND claimed_by GLOB '[0-9]*'
-            ''')
-            # Create new table with proper structure
-            cursor.execute('''CREATE TABLE FOUND_ITEMS_NEW AS 
-                SELECT id, filename, description, image_embedding, description_embedding, 
-                       status, claimed_at, claimed_by_temp as claimed_by, finder_id, 
-                       uploaded_at, expires_at 
-                FROM FOUND_ITEMS''')
-            cursor.execute('DROP TABLE FOUND_ITEMS')
-            cursor.execute('ALTER TABLE FOUND_ITEMS_NEW RENAME TO FOUND_ITEMS')
-            print("Migrated FOUND_ITEMS claimed_by from TEXT to INTEGER")
-        
-        # Check COLLECTED_ITEMS for migration
-        cursor.execute("PRAGMA table_info(COLLECTED_ITEMS)")
-        collected_columns = {col[1]: col for col in cursor.fetchall()}
-        
-        if 'found_by_user_id' in collected_columns and 'finder_id' not in collected_columns:
-            cursor.execute('ALTER TABLE COLLECTED_ITEMS ADD COLUMN finder_id INTEGER')
-            cursor.execute('UPDATE COLLECTED_ITEMS SET finder_id = found_by_user_id WHERE found_by_user_id IS NOT NULL')
-            print("Migrated COLLECTED_ITEMS found_by_user_id to finder_id")
-        
-        conn.commit()
+
+def _create_base_schema(conn: sqlite3.Connection) -> None:
+    """Create the User, Item, Box, and Case tables if they don't exist."""
+    cursor = conn.cursor()
+
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS User (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE,
+            phone TEXT,
+            rfid_tag TEXT UNIQUE,
+            student_id TEXT UNIQUE,
+            user_type TEXT NOT NULL DEFAULT 'both',
+            items_found INTEGER NOT NULL DEFAULT 0,
+            items_claimed INTEGER NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_active DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        '''
+    )
+
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS Box (
+            box_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            status TEXT NOT NULL DEFAULT 'available',
+            door_status TEXT NOT NULL DEFAULT 'closed',
+            capacity INTEGER NOT NULL DEFAULT 1,
+            current_load INTEGER NOT NULL DEFAULT 0,
+            location TEXT,
+            last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        '''
+    )
+
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS Item (
+            item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL UNIQUE,
+            description TEXT,
+            image_embedding TEXT,
+            description_embedding TEXT,
+            status TEXT NOT NULL DEFAULT 'available',
+            claimed_at DATETIME,
+            claimed_user_id INTEGER,
+            finder_user_id INTEGER,
+            uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME,
+            box_id INTEGER,
+            imgtaken_timestamp REAL,
+            FOREIGN KEY (claimed_user_id) REFERENCES User (user_id) ON DELETE SET NULL,
+            FOREIGN KEY (finder_user_id) REFERENCES User (user_id) ON DELETE SET NULL,
+            FOREIGN KEY (box_id) REFERENCES Box (box_id) ON DELETE SET NULL
+        )
+        '''
+    )
+
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS "Case" (
+            case_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            box_id INTEGER NOT NULL,
+            reciver_id INTEGER,
+            receiver_image_url TEXT,
+            item_id INTEGER,
+            status TEXT NOT NULL DEFAULT 'available',
+            case_close_at DATETIME,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (box_id) REFERENCES Box (box_id) ON DELETE CASCADE,
+            FOREIGN KEY (reciver_id) REFERENCES User (user_id) ON DELETE SET NULL,
+            FOREIGN KEY (item_id) REFERENCES Item (item_id) ON DELETE SET NULL
+        )
+        '''
+    )
+
+
+def _table_exists(cursor: sqlite3.Cursor, table_name: str) -> bool:
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+        (table_name,),
+    )
+    return cursor.fetchone() is not None
+
+
+def _migrate_legacy_schema(conn: sqlite3.Connection) -> None:
+    """Migrate data from legacy tables into the new normalized schema."""
+    cursor = conn.cursor()
+
+    _migrate_users(cursor)
+    _migrate_boxes(cursor)
+    _migrate_items(cursor)
+    _migrate_cases(cursor)
+
+
+def _migrate_users(cursor: sqlite3.Cursor) -> None:
+    cursor.execute('SELECT COUNT(*) FROM User')
+    if cursor.fetchone()[0] > 0:
+        return
+
+    migrated_rows = 0
+
+    if _table_exists(cursor, 'USERS'):
+        cursor.execute('SELECT * FROM USERS')
+        for row in cursor.fetchall():
+            cursor.execute(
+                '''
+                INSERT OR IGNORE INTO User (
+                    user_id, name, email, phone, rfid_tag, student_id,
+                    user_type, items_found, items_claimed, created_at, last_active
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    row['user_id'],
+                    row['name'],
+                    row['email'],
+                    row['phone'],
+                    row['rfid_tag'],
+                    row['student_id'],
+                    row['user_type'] if row['user_type'] else 'both',
+                    row['items_found'] if row['items_found'] is not None else 0,
+                    row['items_claimed'] if row['items_claimed'] is not None else 0,
+                    row['created_at'],
+                    row['last_active'],
+                ),
+            )
+            migrated_rows += 1
+
+    legacy_sources = (
+        ('FINDERS', 'finder', 'rfid_tag'),
+        ('COLLECTORS', 'collector', 'student_id'),
+    )
+
+    for table_name, user_type, id_column in legacy_sources:
+        if not _table_exists(cursor, table_name):
+            continue
+
+        cursor.execute(f'SELECT * FROM {table_name}')
+        for row in cursor.fetchall():
+            data = {key: row[key] for key in row.keys()}
+            cursor.execute(
+                '''
+                INSERT OR IGNORE INTO User (name, email, phone, rfid_tag, student_id, user_type, created_at, last_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    data.get('name'),
+                    data.get('email'),
+                    data.get('phone'),
+                    data.get('rfid_tag') if id_column == 'rfid_tag' else None,
+                    data.get('student_id') if id_column == 'student_id' else None,
+                    user_type,
+                    data.get('created_at', datetime.now().isoformat()),
+                    data.get('last_active', datetime.now().isoformat()),
+                ),
+            )
+            migrated_rows += 1
+
+    if migrated_rows:
+        print(f"Migrated {migrated_rows} legacy users into User table")
+
+
+def _migrate_boxes(cursor: sqlite3.Cursor) -> None:
+    cursor.execute('SELECT COUNT(*) FROM Box')
+    if cursor.fetchone()[0] > 0:
+        return
+
+    if not _table_exists(cursor, 'BOXES'):
+        return
+
+    cursor.execute('SELECT * FROM BOXES')
+    for row in cursor.fetchall():
+        row_dict = {key: row[key] for key in row.keys()}
+
+        status_value = row_dict.get('status')
+        if isinstance(status_value, (int, float)):
+            status = 'available' if status_value else 'unavailable'
+        else:
+            status = str(status_value) if status_value is not None else 'available'
+
+        door_status_value = row_dict.get('door_status')
+        if isinstance(door_status_value, (int, float)):
+            door_status = 'open' if door_status_value else 'closed'
+        else:
+            door_status = str(door_status_value) if door_status_value is not None else 'closed'
+
+        cursor.execute(
+            '''
+            INSERT OR IGNORE INTO Box (
+                box_id, status, door_status, capacity, current_load, location, last_updated
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                row_dict.get('box_id'),
+                status,
+                door_status,
+                row_dict.get('capacity', 1),
+                row_dict.get('load', 0),
+                row_dict.get('location'),
+                row_dict.get('last_accessed', datetime.now().isoformat()),
+            ),
+        )
+
+
+def _migrate_items(cursor: sqlite3.Cursor) -> None:
+    cursor.execute('SELECT COUNT(*) FROM Item')
+    if cursor.fetchone()[0] > 0:
+        return
+
+    if _table_exists(cursor, 'FOUND_ITEMS'):
+        cursor.execute('SELECT * FROM FOUND_ITEMS')
+        for row in cursor.fetchall():
+            row_dict = {key: row[key] for key in row.keys()}
+            cursor.execute(
+                '''
+                INSERT OR IGNORE INTO Item (
+                    item_id, filename, description, image_embedding, description_embedding,
+                    status, claimed_at, claimed_user_id, finder_user_id, uploaded_at, expires_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    row_dict.get('id'),
+                    row_dict.get('filename'),
+                    row_dict.get('description'),
+                    row_dict.get('image_embedding'),
+                    row_dict.get('description_embedding'),
+                    row_dict.get('status'),
+                    row_dict.get('claimed_at'),
+                    row_dict.get('claimed_by'),
+                    row_dict.get('finder_id'),
+                    row_dict.get('uploaded_at'),
+                    row_dict.get('expires_at'),
+                ),
+            )
+
+    if _table_exists(cursor, 'COLLECTED_ITEMS'):
+        cursor.execute('SELECT * FROM COLLECTED_ITEMS')
+        for row in cursor.fetchall():
+            row_dict = {key: row[key] for key in row.keys()}
+            cursor.execute(
+                '''
+                INSERT OR IGNORE INTO Item (
+                    filename, status, finder_user_id, uploaded_at, box_id, imgtaken_timestamp
+                )
+                VALUES (?, 'collected', ?, ?, ?, ?)
+                ''',
+                (
+                    row_dict.get('filename'),
+                    row_dict.get('finder_id'),
+                    row_dict.get('uploaded_at'),
+                    row_dict.get('box_id'),
+                    row_dict.get('imgtaken_timestamp'),
+                ),
+            )
+
+
+def _migrate_cases(cursor: sqlite3.Cursor) -> None:
+    cursor.execute('SELECT COUNT(*) FROM "Case"')
+    if cursor.fetchone()[0] > 0:
+        return
+
+    if not _table_exists(cursor, 'CASES'):
+        return
+
+    cursor.execute('SELECT * FROM CASES')
+    for row in cursor.fetchall():
+        row_dict = {key: row[key] for key in row.keys()}
+        cursor.execute(
+            '''
+            INSERT OR IGNORE INTO "Case" (
+                case_id, box_id, reciver_id, receiver_image_url, item_id, status, case_close_at, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                row_dict.get('found_id'),
+                row_dict.get('box_id'),
+                row_dict.get('receiver_id'),
+                row_dict.get('receiver_image_url'),
+                row_dict.get('item_id'),
+                row_dict.get('status'),
+                row_dict.get('case_close_at'),
+                row_dict.get('created_at'),
+            ),
+        )
 
 @contextmanager
 def get_db_connection():
@@ -124,82 +329,127 @@ def get_db_connection():
     finally:
         conn.close()
 
-def add_found_item(filename, image_embedding, description="", description_embedding=None):
-    """Add a found item to the FOUND_ITEMS table."""
+def add_found_item(
+    filename,
+    image_embedding=None,
+    description="",
+    description_embedding=None,
+    *,
+    finder_user_id=None,
+    box_id=None,
+    imgtaken_timestamp=None,
+    status=None,
+):
+    """Add a found item to the Item table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        
-        # Convert embeddings to JSON strings for storage
-        img_emb_json = json.dumps(image_embedding)
-        desc_emb_json = json.dumps(description_embedding) if description_embedding else None
-        
-        cursor.execute('''
-            INSERT INTO FOUND_ITEMS (filename, description, image_embedding, description_embedding)
-            VALUES (?, ?, ?, ?)
-        ''', (filename, description, img_emb_json, desc_emb_json))
-        
+
+        img_emb_json = json.dumps(image_embedding) if image_embedding is not None else None
+        desc_emb_json = json.dumps(description_embedding) if description_embedding is not None else None
+
+        columns = [
+            'filename',
+            'description',
+            'image_embedding',
+            'description_embedding',
+            'finder_user_id',
+            'box_id',
+            'imgtaken_timestamp',
+        ]
+        values = [
+            filename,
+            description,
+            img_emb_json,
+            desc_emb_json,
+            finder_user_id,
+            box_id,
+            imgtaken_timestamp,
+        ]
+
+        if status is not None:
+            columns.append('status')
+            values.append(status)
+
+        placeholders = ', '.join('?' for _ in columns)
+        cursor.execute(
+            f"INSERT INTO Item ({', '.join(columns)}) VALUES ({placeholders})",
+            values,
+        )
+
         conn.commit()
         return cursor.lastrowid
 
 def get_available_items():
-    """Get all available (unclaimed) items."""
+    """Get all available (unclaimed) items from the Item table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         current_time = datetime.now().isoformat()
-        cursor.execute('''
-            SELECT * FROM FOUND_ITEMS 
-            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime(?))
-        ''', (current_time,))
+        cursor.execute(
+            '''
+            SELECT * FROM Item
+            WHERE status = 'available'
+               OR (status = 'claimed' AND expires_at IS NOT NULL AND datetime(expires_at) < datetime(?))
+            ''',
+            (current_time,),
+        )
         return cursor.fetchall()
 
 def get_all_items():
-    """Get all items from the FOUND_ITEMS table."""
+    """Get all items from the Item table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM FOUND_ITEMS')
+        cursor.execute('SELECT * FROM Item')
         return cursor.fetchall()
 
 def claim_item(item_id, claimed_by_collector_id):
     """Claim an item for 1 hour by collector ID."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        
-        # Check if item is available
-        cursor.execute('''
-            SELECT status, expires_at FROM FOUND_ITEMS 
-            WHERE id = ?
-        ''', (item_id,))
-        
+
+        cursor.execute(
+            '''
+            SELECT status, expires_at FROM Item
+            WHERE item_id = ?
+            ''',
+            (item_id,),
+        )
         result = cursor.fetchone()
         if not result:
             return False, "Item not found"
-        
-        status, expires_at = result
-        
-        # Check if item is available or claim has expired
+
+        status = result['status']
+        expires_at = result['expires_at']
+
         if status == 'claimed' and expires_at:
             expires_datetime = datetime.fromisoformat(expires_at)
             if datetime.now() < expires_datetime:
                 return False, "Item is currently claimed"
-        
-        # Claim the item
-        claimed_at = datetime.now()
-        expires_at = claimed_at + timedelta(minutes=1)
-        
-        cursor.execute('''
-            UPDATE FOUND_ITEMS 
-            SET status = 'claimed', claimed_at = ?, claimed_by = ?, expires_at = ?
-            WHERE id = ?
-        ''', (claimed_at.isoformat(), claimed_by_collector_id, expires_at.isoformat(), item_id))
 
-        # Commit the item update first to release the write lock quickly
+        claimed_at = datetime.now()
+        expires_at_dt = claimed_at + timedelta(minutes=60)
+
+        cursor.execute(
+            '''
+            UPDATE Item
+            SET status = 'claimed',
+                claimed_at = ?,
+                claimed_user_id = ?,
+                expires_at = ?
+            WHERE item_id = ?
+            ''',
+            (
+                claimed_at.isoformat(),
+                claimed_by_collector_id,
+                expires_at_dt.isoformat(),
+                item_id,
+            ),
+        )
+
         conn.commit()
 
-        # Update collector's last active timestamp and stats (best-effort, separate transaction)
         try:
             update_collector_stats(claimed_by_collector_id, items_claimed_increment=1)
         except Exception as e:
-            # Do not fail the claim if stats update hits a transient lock
             print(f"Warning: update_collector_stats skipped due to: {e}")
         return True, "Item claimed successfully"
 
@@ -207,24 +457,26 @@ def release_expired_claims():
     """Release claims that have expired (older than 1 hour)."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        
-        # Use Python's current time instead of SQLite's UTC time for consistency
         current_time = datetime.now().isoformat()
-        
-        cursor.execute('''
-            UPDATE FOUND_ITEMS 
-            SET status = 'available', claimed_at = NULL, claimed_by = NULL, expires_at = NULL
-            WHERE status = 'claimed' AND datetime(expires_at) < datetime(?)
-        ''', (current_time,))
-        
+        cursor.execute(
+            '''
+            UPDATE Item
+            SET status = 'available',
+                claimed_at = NULL,
+                claimed_user_id = NULL,
+                expires_at = NULL
+            WHERE status = 'claimed' AND expires_at IS NOT NULL AND datetime(expires_at) < datetime(?)
+            ''',
+            (current_time,),
+        )
         conn.commit()
         return cursor.rowcount
 
 def delete_item(filename):
-    """Delete an item from the FOUND_ITEMS table."""
+    """Delete an item from the Item table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM FOUND_ITEMS WHERE filename = ?', (filename,))
+        cursor.execute('DELETE FROM Item WHERE filename = ?', (filename,))
         conn.commit()
         return cursor.rowcount > 0
 
@@ -232,440 +484,374 @@ def get_item_by_filename(filename):
     """Get an item by filename."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM FOUND_ITEMS WHERE filename = ?', (filename,))
+        cursor.execute('SELECT * FROM Item WHERE filename = ?', (filename,))
         return cursor.fetchone()
 
 def search_items(query_embedding, threshold=0.4):
     """Search for items based on embedding similarity."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        
-        # Get all available items
         current_time = datetime.now().isoformat()
-        cursor.execute('''
-            SELECT * FROM FOUND_ITEMS 
-            WHERE status = 'available' OR (status = 'claimed' AND datetime(expires_at) < datetime(?))
-        ''', (current_time,))
-        
+        cursor.execute(
+            '''
+            SELECT * FROM Item
+            WHERE status = 'available'
+               OR (status = 'claimed' AND expires_at IS NOT NULL AND datetime(expires_at) < datetime(?))
+            ''',
+            (current_time,),
+        )
+
         items = cursor.fetchall()
         results = []
-        
+
         query_emb = np.array(query_embedding, dtype=np.float32)
-        
+
         for item in items:
-            # Parse image embedding
-            img_emb = np.array(json.loads(item['image_embedding']), dtype=np.float32)
-            img_score = float(np.dot(query_emb, img_emb) / (np.linalg.norm(query_emb) * np.linalg.norm(img_emb)))
-            
-            # Parse description embedding if available
+            image_data = item['image_embedding']
+            if not image_data:
+                continue
+
+            img_emb = np.array(json.loads(image_data), dtype=np.float32)
+            denom = np.linalg.norm(query_emb) * np.linalg.norm(img_emb)
+            if denom == 0:
+                continue
+            img_score = float(np.dot(query_emb, img_emb) / denom)
+
             desc_score = 0.0
             if item['description_embedding']:
                 desc_emb = np.array(json.loads(item['description_embedding']), dtype=np.float32)
-                desc_score = float(np.dot(query_emb, desc_emb) / (np.linalg.norm(query_emb) * np.linalg.norm(desc_emb)))
-            
-            # Combine scores
+                desc_denom = np.linalg.norm(query_emb) * np.linalg.norm(desc_emb)
+                if desc_denom != 0:
+                    desc_score = float(np.dot(query_emb, desc_emb) / desc_denom)
+
             final_score = (0.6 * desc_score + 0.4 * img_score)
-            
+
             if final_score > threshold:
-                # Update status if claim expired
-                if item['status'] == 'claimed' and item['expires_at']:
-                    expires_datetime = datetime.fromisoformat(item['expires_at'])
+                status = item['status']
+                expires_at = item['expires_at']
+                if status == 'claimed' and expires_at:
+                    expires_datetime = datetime.fromisoformat(expires_at)
                     if datetime.now() > expires_datetime:
-                        release_expired_claims()  # Clean up expired claims
+                        release_expired_claims()
                         status = 'available'
-                    else:
-                        status = item['status']
-                else:
-                    status = item['status']
-                
-                results.append({
-                    'id': item['id'],
-                    'filename': item['filename'],
-                    'description': item['description'],
-                    'score': final_score,
-                    'status': status,
-                    'claimed_by': item['claimed_by'],
-                    'expires_at': item['expires_at'],
-                    'uploaded_at': item['uploaded_at']
-                })
-        
+
+                results.append(
+                    {
+                        'item_id': item['item_id'],
+                        'filename': item['filename'],
+                        'description': item['description'],
+                        'score': final_score,
+                        'status': status,
+                        'claimed_user_id': item['claimed_user_id'],
+                        'expires_at': item['expires_at'],
+                        'uploaded_at': item['uploaded_at'],
+                    }
+                )
+
         return results
 
 
+
 # COLLECT
-def collect_found_item(filename, imgtaken_timestamp, box_id, finder_id=None):
-    """Collect a found item and store in COLLECTED_ITEMS table."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO COLLECTED_ITEMS (filename, imgtaken_timestamp, box_id, finder_id)
-            VALUES (?, ?, ?, ?)
-        ''', (filename, imgtaken_timestamp, box_id, finder_id))
-        
-        # Update finder stats if provided
-        if finder_id:
-            update_finder_stats(finder_id, items_found_increment=1)
-            
-        conn.commit()
-        return cursor.lastrowid
+def collect_found_item(filename, imgtaken_timestamp, box_id, finder_user_id=None):
+    """Collect a found item and store it as an Item entry."""
+    item_id = add_found_item(
+        filename,
+        image_embedding=None,
+        description="",
+        description_embedding=None,
+        finder_user_id=finder_user_id,
+        box_id=box_id,
+        imgtaken_timestamp=imgtaken_timestamp,
+        status='collected',
+    )
+
+    if finder_user_id:
+        update_finder_stats(finder_user_id, items_found_increment=1)
+
+    return item_id
+
 
 def get_collected_items():
     """Get all collected items."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM COLLECTED_ITEMS ORDER BY uploaded_at DESC')
+        cursor.execute(
+            "SELECT * FROM Item WHERE status = 'collected' ORDER BY uploaded_at DESC"
+        )
         return cursor.fetchall()
 
+
 def clear_all_items():
-    """Clear all items from the FOUND_ITEMS table."""
+    """Clear all items from the Item table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM FOUND_ITEMS')
+        cursor.execute("DELETE FROM Item")
         conn.commit()
         return cursor.rowcount
 
-# USER MANAGEMENT - Unified USERS table
-def init_users_table():
-    """Initialize unified USERS table."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS USERS (
-                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE,
-                phone TEXT,
-                rfid_tag TEXT UNIQUE,
-                student_id TEXT UNIQUE,
-                user_type TEXT DEFAULT 'both',  -- 'finder', 'collector', 'both'
-                items_found INTEGER DEFAULT 0,  -- Count of items they've found
-                items_claimed INTEGER DEFAULT 0,  -- Count of items they've claimed
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                last_active DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Migrate from old FINDERS/COLLECTORS tables if they exist
-        migrate_separated_tables_to_users()
-        
-        conn.commit()
+# USER MANAGEMENT - Unified User table helpers
 
-def migrate_separated_tables_to_users():
-    """Migrate existing FINDERS and COLLECTORS tables to unified USERS table."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        # Check if old FINDERS table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='FINDERS'")
-        has_finders = cursor.fetchone() is not None
-        
-        # Check if old COLLECTORS table exists  
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='COLLECTORS'")
-        has_collectors = cursor.fetchone() is not None
-        
-        if has_finders or has_collectors:
-            print("Migrating FINDERS and COLLECTORS tables to unified USERS table...")
-            
-            # Migrate FINDERS
-            if has_finders:
-                cursor.execute('SELECT * FROM FINDERS')
-                finders = cursor.fetchall()
-                for finder in finders:
-                    finder_dict = dict(finder)
-                    cursor.execute('''
-                        INSERT OR IGNORE INTO USERS (name, email, phone, rfid_tag, user_type, created_at, last_active)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (finder_dict.get('name'), finder_dict.get('email'), finder_dict.get('phone'),
-                          finder_dict.get('rfid_tag'), 'finder', 
-                          finder_dict.get('created_at'), finder_dict.get('last_active')))
-            
-            # Migrate COLLECTORS
-            if has_collectors:
-                cursor.execute('SELECT * FROM COLLECTORS')
-                collectors = cursor.fetchall()
-                for collector in collectors:
-                    collector_dict = dict(collector)
-                    # Check if user already exists (in case they were both finder and collector)
-                    cursor.execute('SELECT user_id FROM USERS WHERE email = ?', (collector_dict.get('email'),))
-                    existing_user = cursor.fetchone()
-                    
-                    if existing_user:
-                        # Update existing user to be 'both'
-                        cursor.execute('''
-                            UPDATE USERS SET user_type = 'both', student_id = ?
-                            WHERE user_id = ?
-                        ''', (collector_dict.get('student_id'), existing_user[0]))
-                    else:
-                        # Insert new collector
-                        cursor.execute('''
-                            INSERT OR IGNORE INTO USERS (name, email, phone, student_id, user_type, created_at, last_active)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (collector_dict.get('name'), collector_dict.get('email'), collector_dict.get('phone'),
-                              collector_dict.get('student_id'), 'collector',
-                              collector_dict.get('created_at'), collector_dict.get('last_active')))
-            
-            # Rename old tables for backup
-            if has_finders:
-                cursor.execute('ALTER TABLE FINDERS RENAME TO FINDERS_BACKUP')
-                print("FINDERS table renamed to FINDERS_BACKUP")
-            if has_collectors:
-                cursor.execute('ALTER TABLE COLLECTORS RENAME TO COLLECTORS_BACKUP') 
-                print("COLLECTORS table renamed to COLLECTORS_BACKUP")
-            
-            print("Migration to unified USERS table completed")
-        
-        conn.commit()
 
-# USER management functions (unified)
 def add_user(name, email=None, phone=None, rfid_tag=None, student_id=None, user_type='both'):
     """Add a new user to the system."""
+    now = datetime.now().isoformat()
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO USERS (name, email, phone, rfid_tag, student_id, user_type, created_at, last_active)
+        cursor.execute(
+            '''
+            INSERT INTO User (name, email, phone, rfid_tag, student_id, user_type, created_at, last_active)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (name, email, phone, rfid_tag, student_id, user_type,
-              datetime.now().isoformat(), datetime.now().isoformat()))
+            ''',
+            (name, email, phone, rfid_tag, student_id, user_type, now, now),
+        )
         conn.commit()
         return cursor.lastrowid
 
-# Backward compatibility functions for existing code
+
 def add_finder(name, email=None, phone=None, rfid_tag=None):
-    """Add a new finder to the system (backward compatibility)."""
+    """Backward compatibility helper for creating finder users."""
     return add_user(name, email, phone, rfid_tag, None, 'finder')
 
+
 def add_collector(name, email=None, phone=None, student_id=None):
-    """Add a new collector to the system (backward compatibility)."""
+    """Backward compatibility helper for creating collector users."""
     return add_user(name, email, phone, None, student_id, 'collector')
 
+
 def get_user_by_id(user_id):
-    """Get user information by user ID."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM USERS WHERE user_id = ?', (user_id,))
+        cursor.execute('SELECT * FROM User WHERE user_id = ?', (user_id,))
         return cursor.fetchone()
 
-# Backward compatibility functions
-def get_finder_by_id(finder_id):
-    """Get finder information by ID (backward compatibility)."""
-    return get_user_by_id(finder_id)
-
-def get_collector_by_id(collector_id):
-    """Get collector information by ID (backward compatibility)."""
-    return get_user_by_id(collector_id)
 
 def get_user_by_email(email):
-    """Get user information by email."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM USERS WHERE email = ?', (email,))
+        cursor.execute('SELECT * FROM User WHERE email = ?', (email,))
         return cursor.fetchone()
 
-# Backward compatibility functions
-def get_finder_by_email(email):
-    """Get finder information by email (backward compatibility)."""
-    return get_user_by_email(email)
-
-def get_collector_by_email(email):
-    """Get collector information by email (backward compatibility)."""
-    return get_user_by_email(email)
 
 def get_user_by_rfid(rfid_tag):
-    """Get user information by RFID tag."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM USERS WHERE rfid_tag = ?', (rfid_tag,))
+        cursor.execute('SELECT * FROM User WHERE rfid_tag = ?', (rfid_tag,))
         return cursor.fetchone()
 
-# Backward compatibility function
-def get_finder_by_rfid(rfid_tag):
-    """Get finder information by RFID tag (backward compatibility)."""
-    return get_user_by_rfid(rfid_tag)
 
 def get_user_by_student_id(student_id):
-    """Get user information by student ID."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM USERS WHERE student_id = ?', (student_id,))
+        cursor.execute('SELECT * FROM User WHERE student_id = ?', (student_id,))
         return cursor.fetchone()
 
-# Backward compatibility function
+
+def get_finder_by_id(finder_id):
+    return get_user_by_id(finder_id)
+
+
+def get_collector_by_id(collector_id):
+    return get_user_by_id(collector_id)
+
+
+def get_finder_by_email(email):
+    return get_user_by_email(email)
+
+
+def get_collector_by_email(email):
+    return get_user_by_email(email)
+
+
+def get_finder_by_rfid(rfid_tag):
+    return get_user_by_rfid(rfid_tag)
+
+
 def get_collector_by_student_id(student_id):
-    """Get collector information by student ID (backward compatibility)."""
     return get_user_by_student_id(student_id)
 
+
 def update_user_stats(user_id, items_found_increment=0, items_claimed_increment=0):
-    """Update user statistics."""
+    """Update aggregate counters for a user."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE USERS 
-            SET items_found = items_found + ?, 
+        cursor.execute(
+            '''
+            UPDATE User
+            SET items_found = items_found + ?,
                 items_claimed = items_claimed + ?,
                 last_active = ?
             WHERE user_id = ?
-        ''', (items_found_increment, items_claimed_increment, 
-              datetime.now().isoformat(), user_id))
+            ''',
+            (items_found_increment, items_claimed_increment, datetime.now().isoformat(), user_id),
+        )
         conn.commit()
         return cursor.rowcount > 0
 
-# Backward compatibility functions
+
 def update_finder_stats(finder_id, items_found_increment=0, reputation_increment=0):
-    """Update finder statistics (backward compatibility)."""
     return update_user_stats(finder_id, items_found_increment, 0)
 
+
 def update_collector_stats(collector_id, items_claimed_increment=0, verification_status=None):
-    """Update collector statistics (backward compatibility)."""
     return update_user_stats(collector_id, 0, items_claimed_increment)
 
-# Get all functions for admin/reporting
+
 def get_all_finders():
-    """Get all finders in the system."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM FINDERS ORDER BY created_at DESC')
+        cursor.execute(
+            """
+            SELECT * FROM User
+            WHERE user_type IN ('finder', 'both')
+            ORDER BY created_at DESC
+            """
+        )
         return cursor.fetchall()
+
 
 def get_all_collectors():
-    """Get all collectors in the system."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM COLLECTORS ORDER BY created_at DESC')
+        cursor.execute(
+            """
+            SELECT * FROM User
+            WHERE user_type IN ('collector', 'both')
+            ORDER BY created_at DESC
+            """
+        )
         return cursor.fetchall()
 
-def init_boxes_table():
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        # Create table if it doesn't exist first
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS BOXES (
-                id TEXT PRIMARY KEY,
-                status TEXT DEFAULT 'available',
-                door_status TEXT DEFAULT 'closed',
-                capacity INTEGER DEFAULT 1,
-                current_load INTEGER DEFAULT 0,
-                last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Check if door_status column exists (for migration from old schema)
-        cursor.execute("PRAGMA table_info(BOXES)")
-        columns = [column[1] for column in cursor.fetchall()]
-        
-        if 'door_status' not in columns:
-            # Add door_status column to existing table
-            cursor.execute('ALTER TABLE BOXES ADD COLUMN door_status TEXT DEFAULT "closed"')
-            print("Added door_status column to BOXES table")
-        
-        conn.commit()
-    
-from datetime import datetime
 
-def add_box(location, status=True, door_status=False, load=0):
+# BOX MANAGEMENT
+
+
+def _status_to_storage(status):
+    if isinstance(status, str):
+        return status
+    return 'available' if status else 'unavailable'
+
+
+def _door_to_storage(door_status):
+    if isinstance(door_status, str):
+        return door_status
+    return 'open' if door_status else 'closed'
+
+
+def _normalize_box_row(row):
+    if row is None:
+        return None
+    data = dict(row)
+    status_value = str(data.get('status', '')).lower()
+    data['status'] = 1 if status_value in {'1', 'true', 'available', 'open'} else 0
+    door_value = str(data.get('door_status', '')).lower()
+    data['door_status'] = 1 if door_value in {'1', 'true', 'open'} else 0
+    data['load'] = data.get('current_load', data.get('load', 0))
+    data.setdefault('current_load', data['load'])
+    if 'last_updated' in data and 'last_accessed' not in data:
+        data['last_accessed'] = data['last_updated']
+    return data
+
+
+def add_box(location, status=True, door_status=False, load=0, capacity=1):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO BOXES (status, location, load, door_status, last_accessed)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (
-            1 if status else 0,          # store as boolean (SQLite uses int 0/1)
-            location,
-            load,
-            1 if door_status else 0,     # store as boolean
-            datetime.now().isoformat()   # last_accessed
-        ))
+        cursor.execute(
+            '''
+            INSERT INTO Box (status, door_status, capacity, current_load, location, last_updated)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                _status_to_storage(status),
+                _door_to_storage(door_status),
+                capacity,
+                load,
+                location,
+                datetime.now().isoformat(),
+            ),
+        )
         conn.commit()
-        return cursor.lastrowid  # return the new auto-incremented box_id
+        return cursor.lastrowid
 
 
 def delete_box(box_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM BOXES WHERE box_id = ?', (box_id,))
+        cursor.execute('DELETE FROM Box WHERE box_id = ?', (box_id,))
         conn.commit()
-        return cursor.rowcount  # number of rows deleted
+        return cursor.rowcount
 
-from datetime import datetime
 
 def update_box(box_id, status=None, door_status=None, location=None, load=None):
+    fields = []
+    values = []
+    if status is not None:
+        fields.append('status = ?')
+        values.append(_status_to_storage(status))
+    if door_status is not None:
+        fields.append('door_status = ?')
+        values.append(_door_to_storage(door_status))
+    if location is not None:
+        fields.append('location = ?')
+        values.append(location)
+    if load is not None:
+        fields.append('current_load = ?')
+        values.append(load)
+
+    if not fields:
+        return 0
+
+    fields.append('last_updated = ?')
+    values.append(datetime.now().isoformat())
+    values.append(box_id)
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        fields, values = [], []
-        
-        if status is not None:
-            fields.append("status = ?")
-            values.append(1 if status else 0)  # store as boolean
-        if door_status is not None:
-            fields.append("door_status = ?")
-            values.append(1 if door_status else 0)
-        if location is not None:
-            fields.append("location = ?")
-            values.append(location)
-        if load is not None:
-            fields.append("load = ?")
-            values.append(load)
-
-        # Always update last_accessed timestamp
-        fields.append("last_accessed = ?")
-        values.append(datetime.now().isoformat())
-
-        values.append(box_id)  # for WHERE clause
-
-        sql = f'''
-            UPDATE BOXES
-            SET {", ".join(fields)}
-            WHERE box_id = ?
-        '''
-        cursor.execute(sql, tuple(values))
+        cursor.execute(
+            f"UPDATE Box SET {', '.join(fields)} WHERE box_id = ?",
+            tuple(values),
+        )
         conn.commit()
-        return cursor.rowcount  # number of rows updated
+        return cursor.rowcount
 
 
 def get_box_status(box_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM BOXES WHERE box_id = ?', (box_id,))
-        return cursor.fetchone()
+        cursor.execute('SELECT * FROM Box WHERE box_id = ?', (box_id,))
+        row = cursor.fetchone()
+        return _normalize_box_row(row)
+
 
 def update_box_status(box_id, status=None, current_load=None, door_status=None, capacity=None):
-    """Update one or more attributes of a box.
-
-    Parameters:
-        box_id (str/int): Identifier of the box row to update.
-        status (str): New status string (e.g., 'available', 'collect_request').
-        current_load (int): Updated current item load.
-        door_status (str): 'open' or 'closed'.
-        capacity (int): Max capacity of the box.
-    Returns:
-        int: Number of rows updated (0 if box not found or nothing to update).
-    """
     fields = []
     values = []
     if status is not None:
         fields.append('status = ?')
-        values.append(status)
+        values.append(status if isinstance(status, str) else _status_to_storage(status))
     if current_load is not None:
         fields.append('current_load = ?')
         values.append(current_load)
     if door_status is not None:
         fields.append('door_status = ?')
-        values.append(door_status)
+        values.append(door_status if isinstance(door_status, str) else _door_to_storage(door_status))
     if capacity is not None:
         fields.append('capacity = ?')
         values.append(capacity)
 
-    # Always update last_updated if we are changing something
     if not fields:
         return 0
-    fields.append('last_updated = CURRENT_TIMESTAMP')
+
+    fields.append('last_updated = ?')
+    values.append(datetime.now().isoformat())
+    values.append(box_id)
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        sql = f"UPDATE BOXES SET {', '.join(fields)} WHERE id = ? OR box_id = ?"  # support either column name in case of schema variation
-        values.extend([box_id, box_id])
-        cursor.execute(sql, tuple(values))
+        cursor.execute(
+            f"UPDATE Box SET {', '.join(fields)} WHERE box_id = ?",
+            tuple(values),
+        )
         conn.commit()
         return cursor.rowcount
 
@@ -673,85 +859,100 @@ def update_box_status(box_id, status=None, current_load=None, door_status=None, 
 def get_all_boxes():
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM BOXES ORDER BY box_id')
-        return cursor.fetchall()
+        cursor.execute('SELECT * FROM Box ORDER BY box_id')
+        rows = cursor.fetchall()
+        return [_normalize_box_row(row) for row in rows]
 
-def add_case(box_id, receiver_id=None, receiver_image_url=None, item_id=None, 
-             status="available", case_close_at=None):
+
+# CASE MANAGEMENT
+
+
+def add_case(box_id, reciver_id=None, receiver_image_url=None, item_id=None, status='available', case_close_at=None, receiver_id=None):
+    if reciver_id is None and receiver_id is not None:
+        reciver_id = receiver_id
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO CASES (box_id, receiver_image_url, receiver_id, item_id, status, case_close_at, created_at)
+        cursor.execute(
+            '''
+            INSERT INTO "Case" (box_id, reciver_id, receiver_image_url, item_id, status, case_close_at, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            box_id,
-            receiver_image_url,
-            receiver_id,
-            item_id,
-            status,
-            case_close_at,
-            datetime.now().isoformat()  # created_at
-        ))
+            ''',
+            (
+                box_id,
+                reciver_id,
+                receiver_image_url,
+                item_id,
+                status,
+                case_close_at,
+                datetime.now().isoformat(),
+            ),
+        )
         conn.commit()
-        return cursor.lastrowid  # return the new auto-incremented found_id
+        return cursor.lastrowid
 
-def update_case(found_id, box_id=None, receiver_id=None, receiver_image_url=None, 
-                item_id=None, status=None, case_close_at=None):
+
+def update_case(case_id=None, *, found_id=None, box_id=None, reciver_id=None, receiver_id=None, receiver_image_url=None, item_id=None, status=None, case_close_at=None):
+    target_id = case_id if case_id is not None else found_id
+    if target_id is None:
+        raise ValueError('case_id is required')
+
+    if reciver_id is None and receiver_id is not None:
+        reciver_id = receiver_id
+
+    fields = []
+    values = []
+    if box_id is not None:
+        fields.append('box_id = ?')
+        values.append(box_id)
+    if reciver_id is not None:
+        fields.append('reciver_id = ?')
+        values.append(reciver_id)
+    if receiver_image_url is not None:
+        fields.append('receiver_image_url = ?')
+        values.append(receiver_image_url)
+    if item_id is not None:
+        fields.append('item_id = ?')
+        values.append(item_id)
+    if status is not None:
+        fields.append('status = ?')
+        values.append(status)
+    if case_close_at is not None:
+        fields.append('case_close_at = ?')
+        values.append(case_close_at)
+
+    if not fields:
+        return 0
+
+    values.append(target_id)
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        fields, values = [], []
-
-        if box_id is not None:
-            fields.append("box_id = ?")
-            values.append(box_id)
-        if receiver_id is not None:
-            fields.append("receiver_id = ?")
-            values.append(receiver_id)
-        if receiver_image_url is not None:
-            fields.append("receiver_image_url = ?")
-            values.append(receiver_image_url)
-        if item_id is not None:
-            fields.append("item_id = ?")
-            values.append(item_id)
-        if status is not None:
-            fields.append("status = ?")
-            values.append(status)
-        if case_close_at is not None:
-            fields.append("case_close_at = ?")
-            values.append(case_close_at)
-
-        # nothing to update
-        if not fields:
-            return 0  
-
-        values.append(found_id)  # WHERE clause
-
-        sql = f'''
-            UPDATE Cases
-            SET {", ".join(fields)}
-            WHERE found_id = ?
-        '''
+        sql = f'UPDATE "Case" SET {", ".join(fields)} WHERE case_id = ?'
         cursor.execute(sql, tuple(values))
         conn.commit()
-        return cursor.rowcount  # number of rows updated
-    
+        return cursor.rowcount
+
+
 def delete_case(case_id):
-	with get_db_connection() as conn:
-		cursor = conn.cursor()
-		cursor.execute('DELETE FROM CASES WHERE found_id = ?', (case_id,))
-		conn.commit()
-		return cursor.rowcount  # number of rows deleted
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM "Case" WHERE case_id = ?', (case_id,))
+        conn.commit()
+        return cursor.rowcount
+
 
 def get_case(case_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM CASES WHERE found_id = ?', (case_id,))
+        cursor.execute('SELECT * FROM "Case" WHERE case_id = ?', (case_id,))
         return cursor.fetchone()
-    
+
+
 def get_all_case():
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM CASES ORDER BY found_id')
+        cursor.execute('SELECT * FROM "Case" ORDER BY case_id')
         return cursor.fetchall()
 
 # Database is initialized when needed - removed automatic initialization
