@@ -1,5 +1,11 @@
 from flask import Blueprint, request, jsonify
-from database import claim_item, get_all_items, release_expired_claims, get_collector_by_email, get_collector_by_student_id
+from database import (
+    claim_item,
+    get_items_with_case,
+    release_expired_claims,
+    get_collector_by_email,
+    get_collector_by_student_id,
+)
 
 claim_bp = Blueprint('claim', __name__)
 
@@ -77,23 +83,23 @@ def claim_found_item():
 
 @claim_bp.route('/items', methods=['GET'])
 def list_all_items():
-    """List all items in the FOUND_ITEMS table with their status."""
+    """List claimable inventory derived from the Item and Case tables."""
     # Clean up expired claims first
     release_expired_claims()
     
-    items = get_all_items()
-    
+    items = get_items_with_case()
+
     result = []
     for item in items:
         result.append({
             'id': item['id'],
             'filename': item['filename'],
             'description': item['description'],
-            'status': item['status'],
-            'claimed_by': item['claimed_by'],
-            'claimed_at': item['claimed_at'],
-            'expires_at': item['expires_at'],
-            'uploaded_at': item['uploaded_at'],
+            'status': item.get('status'),
+            'claimed_by': item.get('claimed_by'),
+            'claimed_at': item.get('claimed_at'),
+            'expires_at': item.get('expires_at'),
+            'uploaded_at': item.get('uploaded_at'),
             'url': f"http://127.0.0.1:5000/uploads/{item['filename']}"
         })
     
