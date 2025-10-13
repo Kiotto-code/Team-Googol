@@ -8,6 +8,7 @@ import numpy as np
 
 # Use absolute path to ensure consistent database location
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lost_and_found.db')
+CLAIM_DURATION_MINUTES = 60
 
 def init_database():
     """Create the new normalized schema and migrate any legacy data."""
@@ -379,37 +380,137 @@ def add_found_item(
         conn.commit()
         return cursor.lastrowid
 
-def get_available_items():
-    """Get all available (unclaimed) items from the Item table."""
+def _fetch_case_item_rows(where_clause: str = '', params: tuple = ()):  # pragma: no cover - simple helper
+    base_query = '''
+        SELECT
+            i.item_id AS item_id,
+            i.filename AS filename,
+            i.description AS description,
+            i.status AS item_status,
+            i.claimed_at AS claimed_at,
+            i.expires_at AS item_expires_at,
+            i.uploaded_at AS uploaded_at,
+            i.claimed_user_id AS claimed_user_id,
+            c.case_id AS case_id,
+            c.box_id AS box_id,
+            c.reciver_id AS reciver_id,
+            c.status AS case_status,
+            c.case_close_at AS case_close_at,
+            c.created_at AS case_created_at
+        FROM Item i
+        LEFT JOIN "Case" c ON c.item_id = i.item_id
+    '''
+
+    if where_clause:
+        base_query += f" {where_clause}"
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        current_time = datetime.now().isoformat()
-        cursor.execute(
-            '''
-            SELECT * FROM Item
-            WHERE status = 'available'
-               OR (status = 'claimed' AND expires_at IS NOT NULL AND datetime(expires_at) < datetime(?))
-            ''',
-            (current_time,),
-        )
+        cursor.execute(base_query, params)
         return cursor.fetchall()
+
+
+def _is_timestamp_past(value) -> bool:
+    if not value:
+        return False
+    try:
+        return datetime.fromisoformat(value) <= datetime.now()
+    except ValueError:
+        return False
+
+
+def _map_case_item_status(case_status, item_status, case_close_at, item_expires_at):
+    if case_status:
+        if case_status == 'available_to_claim':
+            return 'available'
+        if case_status == 'claimed' and _is_timestamp_past(case_close_at):
+            return 'available'
+        return str(case_status)
+
+    if item_status:
+        if item_status == 'claimed':
+            if _is_timestamp_past(item_expires_at):
+                return 'available'
+            return 'claimed'
+        return str(item_status)
+
+    return 'available'
+
+
+def _normalize_case_item_row(row):
+    if row is None:
+        return None
+
+    status = _map_case_item_status(
+        row['case_status'],
+        row['item_status'],
+        row['case_close_at'],
+        row['item_expires_at'],
+    )
+
+    claimed_by = row['reciver_id'] or row['claimed_user_id']
+    claimed_at = row['claimed_at']
+    expires_at = row['case_close_at'] or row['item_expires_at']
+
+    if status == 'available' and (
+        (row['case_status'] == 'claimed' and _is_timestamp_past(row['case_close_at']))
+        or (row['case_status'] is None and row['item_status'] == 'claimed' and _is_timestamp_past(row['item_expires_at']))
+    ):
+        claimed_by = None
+        claimed_at = None
+        expires_at = None
+
+    return {
+        'id': row['item_id'],
+        'item_id': row['item_id'],
+        'case_id': row['case_id'],
+        'filename': row['filename'],
+        'description': row['description'],
+        'status': status,
+        'claimed_by': claimed_by,
+        'claimed_at': claimed_at,
+        'expires_at': expires_at,
+        'uploaded_at': row['uploaded_at'],
+        'case_status': row['case_status'],
+        'case_close_at': row['case_close_at'],
+        'box_id': row['box_id'],
+    }
+
+
+def get_items_with_case():
+    """Return normalized items joined with their cases."""
+    rows = _fetch_case_item_rows('ORDER BY i.uploaded_at DESC')
+    return [_normalize_case_item_row(row) for row in rows]
+
 
 def get_all_items():
-    """Get all items from the Item table."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM Item')
-        return cursor.fetchall()
+    """Backwards-compatible wrapper returning all items with case data."""
+    return get_items_with_case()
+
+
+def get_available_items():
+    """Get all items that are available for claiming."""
+    return [item for item in get_items_with_case() if item and item.get('status') == 'available']
+
 
 def claim_item(item_id, claimed_by_collector_id):
-    """Claim an item for 1 hour by collector ID."""
+    """Claim an item for 1 hour by collector ID, updating related cases."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
         cursor.execute(
             '''
-            SELECT status, expires_at FROM Item
-            WHERE item_id = ?
+            SELECT
+                i.status AS item_status,
+                i.expires_at AS item_expires_at,
+                c.case_id AS case_id,
+                c.status AS case_status,
+                c.case_close_at AS case_close_at
+            FROM Item i
+            LEFT JOIN "Case" c ON c.item_id = i.item_id
+            WHERE i.item_id = ?
+            ORDER BY c.case_id DESC
+            LIMIT 1
             ''',
             (item_id,),
         )
@@ -417,16 +518,28 @@ def claim_item(item_id, claimed_by_collector_id):
         if not result:
             return False, "Item not found"
 
-        status = result['status']
-        expires_at = result['expires_at']
+        item_status = result['item_status']
+        item_expires_at = result['item_expires_at']
+        case_id = result['case_id']
+        case_status = result['case_status']
+        case_close_at = result['case_close_at']
 
-        if status == 'claimed' and expires_at:
-            expires_datetime = datetime.fromisoformat(expires_at)
-            if datetime.now() < expires_datetime:
+        if case_id:
+            if case_status == 'retrieved':
+                return False, "Item is no longer available"
+            if case_status == 'claimed' and not _is_timestamp_past(case_close_at):
                 return False, "Item is currently claimed"
+            if case_status not in (None, 'available_to_claim', 'available', 'claimed'):
+                return False, f"Item cannot be claimed while case is {case_status}"
+        else:
+            if item_status == 'claimed' and not _is_timestamp_past(item_expires_at):
+                return False, "Item is currently claimed"
+            if item_status not in (None, 'available', 'claimed'):
+                return False, f"Item cannot be claimed while status is {item_status}"
 
         claimed_at = datetime.now()
-        expires_at_dt = claimed_at + timedelta(minutes=60)
+        claim_expires_at = (claimed_at + timedelta(minutes=CLAIM_DURATION_MINUTES)).isoformat()
+        claimed_at_iso = claimed_at.isoformat()
 
         cursor.execute(
             '''
@@ -438,12 +551,28 @@ def claim_item(item_id, claimed_by_collector_id):
             WHERE item_id = ?
             ''',
             (
-                claimed_at.isoformat(),
+                claimed_at_iso,
                 claimed_by_collector_id,
-                expires_at_dt.isoformat(),
+                claim_expires_at,
                 item_id,
             ),
         )
+
+        if case_id:
+            cursor.execute(
+                '''
+                UPDATE "Case"
+                SET status = 'claimed',
+                    case_close_at = ?,
+                    reciver_id = ?
+                WHERE case_id = ?
+                ''',
+                (
+                    claim_expires_at,
+                    claimed_by_collector_id,
+                    case_id,
+                ),
+            )
 
         conn.commit()
 
@@ -453,11 +582,56 @@ def claim_item(item_id, claimed_by_collector_id):
             print(f"Warning: update_collector_stats skipped due to: {e}")
         return True, "Item claimed successfully"
 
+
 def release_expired_claims():
-    """Release claims that have expired (older than 1 hour)."""
+    """Release claims that have expired for both legacy items and new cases."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         current_time = datetime.now().isoformat()
+
+        cursor.execute(
+            '''
+            SELECT case_id, item_id FROM "Case"
+            WHERE status = 'claimed'
+              AND case_close_at IS NOT NULL
+              AND datetime(case_close_at) < datetime(?)
+            ''',
+            (current_time,),
+        )
+        expired_rows = cursor.fetchall()
+
+        case_ids = {row['case_id'] for row in expired_rows if row['case_id'] is not None}
+        item_ids = {row['item_id'] for row in expired_rows if row['item_id'] is not None}
+
+        if case_ids:
+            placeholders = ', '.join('?' for _ in case_ids)
+            cursor.execute(
+                f'''
+                UPDATE "Case"
+                SET status = 'available_to_claim',
+                    case_close_at = NULL,
+                    reciver_id = NULL
+                WHERE case_id IN ({placeholders})
+                ''',
+                tuple(case_ids),
+            )
+
+        released_count = len(case_ids)
+
+        if item_ids:
+            placeholders = ', '.join('?' for _ in item_ids)
+            cursor.execute(
+                f'''
+                UPDATE Item
+                SET status = 'available',
+                    claimed_at = NULL,
+                    claimed_user_id = NULL,
+                    expires_at = NULL
+                WHERE item_id IN ({placeholders})
+                ''',
+                tuple(item_ids),
+            )
+
         cursor.execute(
             '''
             UPDATE Item
@@ -465,12 +639,19 @@ def release_expired_claims():
                 claimed_at = NULL,
                 claimed_user_id = NULL,
                 expires_at = NULL
-            WHERE status = 'claimed' AND expires_at IS NOT NULL AND datetime(expires_at) < datetime(?)
+            WHERE status = 'claimed'
+              AND expires_at IS NOT NULL
+              AND datetime(expires_at) < datetime(?)
+              AND item_id NOT IN (
+                    SELECT item_id FROM "Case" WHERE item_id IS NOT NULL
+                )
             ''',
             (current_time,),
         )
+
+        legacy_count = cursor.rowcount
         conn.commit()
-        return cursor.rowcount
+        return released_count + legacy_count
 
 def delete_item(filename):
     """Delete an item from the Item table."""
