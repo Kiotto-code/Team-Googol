@@ -2,7 +2,7 @@
 
 Simple FastAPI backend + Jinja2 frontend served from the same server, using SQLite.
 
-## Run locally
+## Run locally (Python 3.10.12)
 
 ```bash
 python -m venv .venv
