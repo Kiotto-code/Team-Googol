@@ -1,0 +1,40 @@
+nohup: ignoring input
+INFO:__main__:Starting FINDR server on port 5000
+INFO:__main__:Debug mode: True
+Database initialized with new schema
+ * Serving Flask app 'app'
+ * Debug mode: on
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.30.76.133:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+INFO:__main__:Starting FINDR server on port 5000
+INFO:__main__:Debug mode: True
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 430-456-843
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:49:54] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:49:54] "GET /api/stats HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:49:54] "[33mPOST /api/users HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:49:54] "[32mGET /api/items HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:49:54] "GET /api/items/ HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:50:30] "[35m[1mPOST /api/auth/register HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:50:45] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:50:45] "GET /api/stats HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:50:45] "[33mPOST /api/users HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:50:45] "[32mGET /api/items HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:50:45] "GET /api/items/ HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:05] "[32mGET /api/boxes HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:13] "GET /api/boxes/ HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:19] "GET /api/cases/ HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:56] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:56] "GET /api/stats HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:56] "[33mPOST /api/users HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:56] "[32mGET /api/items HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:51:56] "GET /api/items/ HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:52:46] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:52:46] "GET /api/stats HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:52:46] "[35m[1mPOST /api/auth/register HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:52:46] "[32mGET /api/items HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [14/Oct/2025 09:52:46] "GET /api/items/ HTTP/1.1" 200 -
