@@ -16,6 +16,11 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: Optional[str] = None
+    
+
+class UserLogin(BaseModel):
+    student_id: str
+    password: str
 
 
 class UserRead(UserBase):
@@ -28,6 +33,7 @@ class UserRead(UserBase):
 
 # Item Schemas
 class ItemBase(BaseModel):
+    gemini_description:Optional[str] = None
     description: Optional[str] = None
     image_url: Optional[str] = None
     image_embedding: Optional[str] = None
