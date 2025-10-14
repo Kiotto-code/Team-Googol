@@ -4,7 +4,7 @@ Item management routes for FINDR system.
 """
 
 from flask import Blueprint, request, jsonify
-from database_new import (
+from database import (
     create_item, get_item_by_id, get_all_items, get_items_by_status,
     get_items_by_finder, update_item_status, search_items_by_text
 )

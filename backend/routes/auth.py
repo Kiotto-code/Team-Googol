@@ -4,7 +4,7 @@ Authentication routes for FINDR system.
 """
 
 from flask import Blueprint, request, jsonify, session
-from database_new import (
+from database import (
     authenticate_user, create_user, get_user_by_email, 
     get_user_by_rfid, get_user_by_student_id
 )

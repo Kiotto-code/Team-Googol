@@ -4,7 +4,7 @@ Case management routes for FINDR system.
 """
 
 from flask import Blueprint, request, jsonify
-from database_new import (
+from database import (
     create_case, get_case_by_id, get_all_cases, get_cases_by_status,
     get_cases_by_box, update_case, claim_case
 )

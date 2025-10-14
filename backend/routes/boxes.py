@@ -4,7 +4,7 @@ Box management routes for FINDR system.
 """
 
 from flask import Blueprint, request, jsonify
-from database_new import (
+from database import (
     create_box, get_box_by_id, get_all_boxes, get_boxes_by_status,
     update_box, get_cases_by_box
 )

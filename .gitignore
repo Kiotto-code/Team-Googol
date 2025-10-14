@@ -1,6 +1,6 @@
 .venv
 .venv_wsl
-venv
+venv*
 uploads/
 esp32_uploads/
 data.json
@@ -18,4 +18,4 @@ tests/
 docs/
 GUIDANCE/
 *.md
-.env
+test_*

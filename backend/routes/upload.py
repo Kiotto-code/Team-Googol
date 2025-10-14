@@ -1,80 +1,325 @@
-import os
+#!/usr/bin/env python3
+"""
+File upload routes for FINDR system.
+"""
+
 from flask import Blueprint, request, jsonify
+import os
+import uuid
 from werkzeug.utils import secure_filename
-from clip_utils import get_image_embedding, get_text_embedding, save_data, image_data, UPLOAD_FOLDER
-from caption_utils import generate_caption_with_gemini
-from upload_utils import is_lighting_good, check_framing
-from database import add_found_item
+import logging
 
 upload_bp = Blueprint('upload', __name__)
+logger = logging.getLogger(__name__)
 
-@upload_bp.route('/upload', methods=['POST'])
+# Upload configuration
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'}
+MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
+
+# Ensure upload directory exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    """Check if file extension is allowed."""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def generate_unique_filename(filename):
+    """Generate a unique filename while preserving extension."""
+    if '.' in filename:
+        name, ext = filename.rsplit('.', 1)
+        return f"{uuid.uuid4().hex}.{ext.lower()}"
+    else:
+        return f"{uuid.uuid4().hex}"
+
+@upload_bp.route('/image', methods=['POST'])
 def upload_image():
-    if 'image' not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
-
-    file = request.files['image']
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(filepath)
-    
-    # Lighting check
-    good, brightness, contrast = is_lighting_good(filepath)
-    if not good:
-        os.remove(filepath)
-        return jsonify({
-            "error": "Lighting is not good enough, please re-upload.",
-            "brightness": brightness,
-            "contrast": contrast
-        }), 400
-        
-    # Framing check (need to test more)
-    # framing_good, framing_msg = check_framing(filepath)
-    # if not framing_good:
-    #     os.remove(filepath)
-    #     return jsonify({
-    #         "error": "Framing issue: " + framing_msg,
-    #     }), 400
-
-
-    # User optional description
-    description = request.form.get('description', "")
-
-    # --- Generate caption with Gemini ---
-    # custom_prompt = "Describe item: color, type, material, unique features. Be concise, no filler."
-    custom_prompt = "Output as: Color: <…>; Type: <…>; Material: <…>; Features: <…>; Optional: Brand/Markings: <…>."
-    gemini_caption = generate_caption_with_gemini(filepath, prompt=custom_prompt)
-
-    # Combine user description and Gemini caption
-    combined_caption = description + ". " + gemini_caption if description else gemini_caption
-
-    # Compute embeddings
-    img_emb = get_image_embedding(filepath).detach().cpu().numpy().flatten().tolist()
-    desc_emb = get_text_embedding(combined_caption).detach().cpu().numpy().flatten().tolist()
-
-    # Store in memory
-    # image_data[filename] = {
-    #     "image_embedding": img_emb,
-    #     "description": description,
-    #     "gemini_caption": gemini_caption,
-    #     "description_embedding": desc_emb
-    # }
-    # save_data()
-
-
+    """Upload an image file."""
     try:
-        # Save to database
-        item_id = add_found_item(filename, img_emb, description, desc_emb)
+        # Check if file is in request
+        if 'file' not in request.files:
+            return jsonify({
+                'status': 'error',
+                'message': 'No file provided'
+            }), 400
+        
+        file = request.files['file']
+        
+        # Check if file is selected
+        if file.filename == '':
+            return jsonify({
+                'status': 'error',
+                'message': 'No file selected'
+            }), 400
+        
+        # Check file size
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({
+                'status': 'error',
+                'message': f'File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB'
+            }), 400
+        
+        # Check if file extension is allowed
+        if not allowed_file(file.filename):
+            return jsonify({
+                'status': 'error',
+                'message': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'
+            }), 400
+        
+        # Generate unique filename
+        original_filename = secure_filename(file.filename)
+        unique_filename = generate_unique_filename(original_filename)
+        file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+        
+        # Save file
+        file.save(file_path)
+        
+        # Create file URL (relative to the backend)
+        file_url = f'/uploads/{unique_filename}'
+        
         return jsonify({
-                "message": "Image uploaded successfully", 
-                "filename": filename,
-                "description": description,
-                "gemini_caption": gemini_caption,
-                "item_id": item_id
-            }), 200
-            
+            'status': 'success',
+            'message': 'File uploaded successfully',
+            'data': {
+                'filename': unique_filename,
+                'original_filename': original_filename,
+                'file_url': file_url,
+                'file_size': file_size,
+                'file_path': file_path
+            }
+        })
+    
     except Exception as e:
-            # Remove uploaded file if database save fails
-            if os.path.exists(filepath):
-                os.remove(filepath)
-            return jsonify({"error": f"Failed to save item: {str(e)}"}), 500
+        logger.error(f"Error uploading image: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to upload image',
+            'error': str(e)
+        }), 500
+
+@upload_bp.route('/multiple', methods=['POST'])
+def upload_multiple_images():
+    """Upload multiple image files."""
+    try:
+        # Check if files are in request
+        if 'files' not in request.files:
+            return jsonify({
+                'status': 'error',
+                'message': 'No files provided'
+            }), 400
+        
+        files = request.files.getlist('files')
+        
+        if not files or (len(files) == 1 and files[0].filename == ''):
+            return jsonify({
+                'status': 'error',
+                'message': 'No files selected'
+            }), 400
+        
+        uploaded_files = []
+        errors = []
+        
+        for file in files:
+            try:
+                # Check file size
+                file.seek(0, os.SEEK_END)
+                file_size = file.tell()
+                file.seek(0)
+                
+                if file_size > MAX_FILE_SIZE:
+                    errors.append({
+                        'filename': file.filename,
+                        'error': f'File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB'
+                    })
+                    continue
+                
+                # Check if file extension is allowed
+                if not allowed_file(file.filename):
+                    errors.append({
+                        'filename': file.filename,
+                        'error': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'
+                    })
+                    continue
+                
+                # Generate unique filename
+                original_filename = secure_filename(file.filename)
+                unique_filename = generate_unique_filename(original_filename)
+                file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+                
+                # Save file
+                file.save(file_path)
+                
+                # Create file URL
+                file_url = f'/uploads/{unique_filename}'
+                
+                uploaded_files.append({
+                    'filename': unique_filename,
+                    'original_filename': original_filename,
+                    'file_url': file_url,
+                    'file_size': file_size,
+                    'file_path': file_path
+                })
+                
+            except Exception as file_error:
+                errors.append({
+                    'filename': file.filename,
+                    'error': str(file_error)
+                })
+        
+        return jsonify({
+            'status': 'success' if uploaded_files else 'error',
+            'message': f'Uploaded {len(uploaded_files)} files successfully',
+            'data': {
+                'uploaded_files': uploaded_files,
+                'errors': errors,
+                'uploaded_count': len(uploaded_files),
+                'error_count': len(errors)
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"Error uploading multiple images: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to upload images',
+            'error': str(e)
+        }), 500
+
+@upload_bp.route('/info/<filename>', methods=['GET'])
+def get_file_info(filename):
+    """Get information about an uploaded file."""
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, secure_filename(filename))
+        
+        if not os.path.exists(file_path):
+            return jsonify({
+                'status': 'error',
+                'message': 'File not found'
+            }), 404
+        
+        file_stats = os.stat(file_path)
+        file_url = f'/uploads/{filename}'
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'filename': filename,
+                'file_url': file_url,
+                'file_size': file_stats.st_size,
+                'created_at': file_stats.st_ctime,
+                'modified_at': file_stats.st_mtime,
+                'file_path': file_path
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"Error getting file info for {filename}: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to get file information',
+            'error': str(e)
+        }), 500
+
+@upload_bp.route('/list', methods=['GET'])
+def list_uploaded_files():
+    """List all uploaded files."""
+    try:
+        files = []
+        
+        for filename in os.listdir(UPLOAD_FOLDER):
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            
+            if os.path.isfile(file_path):
+                file_stats = os.stat(file_path)
+                file_url = f'/uploads/{filename}'
+                
+                files.append({
+                    'filename': filename,
+                    'file_url': file_url,
+                    'file_size': file_stats.st_size,
+                    'created_at': file_stats.st_ctime,
+                    'modified_at': file_stats.st_mtime
+                })
+        
+        # Sort by creation time (newest first)
+        files.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        return jsonify({
+            'status': 'success',
+            'data': files,
+            'count': len(files)
+        })
+    
+    except Exception as e:
+        logger.error(f"Error listing uploaded files: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to list uploaded files',
+            'error': str(e)
+        }), 500
+
+@upload_bp.route('/delete/<filename>', methods=['DELETE'])
+def delete_file(filename):
+    """Delete an uploaded file."""
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, secure_filename(filename))
+        
+        if not os.path.exists(file_path):
+            return jsonify({
+                'status': 'error',
+                'message': 'File not found'
+            }), 404
+        
+        os.remove(file_path)
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'File deleted successfully',
+            'filename': filename
+        })
+    
+    except Exception as e:
+        logger.error(f"Error deleting file {filename}: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to delete file',
+            'error': str(e)
+        }), 500
+
+@upload_bp.route('/stats', methods=['GET'])
+def get_upload_stats():
+    """Get upload statistics."""
+    try:
+        files = os.listdir(UPLOAD_FOLDER)
+        file_count = len([f for f in files if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))])
+        
+        total_size = 0
+        for filename in files:
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            if os.path.isfile(file_path):
+                total_size += os.path.getsize(file_path)
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'total_files': file_count,
+                'total_size_bytes': total_size,
+                'total_size_mb': round(total_size / (1024 * 1024), 2),
+                'upload_folder': UPLOAD_FOLDER,
+                'allowed_extensions': list(ALLOWED_EXTENSIONS),
+                'max_file_size_mb': MAX_FILE_SIZE // (1024 * 1024)
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"Error getting upload stats: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to get upload statistics',
+            'error': str(e)
+        }), 500
