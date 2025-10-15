@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from .. import models, schemas
 
-router = APIRouter(prefix="/boxes", tags=["boxes"])
+router = APIRouter(prefix="/api/v1/admin/boxes", tags=["admin-boxes"])
 
 
 @router.post("/", response_model=schemas.BoxRead)

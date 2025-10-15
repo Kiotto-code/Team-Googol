@@ -1,7 +1,6 @@
 import os
 import json
 from fastapi import APIRouter, Depends, UploadFile, Form, HTTPException
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from werkzeug.utils import secure_filename
 
@@ -11,11 +10,13 @@ from ..utils.clip_utils import get_image_embedding, get_text_embedding, UPLOAD_F
 from ..utils.upload_utils import is_lighting_good
 from ..utils.caption_utils import generate_caption_with_gemini
 
-router = APIRouter(prefix="/items", tags=["items"])
+admin_router = APIRouter(prefix="/api/v1/admin/items", tags=["admin-items"])
+public_router = APIRouter(prefix="/api/v1/items", tags=["items"])
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@router.post("/", response_model=schemas.ItemRead)
+
+@admin_router.post("/", response_model=schemas.ItemRead)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
     db_item = models.Item(**item.model_dump(exclude_unset=True))
     db.add(db_item)
@@ -24,11 +25,21 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
     return db_item
 
 
-@router.get("/", response_model=list[schemas.ItemRead])
-def list_items(db: Session = Depends(get_db)):
+def _list_items(db: Session) -> list[models.Item]:
     return db.query(models.Item).order_by(models.Item.item_id.desc()).all()
 
-@router.post("/upload", response_model=schemas.ItemRead)
+
+@admin_router.get("/", response_model=list[schemas.ItemRead])
+def list_items(db: Session = Depends(get_db)):
+    return _list_items(db)
+
+
+@public_router.get("/", response_model=list[schemas.ItemRead])
+def list_items_public(db: Session = Depends(get_db)):
+    return _list_items(db)
+
+
+@admin_router.post("/upload", response_model=schemas.ItemRead)
 async def upload_item(
     image: UploadFile,
     finder_user_id: int = Form(...),
