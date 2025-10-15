@@ -5,7 +5,8 @@ from passlib.context import CryptContext
 from ..db import get_db
 from .. import models, schemas
 
-router = APIRouter(prefix="/users", tags=["users"])
+admin_router = APIRouter(prefix="/api/v1/admin/users", tags=["admin-users"])
+public_router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -14,7 +15,7 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-@router.post("/", response_model=schemas.UserRead)
+@admin_router.post("/", response_model=schemas.UserRead)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     # Check unique constraints
     if user.email:
@@ -34,7 +35,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         rfid_tag=user.rfid_tag,
         items_found=user.items_found or 0,
         items_find=user.items_find or 0,
-    role=user.role if hasattr(user, 'role') and user.role else 'user',
+        role=user.role if hasattr(user, "role") and user.role else "user",
         password=get_password_hash(user.password) if user.password else None,
     )
     db.add(db_user)
@@ -43,20 +44,16 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.get("/", response_model=list[schemas.UserRead])
+@admin_router.get("/", response_model=list[schemas.UserRead])
 def list_users(db: Session = Depends(get_db)):
     return db.query(models.User).order_by(models.User.user_id.desc()).all()
-
-# Utility functions
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
 # /register endpoint
-@router.post("/register", response_model=schemas.UserRead)
+@public_router.post("/register", response_model=schemas.UserRead)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     # Check if student ID already registered
     existing = db.query(models.User).filter(models.User.student_id == user.student_id).first()
@@ -88,7 +85,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         rfid_tag=user.rfid_tag,
         items_found=user.items_found or 0,
         items_find=user.items_find or 0,
-    role=user.role if hasattr(user, 'role') and user.role else 'user',
+        role=user.role if hasattr(user, "role") and user.role else "user",
         password=hashed_password,
     )
     db.add(db_user)
@@ -96,10 +93,10 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-@router.post("/login")
+@public_router.post("/login")
 def login_user(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.student_id == credentials.student_id).first()
-    
+
     if not user or not verify_password(credentials.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
