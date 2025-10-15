@@ -186,6 +186,73 @@ class BulkStatusUpdateResponse(BaseModel):
     result: BulkStatusUpdateResult
 
 
+# Reporting schemas
+class OverviewUsersMetrics(BaseModel):
+    total: int
+    active: int
+    disabled: int
+    deleted: int
+
+
+class OverviewItemsMetrics(BaseModel):
+    total: int
+    deleted: int
+    by_status: dict[str, int]
+
+
+class OverviewCasesMetrics(BaseModel):
+    total: int
+    open: int
+    closed: int
+    closed_last_30_days: int
+    average_resolution_hours: float | None = None
+
+
+class OverviewBoxesMetrics(BaseModel):
+    total: int
+    available: int
+    unavailable: int
+    unknown: int
+    with_active_cases: int
+    average_load: float | None = None
+    doors_open: int
+
+
+class OverviewReport(BaseModel):
+    generated_at: datetime
+    users: OverviewUsersMetrics
+    items: OverviewItemsMetrics
+    cases: OverviewCasesMetrics
+    boxes: OverviewBoxesMetrics
+
+
+class BoxUtilizationEntry(BaseModel):
+    box_id: int
+    location: Optional[str] = None
+    status: Optional[bool] = None
+    load: Optional[int] = None
+    door_status: Optional[bool] = None
+    last_accessed: Optional[datetime] = None
+    total_cases: int
+    active_cases: int
+    utilization_rate: Optional[float] = None
+
+
+class BoxUtilizationTotals(BaseModel):
+    total_boxes: int
+    active_boxes: int
+    doors_open: int
+    total_cases: int
+    active_cases: int
+    average_load: Optional[float] = None
+
+
+class BoxUtilizationReport(BaseModel):
+    generated_at: datetime
+    totals: BoxUtilizationTotals
+    boxes: list[BoxUtilizationEntry]
+
+
 # Box Schemas
 class BoxBase(BaseModel):
     status: Optional[bool] = None
