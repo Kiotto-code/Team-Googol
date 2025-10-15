@@ -53,11 +53,11 @@ def create_box(
     db_box = models.Box(**box.model_dump(exclude_unset=True))
     db.add(db_box)
     db.flush()
-    audit_service.record_audit(
+    audit_service.log_box_event(
         db,
         actor_id=current_user.user_id,
-        action="box.create",
-        payload={"box_id": db_box.box_id},
+        action="create",
+        box_id=db_box.box_id,
     )
     db.commit()
     db.refresh(db_box)
@@ -144,13 +144,13 @@ def update_box(
 
     box.last_accessed = datetime.utcnow()
 
-    audit_service.record_audit(
+    audit_service.log_box_event(
         db,
         actor_id=current_user.user_id,
-        action="box.update",
-        payload={
-            "box_id": box.box_id,
-            "changes": {k: {"from": v[0], "to": v[1]} for k, v in changed_fields.items()},
+        action="update",
+        box_id=box.box_id,
+        metadata={
+            "changes": {k: {"from": v[0], "to": v[1]} for k, v in changed_fields.items()}
         },
     )
     db.commit()
@@ -248,11 +248,12 @@ async def _handle_idempotent_action(
         response_body=response_model.model_dump(),
     )
 
-    audit_service.record_audit(
+    audit_service.log_box_event(
         db,
         actor_id=audit_actor.user_id,
-        action=f"box.{action}",
-        payload={"box_id": box.box_id, "result": result},
+        action=action,
+        box_id=box.box_id,
+        metadata={"result": result},
     )
     db.commit()
 

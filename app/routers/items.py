@@ -91,11 +91,12 @@ def create_item(
     db.add(db_item)
     db.flush()
 
-    audit_service.record_audit(
+    audit_service.log_item_event(
         db,
         actor_id=current_admin.user_id,
-        action="create_item",
-        payload={"item_id": db_item.item_id, "status": db_item.status},
+        action="create",
+        item_id=db_item.item_id,
+        metadata={"status": db_item.status},
     )
 
     refresh_image, refresh_description = _should_refresh_embeddings(
@@ -234,11 +235,12 @@ def update_item(
         setattr(item, field, value)
     item.updated_at = datetime.utcnow()
 
-    audit_service.record_audit(
+    audit_service.log_item_event(
         db,
         actor_id=current_admin.user_id,
-        action="update_item",
-        payload={"item_id": item.item_id, "changes": updates},
+        action="update",
+        item_id=item.item_id,
+        metadata={"changes": updates},
     )
 
     refresh_image, refresh_description = _should_refresh_embeddings(updates.keys())
@@ -271,11 +273,12 @@ def delete_item(
     if previous_status != "archived":
         item.status = "archived"
 
-    audit_service.record_audit(
+    audit_service.log_item_event(
         db,
         actor_id=current_admin.user_id,
-        action="delete_item",
-        payload={"item_id": item.item_id, "previous_status": previous_status},
+        action="delete",
+        item_id=item.item_id,
+        metadata={"previous_status": previous_status},
     )
 
     db.add(item)
@@ -400,11 +403,11 @@ def bulk_update_status(
         db.add(item)
 
     if updated_ids:
-        audit_service.record_audit(
+        audit_service.log_item_event(
             db,
             actor_id=current_admin.user_id,
-            action="bulk_expire_items",
-            payload={"item_ids": updated_ids, "status": payload.status},
+            action="bulk_update_status",
+            metadata={"item_ids": updated_ids, "status": payload.status},
         )
 
     db.commit()
@@ -464,11 +467,12 @@ async def upload_item(
     db.add(new_item)
     db.flush()
 
-    audit_service.record_audit(
+    audit_service.log_item_event(
         db,
         actor_id=current_admin.user_id,
-        action="upload_item",
-        payload={"item_id": new_item.item_id, "finder_user_id": finder_user_id},
+        action="upload",
+        item_id=new_item.item_id,
+        metadata={"finder_user_id": finder_user_id},
     )
 
     db.commit()
