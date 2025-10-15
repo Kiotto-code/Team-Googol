@@ -1,8 +1,7 @@
 from datetime import datetime
+from typing import Any, List, Literal, Optional
+
 from pydantic import BaseModel, EmailStr, Field, model_validator
-from typing import Optional
-from typing import Literal
-from typing import List
 
 
 # User Schemas
@@ -200,11 +199,56 @@ class BoxCreate(BoxBase):
     pass
 
 
+class BoxUpdate(BaseModel):
+    status: Optional[bool] = None
+    location: Optional[str] = None
+    load: Optional[int] = None
+
+    @model_validator(mode="after")
+    def validate_payload(self):
+        if not any(value is not None for value in self.model_dump().values()):
+            raise ValueError("At least one field must be provided for update")
+        return self
+
+
 class BoxRead(BoxBase):
     box_id: int
 
     class Config:
         from_attributes = True
+
+
+class BoxListResponse(BaseModel):
+    items: List[BoxRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class BoxActionResponse(BaseModel):
+    box_id: int
+    action: str
+    message: str
+    status: Optional[bool] = None
+    door_status: Optional[bool] = None
+    telemetry: Optional[dict[str, Any]] = None
+
+
+class BoxTelemetryRead(BaseModel):
+    telemetry_id: int
+    box_id: int
+    recorded_at: datetime
+    payload: dict[str, Any]
+
+    class Config:
+        from_attributes = True
+
+
+class BoxTelemetryList(BaseModel):
+    items: List[BoxTelemetryRead]
+    total: int
+    limit: int
+    offset: int
 
 
 # Case Schemas

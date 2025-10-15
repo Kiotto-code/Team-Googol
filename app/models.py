@@ -1,12 +1,15 @@
 from datetime import datetime
+from typing import Any
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
+    JSON,
     String,
     Text,
-    CheckConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
@@ -79,6 +82,9 @@ class Box(Base):
 
     # Relationships
     cases: Mapped[list["Case"]] = relationship(back_populates="box")
+    telemetry_entries: Mapped[list["BoxTelemetry"]] = relationship(
+        back_populates="box", cascade="all, delete-orphan"
+    )
 
 
 class Case(Base):
@@ -124,3 +130,28 @@ class AuditLog(Base):
 
     actor: Mapped[User] = relationship(foreign_keys=[actor_user_id])
     target: Mapped[User | None] = relationship(foreign_keys=[target_user_id])
+
+
+class BoxTelemetry(Base):
+    __tablename__ = "box_telemetry"
+
+    telemetry_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    box_id: Mapped[int] = mapped_column(Integer, ForeignKey("boxes.box_id"), index=True)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+    box: Mapped[Box] = relationship(back_populates="telemetry_entries")
+
+
+class IdempotencyKey(Base):
+    __tablename__ = "idempotency_keys"
+    __table_args__ = (
+        UniqueConstraint("scope", "key", name="uq_idempotency_scope_key"),
+    )
+
+    idempotency_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    scope: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    key: Mapped[str] = mapped_column(String, nullable=False)
+    response_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    response_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
