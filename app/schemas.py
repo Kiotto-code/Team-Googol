@@ -259,6 +259,7 @@ class CaseBase(BaseModel):
     item_id: Optional[int] = None
     status: Optional[str] = None
     case_close_at: Optional[datetime] = None
+    remarks: Optional[str] = None
 
 
 class CaseCreate(CaseBase):
@@ -268,6 +269,37 @@ class CaseCreate(CaseBase):
 class CaseRead(CaseBase):
     found_id: int
     created_at: datetime
+    deleted_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class CaseListResponse(BaseModel):
+    items: List[CaseRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class CaseUpdate(BaseModel):
+    remarks: Optional[str] = None
+
+
+class CaseClaimRequest(BaseModel):
+    reciver_id: int
+    reciver_image_url: Optional[str] = None
+    remarks: Optional[str] = None
+
+
+class CaseRetrieveRequest(BaseModel):
+    remarks: Optional[str] = None
+    reciver_id: Optional[int] = None
+
+
+class CaseExpireRequest(BaseModel):
+    remarks: Optional[str] = None
+
+
+class CaseForfeitRequest(BaseModel):
+    remarks: Optional[str] = None

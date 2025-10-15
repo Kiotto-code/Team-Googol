@@ -97,7 +97,9 @@ class Case(Base):
     item_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("items.item_id"), nullable=True)
     status: Mapped[str | None] = mapped_column(String, nullable=True)
     case_close_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     box: Mapped[Box | None] = relationship(back_populates="cases")

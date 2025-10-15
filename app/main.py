@@ -33,6 +33,12 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE items ADD COLUMN updated_at DATETIME"))
     if "deleted_at" not in item_columns:
         conn.execute(text("ALTER TABLE items ADD COLUMN deleted_at DATETIME"))
+    result = conn.execute(text("PRAGMA table_info(cases)"))
+    case_columns = [row[1] for row in result.fetchall()]
+    if "remarks" not in case_columns:
+        conn.execute(text("ALTER TABLE cases ADD COLUMN remarks TEXT"))
+    if "deleted_at" not in case_columns:
+        conn.execute(text("ALTER TABLE cases ADD COLUMN deleted_at DATETIME"))
     # Ensure check constraint exists (SQLite doesn't support adding named check constraints easily)
     # As a fallback, create a trigger to enforce allowed values on insert/update
     conn.execute(text("DROP TRIGGER IF EXISTS trg_users_role_insert"))
