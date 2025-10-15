@@ -49,6 +49,7 @@ pydantic_core==2.23.4
 Pygments==2.19.2
 python-dotenv==1.1.1
 python-multipart==0.0.9
+python-jose==3.3.0
 PyYAML==6.0.3
 regex==2025.9.18
 rich==14.2.0

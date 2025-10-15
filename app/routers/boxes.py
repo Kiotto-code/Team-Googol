@@ -3,8 +3,13 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from .. import models, schemas
+from ..dependencies.auth import require_roles
 
-router = APIRouter(prefix="/api/v1/admin/boxes", tags=["admin-boxes"])
+router = APIRouter(
+    prefix="/api/v1/admin/boxes",
+    tags=["admin-boxes"],
+    dependencies=[Depends(require_roles("admin", "staff"))],
+)
 
 
 @router.post("/", response_model=schemas.BoxRead)

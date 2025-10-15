@@ -6,11 +6,16 @@ from werkzeug.utils import secure_filename
 
 from ..db import get_db
 from .. import models, schemas
+from ..dependencies.auth import require_roles
 from ..utils.clip_utils import get_image_embedding, get_text_embedding, UPLOAD_FOLDER
 from ..utils.upload_utils import is_lighting_good
 from ..utils.caption_utils import generate_caption_with_gemini
 
-admin_router = APIRouter(prefix="/api/v1/admin/items", tags=["admin-items"])
+admin_router = APIRouter(
+    prefix="/api/v1/admin/items",
+    tags=["admin-items"],
+    dependencies=[Depends(require_roles("admin", "staff"))],
+)
 public_router = APIRouter(prefix="/api/v1/items", tags=["items"])
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
