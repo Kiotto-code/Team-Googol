@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from typing import Literal
 
 
 # User Schemas
@@ -12,6 +13,7 @@ class UserBase(BaseModel):
     rfid_tag: Optional[str] = None
     items_found: Optional[int] = 0
     items_find: Optional[int] = 0
+    role: Literal['user','admin'] = 'user'
 
 
 class UserCreate(UserBase):

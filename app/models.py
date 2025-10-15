@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, CheckConstraint
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from .db import Base
@@ -7,6 +7,9 @@ from .db import Base
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint("role IN ('user','admin')", name="ck_users_role_allowed"),
+    )
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -17,6 +20,8 @@ class User(Base):
     rfid_tag: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     items_found: Mapped[int | None] = mapped_column(Integer, default=0)
     items_find: Mapped[int | None] = mapped_column(Integer, default=0)
+    # 'user' or 'admin'
+    role: Mapped[str] = mapped_column(String, nullable=False, default="user")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships

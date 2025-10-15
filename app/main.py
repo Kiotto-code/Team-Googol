@@ -4,10 +4,50 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 from .db import engine, Base
+from sqlalchemy import text
 from .routers import users, items, boxes, cases
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
+
+# Lightweight migration for existing DBs: add users.role if missing
+with engine.connect() as conn:
+    # Check if 'role' column exists in 'users'
+    result = conn.execute(text("PRAGMA table_info(users)"))
+    columns = [row[1] for row in result.fetchall()]
+    if "role" not in columns:
+        # Add the column with default 'user' and NOT NULL
+        conn.execute(text("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'"))
+    # Ensure check constraint exists (SQLite doesn't support adding named check constraints easily)
+    # As a fallback, create a trigger to enforce allowed values on insert/update
+    triggers = conn.execute(text("SELECT name FROM sqlite_master WHERE type='trigger' AND name IN ('trg_users_role_insert','trg_users_role_update')")).fetchall()
+    trigger_names = {row[0] for row in triggers}
+    if 'trg_users_role_insert' not in trigger_names:
+        conn.execute(text(
+            """
+            CREATE TRIGGER IF NOT EXISTS trg_users_role_insert
+            BEFORE INSERT ON users
+            FOR EACH ROW
+            BEGIN
+                SELECT CASE WHEN NEW.role NOT IN ('user','admin') THEN
+                    RAISE(ABORT, 'Invalid role value')
+                END;
+            END;
+            """
+        ))
+    if 'trg_users_role_update' not in trigger_names:
+        conn.execute(text(
+            """
+            CREATE TRIGGER IF NOT EXISTS trg_users_role_update
+            BEFORE UPDATE OF role ON users
+            FOR EACH ROW
+            BEGIN
+                SELECT CASE WHEN NEW.role NOT IN ('user','admin') THEN
+                    RAISE(ABORT, 'Invalid role value')
+                END;
+            END;
+            """
+        ))
 
 app = FastAPI(
     title="Team-Googol Lost & Found API",
