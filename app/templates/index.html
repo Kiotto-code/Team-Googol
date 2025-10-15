@@ -3,25 +3,237 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Team-Googol Lost & Found</title>
+    <title>Lost &amp; Found Admin Console</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
-    <main>
-      <h1>Lost & Found</h1>
-      <p>Backend: FastAPI + SQLite. Basic endpoints:</p>
-      <ul>
-        <li><a href="/users">GET /users</a></li>
-        <li><a href="/items">GET /items</a></li>
-        <li><a href="/boxes">GET /boxes</a></li>
-        <li><a href="/cases">GET /cases</a></li>
-      </ul>
-      <h2>API Docs</h2>
-      <ul>
-        <li><a href="/docs">Swagger UI (interactive)</a></li>
-        <li><a href="/redoc">ReDoc</a></li>
-      </ul>
-      <p>Use your favorite REST client to POST new records.</p>
-    </main>
+    <noscript>
+      <div class="no-script-warning">
+        JavaScript is required to access the administrative dashboard. Please enable it and reload this page.
+      </div>
+    </noscript>
+
+    <header class="admin-header" role="banner">
+      <div class="brand-group">
+        <div class="brand-mark" aria-hidden="true">LF</div>
+        <div class="brand-copy">
+          <span class="brand-title">Team-Googol</span>
+          <span class="brand-subtitle">Lost &amp; Found Administration</span>
+        </div>
+      </div>
+      <div class="user-menu" aria-live="polite">
+        <div class="user-details">
+          <span class="user-greeting">Welcome,</span>
+          <span class="user-name" id="user-display-name">Administrator</span>
+        </div>
+        <button type="button" id="logout-button" class="ghost-button" aria-label="Log out">
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-shell">
+      <aside class="admin-sidebar" aria-label="Primary navigation">
+        <nav>
+          <ul class="nav-list">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#system-health">System Health</a></li>
+            <li><a href="#metrics">Prometheus Metrics</a></li>
+            <li><a href="#activity">Recent Activity</a></li>
+            <li><a href="#cases">Open Cases</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="admin-main is-hidden" id="dashboard-content">
+        <section class="section" id="overview">
+          <header class="section-header">
+            <div>
+              <h1>Operational Overview</h1>
+              <p class="section-subtitle">Monitor overall system throughput across users, inventory, and casework.</p>
+            </div>
+            <div class="section-meta">
+              <span class="label">Last update</span>
+              <time id="overview-updated-at" class="timestamp" datetime="">—</time>
+            </div>
+          </header>
+
+          <div class="kpi-grid">
+            <article class="kpi-card" aria-live="polite">
+              <h2>Registered Users</h2>
+              <p class="kpi-value" id="data-users-total">—</p>
+              <p class="kpi-caption">Total number of active user accounts.</p>
+            </article>
+            <article class="kpi-card" aria-live="polite">
+              <h2>Catalogued Items</h2>
+              <p class="kpi-value" id="data-items-total">—</p>
+              <p class="kpi-caption">Objects recorded across intake locations.</p>
+            </article>
+            <article class="kpi-card" aria-live="polite">
+              <h2>Open Cases</h2>
+              <p class="kpi-value" id="data-cases-open">—</p>
+              <p class="kpi-caption">Cases pending resolution or follow-up.</p>
+            </article>
+            <article class="kpi-card" aria-live="polite">
+              <h2>Storage Boxes</h2>
+              <p class="kpi-value" id="data-boxes-total">—</p>
+              <p class="kpi-caption">Boxes currently tracked within the warehouse.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="system-health">
+          <header class="section-header">
+            <div>
+              <h2>System Health</h2>
+              <p class="section-subtitle">Service availability and readiness indicators.</p>
+            </div>
+            <div class="section-meta">
+              <span class="label">Status</span>
+              <span id="system-health-status" class="health-indicator is-unknown">Unknown</span>
+            </div>
+          </header>
+          <div class="card">
+            <div class="health-summary">
+              <div class="health-row">
+                <span class="label">Ready check</span>
+                <span id="readyz-status" class="status-copy">Awaiting verification…</span>
+              </div>
+              <div class="health-row">
+                <span class="label">Last ping</span>
+                <time id="readyz-checked-at" class="timestamp" datetime="">—</time>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="metrics">
+          <header class="section-header">
+            <div>
+              <h2>Prometheus Metrics</h2>
+              <p class="section-subtitle">Links to operational dashboards and observability tooling.</p>
+            </div>
+          </header>
+          <div class="card link-panel">
+            <ul class="metrics-links">
+              <li>
+                <a id="metrics-primary-link" href="/metrics" target="_blank" rel="noopener noreferrer">Cluster scrape endpoint</a>
+                <p class="link-caption">Primary Prometheus exposition format.</p>
+              </li>
+              <li>
+                <a id="metrics-admin-link" href="https://prometheus.io/docs/introduction/overview/" target="_blank" rel="noopener noreferrer">Prometheus documentation</a>
+                <p class="link-caption">Reference for querying and alert rules.</p>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="section" id="activity">
+          <header class="section-header">
+            <div>
+              <h2>Recent Activity</h2>
+              <p class="section-subtitle">Highlights from the latest audits and operational updates.</p>
+            </div>
+          </header>
+          <div class="grid two-column">
+            <div class="card">
+              <h3>Operations Timeline</h3>
+              <ul class="activity-list" id="recent-activity-list">
+                <li class="empty-state">No recent events to display.</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Audit Log</h3>
+              <ul class="activity-list" id="audit-log-list">
+                <li class="empty-state">No audit entries recorded.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="cases">
+          <header class="section-header">
+            <div>
+              <h2>Box Utilization</h2>
+              <p class="section-subtitle">Monitor current occupancy and availability across storage boxes.</p>
+            </div>
+            <div class="section-meta">
+              <span class="label">Last update</span>
+              <time id="boxes-updated-at" class="timestamp" datetime="">—</time>
+            </div>
+          </header>
+          <div class="card table-card">
+            <div class="table-responsive">
+              <table class="data-table" aria-describedby="cases">
+                <thead>
+                  <tr>
+                    <th scope="col">Box</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">Capacity</th>
+                    <th scope="col">Utilization</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="boxes-table-body">
+                  <tr class="empty-state-row">
+                    <td colspan="5">Utilization data has not been retrieved.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <header class="section-header subsection">
+            <div>
+              <h2>Open Case Register</h2>
+              <p class="section-subtitle">Detailed view of open cases requiring attention.</p>
+            </div>
+            <div class="section-meta">
+              <span class="label">Last update</span>
+              <time id="cases-updated-at" class="timestamp" datetime="">—</time>
+            </div>
+          </header>
+          <div class="card table-card">
+            <div class="table-responsive">
+              <table class="data-table" aria-describedby="cases">
+                <thead>
+                  <tr>
+                    <th scope="col">Case ID</th>
+                    <th scope="col">Owner</th>
+                    <th scope="col">Priority</th>
+                    <th scope="col">Opened</th>
+                    <th scope="col">Summary</th>
+                  </tr>
+                </thead>
+                <tbody id="open-cases-table-body">
+                  <tr class="empty-state-row">
+                    <td colspan="5">No open cases are currently assigned.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <section id="login-panel" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="login-title" hidden>
+      <form id="admin-login-form" class="auth-card" novalidate>
+        <h2 id="login-title">Administrator Sign-In</h2>
+        <p class="auth-copy">Authenticate to access secure administrative functions.</p>
+        <label class="form-field">
+          <span>Username</span>
+          <input type="text" id="login-username" name="username" autocomplete="username" required />
+        </label>
+        <label class="form-field">
+          <span>Password</span>
+          <input type="password" id="login-password" name="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="primary-button" id="login-submit">Sign in</button>
+        <p id="login-status" class="form-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <script type="module" src="/static/dashboard.js"></script>
   </body>
 </html>
