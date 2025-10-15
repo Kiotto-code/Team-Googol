@@ -19,6 +19,14 @@ with engine.connect() as conn:
     if "role" not in columns:
         # Add the column with default 'user' and NOT NULL
         conn.execute(text("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'"))
+    if "is_disabled" not in columns:
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN is_disabled BOOLEAN NOT NULL DEFAULT 0"
+            )
+        )
+    if "deleted_at" not in columns:
+        conn.execute(text("ALTER TABLE users ADD COLUMN deleted_at DATETIME"))
     # Ensure check constraint exists (SQLite doesn't support adding named check constraints easily)
     # As a fallback, create a trigger to enforce allowed values on insert/update
     conn.execute(text("DROP TRIGGER IF EXISTS trg_users_role_insert"))
