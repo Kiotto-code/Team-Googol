@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
 from typing import Literal
 from typing import List
@@ -125,9 +125,66 @@ class ItemCreate(ItemBase):
 class ItemRead(ItemBase):
     item_id: int
     created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class ItemUpdate(BaseModel):
+    gemini_description: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    finder_user_id: Optional[int] = None
+    finder_img_url: Optional[str] = None
+    status: Optional[str] = None
+
+
+class PaginatedItems(BaseModel):
+    data: List[ItemRead]
+    meta: PaginationMeta
+
+
+class SimilarItemResult(BaseModel):
+    item: ItemRead
+    score: float
+
+
+class SimilarItemSearchRequest(BaseModel):
+    item_id: Optional[int] = None
+    description: Optional[str] = None
+    use_image: bool = False
+    include_deleted: bool = False
+    max_results: int = Field(10, ge=1, le=100)
+    generate_if_missing: bool = True
+
+    @model_validator(mode="after")
+    def validate_query(cls, values: "SimilarItemSearchRequest"):
+        if not values.item_id and not values.description:
+            raise ValueError("Either item_id or description must be provided")
+        return values
+
+
+class SimilarItemsResponse(BaseModel):
+    query_item_id: Optional[int] = None
+    results: List[SimilarItemResult]
+
+
+class BulkStatusUpdateRequest(BaseModel):
+    item_ids: List[int] = Field(..., min_length=1)
+    status: str
+
+
+class BulkStatusUpdateResult(BaseModel):
+    updated_ids: List[int]
+    already_in_status: List[int]
+    not_found_ids: List[int]
+
+
+class BulkStatusUpdateResponse(BaseModel):
+    status: str
+    result: BulkStatusUpdateResult
 
 
 # Box Schemas

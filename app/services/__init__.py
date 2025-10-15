@@ -1,5 +1,5 @@
 """Service layer exports."""
 
-from . import audit, auth
+from . import audit, auth, items
 
-__all__ = ["audit", "auth"]
+__all__ = ["audit", "auth", "items"]
