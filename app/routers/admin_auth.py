@@ -13,7 +13,7 @@ from ..services import auth as auth_service
 
 router = APIRouter(prefix="/api/v1/admin/auth", tags=["admin-auth"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 ADMIN_ALLOWED_ROLES = {"admin", "staff"}
 
 

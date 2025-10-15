@@ -27,7 +27,10 @@ admin_router = APIRouter(
 )
 public_router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+)
 
 
 def get_password_hash(password: str) -> str:

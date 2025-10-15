@@ -128,7 +128,8 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String, nullable=False)
     entity_type: Mapped[str] = mapped_column(String, nullable=False)
     entity_id: Mapped[str | None] = mapped_column(String, nullable=True)
-    metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    # attribute name 'metadata' is reserved in SQLAlchemy; map to column 'metadata'
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     actor: Mapped[User] = relationship(foreign_keys=[actor_user_id])

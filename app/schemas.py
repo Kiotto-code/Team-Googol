@@ -378,7 +378,7 @@ class AuditLogRead(BaseModel):
     action: str
     entity_type: str
     entity_id: Optional[str] = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict, validation_alias="metadata_")
     created_at: datetime
 
     class Config:
