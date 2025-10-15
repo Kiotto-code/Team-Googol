@@ -1,5 +1,13 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, CheckConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    CheckConstraint,
+)
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from .db import Base
@@ -26,6 +34,8 @@ class User(Base):
     # 'user', 'admin', or 'staff'
     role: Mapped[str] = mapped_column(String, nullable=False, default="user")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    is_disabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     found_items: Mapped[list["Item"]] = relationship(
@@ -96,3 +106,17 @@ class RefreshToken(Base):
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user: Mapped[User] = relationship()
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    audit_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    actor_user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=False)
+    target_user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
+    action: Mapped[str] = mapped_column(String, nullable=False)
+    payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    actor: Mapped[User] = relationship(foreign_keys=[actor_user_id])
+    target: Mapped[User | None] = relationship(foreign_keys=[target_user_id])

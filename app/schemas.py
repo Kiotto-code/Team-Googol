@@ -29,6 +29,8 @@ class UserLogin(BaseModel):
 class UserRead(UserBase):
     user_id: int
     created_at: datetime
+    is_disabled: bool
+    deleted_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -36,6 +38,45 @@ class UserRead(UserBase):
 
 class UserRoleUpdate(BaseModel):
     role: Literal["user", "admin", "staff"]
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    phone_number: Optional[int] = None
+    email: Optional[EmailStr] = None
+    student_id: Optional[int] = None
+    rfid_tag: Optional[str] = None
+    items_found: Optional[int] = None
+    items_find: Optional[int] = None
+    role: Optional[Literal["user", "admin", "staff"]] = None
+    is_disabled: Optional[bool] = None
+
+
+class PaginationMeta(BaseModel):
+    page: int
+    limit: int
+    total: int
+    total_pages: int
+
+
+class PaginatedUsers(BaseModel):
+    data: List[UserRead]
+    meta: PaginationMeta
+
+
+class PasswordResetResponse(BaseModel):
+    user_id: int
+    temporary_password: str
+
+
+class UserStats(BaseModel):
+    user_id: int
+    total_found_items: int
+    total_cases_received: int
+    open_cases: int
+    closed_cases: int
+    last_found_item_at: Optional[datetime] = None
+    last_case_received_at: Optional[datetime] = None
 
 
 class AdminLoginRequest(BaseModel):
