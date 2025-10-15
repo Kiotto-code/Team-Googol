@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from .db import engine, Base
 from sqlalchemy import text
 from .routers import audit_logs, users, items, boxes, cases
-from .routers import admin_auth
+from .routers import admin_auth, admin_reports, system
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -91,6 +91,9 @@ openapi_tags = [
     {"name": "admin-boxes", "description": "Administrative storage box management."},
     {"name": "admin-cases", "description": "Administrative case tracking endpoints."},
     {"name": "admin-audit-logs", "description": "Administrative audit log access."},
+    {"name": "system", "description": "Health and readiness probes."},
+    {"name": "admin-metrics", "description": "Administrative monitoring metrics."},
+    {"name": "admin-reports", "description": "Administrative reporting endpoints."},
 ]
 
 app = FastAPI(
@@ -123,3 +126,6 @@ app.include_router(boxes.router)
 app.include_router(boxes.ws_router)
 app.include_router(cases.router)
 app.include_router(audit_logs.router)
+app.include_router(system.router)
+app.include_router(admin_reports.metrics_router)
+app.include_router(admin_reports.reports_router)

@@ -43,6 +43,7 @@ nvidia-nvtx-cu12==12.8.90
 packaging==25.0
 passlib==1.7.4
 pillow==11.3.0
+prometheus-client==0.21.0
 pydantic==2.9.2
 pydantic-settings==2.5.2
 pydantic_core==2.23.4
