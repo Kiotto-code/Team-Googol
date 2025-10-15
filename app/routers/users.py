@@ -4,8 +4,13 @@ from passlib.context import CryptContext
 
 from ..db import get_db
 from .. import models, schemas
+from ..dependencies.auth import require_roles
 
-admin_router = APIRouter(prefix="/api/v1/admin/users", tags=["admin-users"])
+admin_router = APIRouter(
+    prefix="/api/v1/admin/users",
+    tags=["admin-users"],
+    dependencies=[Depends(require_roles("admin", "staff"))],
+)
 public_router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -47,6 +52,24 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @admin_router.get("/", response_model=list[schemas.UserRead])
 def list_users(db: Session = Depends(get_db)):
     return db.query(models.User).order_by(models.User.user_id.desc()).all()
+
+
+@admin_router.post("/{user_id}/role", response_model=schemas.UserRead)
+def update_user_role(
+    user_id: int,
+    payload: schemas.UserRoleUpdate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_roles("admin")),
+):
+    user = db.get(models.User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.role = payload.role
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

@@ -8,7 +8,10 @@ from .db import Base
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
-        CheckConstraint("role IN ('user','admin')", name="ck_users_role_allowed"),
+        CheckConstraint(
+            "role IN ('user','admin','staff')",
+            name="ck_users_role_allowed",
+        ),
     )
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -20,7 +23,7 @@ class User(Base):
     rfid_tag: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     items_found: Mapped[int | None] = mapped_column(Integer, default=0)
     items_find: Mapped[int | None] = mapped_column(Integer, default=0)
-    # 'user' or 'admin'
+    # 'user', 'admin', or 'staff'
     role: Mapped[str] = mapped_column(String, nullable=False, default="user")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -80,3 +83,16 @@ class Case(Base):
     box: Mapped[Box | None] = relationship(back_populates="cases")
     item: Mapped[Item | None] = relationship(back_populates="cases")
     receiver: Mapped[User | None] = relationship()
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    token_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    user: Mapped[User] = relationship()

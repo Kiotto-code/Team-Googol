@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from typing import Literal
+from typing import List
 
 
 # User Schemas
@@ -13,7 +14,7 @@ class UserBase(BaseModel):
     rfid_tag: Optional[str] = None
     items_found: Optional[int] = 0
     items_find: Optional[int] = 0
-    role: Literal['user','admin'] = 'user'
+    role: Literal["user", "admin", "staff"] = "user"
 
 
 class UserCreate(UserBase):
@@ -31,6 +32,37 @@ class UserRead(UserBase):
 
     class Config:
         from_attributes = True
+
+
+class UserRoleUpdate(BaseModel):
+    role: Literal["user", "admin", "staff"]
+
+
+class AdminLoginRequest(BaseModel):
+    identifier: str
+    password: str
+
+
+class TokenPair(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int
+
+
+class AdminAuthResponse(TokenPair):
+    user: UserRead
+    roles: List[str]
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class AdminMeResponse(BaseModel):
+    user: UserRead
+    roles: List[str]
+    permissions: List[str]
 
 
 # Item Schemas

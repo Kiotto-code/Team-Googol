@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from .db import engine, Base
 from sqlalchemy import text
 from .routers import users, items, boxes, cases
+from .routers import admin_auth
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -20,36 +21,39 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'"))
     # Ensure check constraint exists (SQLite doesn't support adding named check constraints easily)
     # As a fallback, create a trigger to enforce allowed values on insert/update
-    triggers = conn.execute(text("SELECT name FROM sqlite_master WHERE type='trigger' AND name IN ('trg_users_role_insert','trg_users_role_update')")).fetchall()
-    trigger_names = {row[0] for row in triggers}
-    if 'trg_users_role_insert' not in trigger_names:
-        conn.execute(text(
+    conn.execute(text("DROP TRIGGER IF EXISTS trg_users_role_insert"))
+    conn.execute(text("DROP TRIGGER IF EXISTS trg_users_role_update"))
+    conn.execute(
+        text(
             """
             CREATE TRIGGER IF NOT EXISTS trg_users_role_insert
             BEFORE INSERT ON users
             FOR EACH ROW
             BEGIN
-                SELECT CASE WHEN NEW.role NOT IN ('user','admin') THEN
+                SELECT CASE WHEN NEW.role NOT IN ('user','admin','staff') THEN
                     RAISE(ABORT, 'Invalid role value')
                 END;
             END;
             """
-        ))
-    if 'trg_users_role_update' not in trigger_names:
-        conn.execute(text(
+        )
+    )
+    conn.execute(
+        text(
             """
             CREATE TRIGGER IF NOT EXISTS trg_users_role_update
             BEFORE UPDATE OF role ON users
             FOR EACH ROW
             BEGIN
-                SELECT CASE WHEN NEW.role NOT IN ('user','admin') THEN
+                SELECT CASE WHEN NEW.role NOT IN ('user','admin','staff') THEN
                     RAISE(ABORT, 'Invalid role value')
                 END;
             END;
             """
-        ))
+        )
+    )
 
 openapi_tags = [
+    {"name": "admin-auth", "description": "Administrative authentication endpoints."},
     {"name": "admin-users", "description": "Administrative user management endpoints."},
     {"name": "users", "description": "Public user registration and login endpoints."},
     {"name": "admin-items", "description": "Administrative item management endpoints."},
@@ -79,6 +83,7 @@ async def index(request: Request):
 
 
 # Include API routers
+app.include_router(admin_auth.router)
 app.include_router(users.admin_router)
 app.include_router(users.public_router)
 app.include_router(items.admin_router)
