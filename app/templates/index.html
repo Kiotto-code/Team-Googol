@@ -10,11 +10,19 @@
     <main>
       <h1>Lost & Found</h1>
       <p>Backend: FastAPI + SQLite. Basic endpoints:</p>
+      <h2>Public API</h2>
       <ul>
-        <li><a href="/users">GET /users</a></li>
-        <li><a href="/items">GET /items</a></li>
-        <li><a href="/boxes">GET /boxes</a></li>
-        <li><a href="/cases">GET /cases</a></li>
+        <li><a href="/api/v1/items">GET /api/v1/items</a></li>
+        <li>POST /api/v1/users/register</li>
+        <li>POST /api/v1/users/login</li>
+      </ul>
+      <h2>Admin API</h2>
+      <ul>
+        <li><a href="/api/v1/admin/users">GET /api/v1/admin/users</a></li>
+        <li><a href="/api/v1/admin/boxes">GET /api/v1/admin/boxes</a></li>
+        <li><a href="/api/v1/admin/cases">GET /api/v1/admin/cases</a></li>
+        <li>POST /api/v1/admin/items (JSON)</li>
+        <li>POST /api/v1/admin/items/upload (multipart)</li>
       </ul>
       <h2>API Docs</h2>
       <ul>

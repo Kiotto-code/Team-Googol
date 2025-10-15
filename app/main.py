@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -69,7 +69,23 @@ async def index(request: Request):
 
 
 # Include API routers
-app.include_router(users.router)
-app.include_router(items.router)
-app.include_router(boxes.router)
-app.include_router(cases.router)
+admin_router = APIRouter(prefix="/api/v1/admin")
+public_router = APIRouter(prefix="/api/v1")
+
+admin_router.include_router(users.admin_router)
+admin_router.include_router(items.admin_router)
+admin_router.include_router(boxes.admin_router)
+admin_router.include_router(cases.admin_router)
+
+if hasattr(users, "public_router"):
+    public_router.include_router(users.public_router)
+if hasattr(items, "public_router"):
+    public_router.include_router(items.public_router)
+if hasattr(boxes, "public_router"):
+    public_router.include_router(boxes.public_router)
+if hasattr(cases, "public_router"):
+    public_router.include_router(cases.public_router)
+
+app.include_router(admin_router)
+if public_router.routes:
+    app.include_router(public_router)
