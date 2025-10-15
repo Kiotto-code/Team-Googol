@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from .. import models, schemas
 
-router = APIRouter(prefix="/cases", tags=["cases"])
+router = APIRouter(prefix="/api/v1/admin/cases", tags=["admin-cases"])
 
 
 @router.post("/", response_model=schemas.CaseRead)

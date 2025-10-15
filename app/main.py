@@ -49,6 +49,15 @@ with engine.connect() as conn:
             """
         ))
 
+openapi_tags = [
+    {"name": "admin-users", "description": "Administrative user management endpoints."},
+    {"name": "users", "description": "Public user registration and login endpoints."},
+    {"name": "admin-items", "description": "Administrative item management endpoints."},
+    {"name": "items", "description": "Public item discovery endpoints."},
+    {"name": "admin-boxes", "description": "Administrative storage box management."},
+    {"name": "admin-cases", "description": "Administrative case tracking endpoints."},
+]
+
 app = FastAPI(
     title="Team-Googol Lost & Found API",
     version="0.1.0",
@@ -56,6 +65,7 @@ app = FastAPI(
         "Simple Lost & Found backend with SQLite. Use Swagger UI at /docs to try endpoints "
         "directly from the browser."
     ),
+    openapi_tags=openapi_tags,
 )
 
 # Static and templates
@@ -69,7 +79,9 @@ async def index(request: Request):
 
 
 # Include API routers
-app.include_router(users.router)
-app.include_router(items.router)
+app.include_router(users.admin_router)
+app.include_router(users.public_router)
+app.include_router(items.admin_router)
+app.include_router(items.public_router)
 app.include_router(boxes.router)
 app.include_router(cases.router)
