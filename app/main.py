@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .db import engine, Base
 from sqlalchemy import text
-from .routers import users, items, boxes, cases
+from .routers import audit_logs, users, items, boxes, cases
 from .routers import admin_auth
 
 # Create DB tables
@@ -39,6 +39,16 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE cases ADD COLUMN remarks TEXT"))
     if "deleted_at" not in case_columns:
         conn.execute(text("ALTER TABLE cases ADD COLUMN deleted_at DATETIME"))
+    result = conn.execute(text("PRAGMA table_info(audit_logs)"))
+    audit_columns = [row[1] for row in result.fetchall()]
+    if audit_columns:
+        if "entity_type" not in audit_columns:
+            conn.execute(text("ALTER TABLE audit_logs ADD COLUMN entity_type TEXT"))
+        if "entity_id" not in audit_columns:
+            conn.execute(text("ALTER TABLE audit_logs ADD COLUMN entity_id TEXT"))
+        if "metadata" not in audit_columns:
+            conn.execute(text("ALTER TABLE audit_logs ADD COLUMN metadata JSON"))
+            conn.execute(text("UPDATE audit_logs SET metadata='{}' WHERE metadata IS NULL"))
     # Ensure check constraint exists (SQLite doesn't support adding named check constraints easily)
     # As a fallback, create a trigger to enforce allowed values on insert/update
     conn.execute(text("DROP TRIGGER IF EXISTS trg_users_role_insert"))
@@ -80,6 +90,7 @@ openapi_tags = [
     {"name": "items", "description": "Public item discovery endpoints."},
     {"name": "admin-boxes", "description": "Administrative storage box management."},
     {"name": "admin-cases", "description": "Administrative case tracking endpoints."},
+    {"name": "admin-audit-logs", "description": "Administrative audit log access."},
 ]
 
 app = FastAPI(
@@ -111,3 +122,4 @@ app.include_router(items.public_router)
 app.include_router(boxes.router)
 app.include_router(boxes.ws_router)
 app.include_router(cases.router)
+app.include_router(audit_logs.router)

@@ -88,12 +88,12 @@ def create_user(
     db.add(db_user)
     db.flush()
 
-    audit_service.record_audit(
+    audit_service.log_user_event(
         db,
         actor_id=current_admin.user_id,
-        action="create_user",
-        target_user_id=db_user.user_id,
-        payload={"email": user.email, "rfid_tag": user.rfid_tag},
+        action="create",
+        user_id=db_user.user_id,
+        metadata={"email": user.email, "rfid_tag": user.rfid_tag},
     )
     db.commit()
     db.refresh(db_user)
@@ -203,12 +203,12 @@ def update_user(
     for field, value in updates.items():
         setattr(user, field, value)
 
-    audit_service.record_audit(
+    audit_service.log_user_event(
         db,
         actor_id=current_admin.user_id,
-        action="update_user",
-        target_user_id=user.user_id,
-        payload=updates,
+        action="update",
+        user_id=user.user_id,
+        metadata=updates,
     )
     db.add(user)
     db.commit()
@@ -230,12 +230,12 @@ def delete_user(
     user.deleted_at = datetime.utcnow()
     user.is_disabled = True
 
-    audit_service.record_audit(
+    audit_service.log_user_event(
         db,
         actor_id=current_admin.user_id,
-        action="soft_delete_user",
-        target_user_id=user.user_id,
-        payload={"deleted_at": user.deleted_at.isoformat()},
+        action="soft_delete",
+        user_id=user.user_id,
+        metadata={"deleted_at": user.deleted_at.isoformat()},
     )
     db.add(user)
     db.commit()
@@ -256,11 +256,11 @@ def reset_user_password(
     temporary_password = secrets.token_urlsafe(12)
     user.password = get_password_hash(temporary_password)
 
-    audit_service.record_audit(
+    audit_service.log_user_event(
         db,
         actor_id=current_admin.user_id,
-        action="reset_user_password",
-        target_user_id=user.user_id,
+        action="reset_password",
+        user_id=user.user_id,
     )
     db.add(user)
     db.commit()
@@ -348,12 +348,12 @@ def update_user_role(
 
     user.role = payload.role
     db.add(user)
-    audit_service.record_audit(
+    audit_service.log_user_event(
         db,
         actor_id=current_admin.user_id,
-        action="update_user_role",
-        target_user_id=user.user_id,
-        payload={"role": payload.role},
+        action="update_role",
+        user_id=user.user_id,
+        metadata={"role": payload.role},
     )
     db.commit()
     db.refresh(user)

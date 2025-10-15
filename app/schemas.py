@@ -303,3 +303,21 @@ class CaseExpireRequest(BaseModel):
 
 class CaseForfeitRequest(BaseModel):
     remarks: Optional[str] = None
+
+
+class AuditLogRead(BaseModel):
+    audit_id: int
+    actor_user_id: int
+    action: str
+    entity_type: str
+    entity_id: Optional[str] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PaginatedAuditLogs(BaseModel):
+    data: List[AuditLogRead]
+    meta: PaginationMeta

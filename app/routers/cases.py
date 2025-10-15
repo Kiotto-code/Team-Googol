@@ -45,11 +45,12 @@ def create_case(
     db_case = models.Case(**payload)
     db.add(db_case)
     db.flush()
-    audit_service.record_audit(
+    audit_service.log_case_event(
         db,
         actor_id=current_user.user_id,
-        action="case.create",
-        payload={"found_id": db_case.found_id, "status": db_case.status},
+        action="create",
+        case_id=db_case.found_id,
+        metadata={"status": db_case.status},
     )
     db.commit()
     db.refresh(db_case)
@@ -126,13 +127,13 @@ def update_case(
     if not changes:
         return case
 
-    audit_service.record_audit(
+    audit_service.log_case_event(
         db,
         actor_id=current_user.user_id,
-        action="case.update",
-        payload={
-            "found_id": case.found_id,
-            "changes": {k: {"from": v[0], "to": v[1]} for k, v in changes.items()},
+        action="update",
+        case_id=case.found_id,
+        metadata={
+            "changes": {k: {"from": v[0], "to": v[1]} for k, v in changes.items()}
         },
     )
     db.commit()
@@ -151,11 +152,11 @@ def delete_case(
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     case.deleted_at = datetime.utcnow()
-    audit_service.record_audit(
+    audit_service.log_case_event(
         db,
         actor_id=current_user.user_id,
-        action="case.delete",
-        payload={"found_id": case.found_id},
+        action="delete",
+        case_id=case.found_id,
     )
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -221,12 +222,12 @@ async def claim_case(
 
     await _open_box(case)
 
-    audit_service.record_audit(
+    audit_service.log_case_event(
         db,
         actor_id=current_user.user_id,
-        action="case.claim",
-        payload={
-            "found_id": case.found_id,
+        action="claim",
+        case_id=case.found_id,
+        metadata={
             "reciver_id": case.reciver_id,
             "box_id": case.box_id,
         },
@@ -253,12 +254,12 @@ async def retrieve_case(
 
     await _close_box(case)
 
-    audit_service.record_audit(
+    audit_service.log_case_event(
         db,
         actor_id=current_user.user_id,
-        action="case.retrieve",
-        payload={
-            "found_id": case.found_id,
+        action="retrieve",
+        case_id=case.found_id,
+        metadata={
             "reciver_id": case.reciver_id,
             "box_id": case.box_id,
         },
@@ -281,11 +282,12 @@ async def expire_case(
 
     await _close_box(case)
 
-    audit_service.record_audit(
+    audit_service.log_case_event(
         db,
         actor_id=current_user.user_id,
-        action="case.expire",
-        payload={"found_id": case.found_id, "box_id": case.box_id},
+        action="expire",
+        case_id=case.found_id,
+        metadata={"box_id": case.box_id},
     )
     db.commit()
     db.refresh(case)
@@ -305,11 +307,12 @@ async def forfeit_case(
 
     await _close_box(case)
 
-    audit_service.record_audit(
+    audit_service.log_case_event(
         db,
         actor_id=current_user.user_id,
-        action="case.forfeit",
-        payload={"found_id": case.found_id, "box_id": case.box_id},
+        action="forfeit",
+        case_id=case.found_id,
+        metadata={"box_id": case.box_id},
     )
     db.commit()
     db.refresh(case)
