@@ -45,6 +45,23 @@ The build artifacts are emitted to `admin-panel/dist`. When that directory exist
 
 Deploy the contents of `admin-panel/dist` alongside the FastAPI app (or behind the same reverse proxy) so requests to `/admin-panel` and `/admin-panel/assets/*` are routed to those static files.
 
+### Running admin panel tests
+
+Vitest and React Testing Library are configured in the SPA workspace. Run the test suite before opening a pull request so CI can reproduce the results:
+
+```bash
+cd admin-panel
+npm install
+npm run test
+```
+
+For iterative development you can use watch mode:
+
+```bash
+cd admin-panel
+npm run test:watch
+```
+
 ## API
 
 - Users: GET/POST /users

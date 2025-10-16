@@ -1,6 +1,7 @@
 import {
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   useReactTable,
   type ColumnDef,
@@ -23,6 +24,7 @@ export interface DataTableProps<TData, TValue> {
   rowSelection?: RowSelectionState
   onRowSelectionChange?: (value: RowSelectionState) => void
   getRowId?: TableOptions<TData>["getRowId"]
+  pageSize?: number
 }
 
 export function DataTable<TData, TValue>({
@@ -33,6 +35,7 @@ export function DataTable<TData, TValue>({
   rowSelection: externalRowSelection,
   onRowSelectionChange,
   getRowId,
+  pageSize = 10,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -54,16 +57,26 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: handleRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getRowId,
     enableRowSelection: true,
+    initialState: { pagination: { pageSize } },
   })
 
   const selectedCount = Object.values(rowSelection ?? {}).filter(Boolean).length
   const hasBulkActions = !!bulkActions && selectedCount > 0
 
-  const headerGroups = useMemo(() => table.getHeaderGroups(), [table, sorting, columnFilters, rowSelection, data])
-  const rowModel = useMemo(() => table.getRowModel(), [table, sorting, columnFilters, rowSelection, data])
+  const { pageIndex, pageSize: currentPageSize } = table.getState().pagination
+
+  const headerGroups = useMemo(
+    () => table.getHeaderGroups(),
+    [table, sorting, columnFilters, rowSelection, data, pageIndex, currentPageSize],
+  )
+  const rowModel = useMemo(
+    () => table.getRowModel(),
+    [table, sorting, columnFilters, rowSelection, data, pageIndex, currentPageSize],
+  )
 
   return (
     <div className={cn("space-y-4", className)}>
