@@ -118,6 +118,18 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.get("/admin-panel", response_class=HTMLResponse)
+async def admin_panel(request: Request):
+    """Render a formal administrative IoT dashboard."""
+
+    return templates.TemplateResponse(
+        "admin_panel.html",
+        {
+            "request": request,
+        },
+    )
+
+
 # Include API routers
 app.include_router(admin_auth.router)
 app.include_router(users.admin_router)
