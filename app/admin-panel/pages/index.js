@@ -1,0 +1,9 @@
+export { dashboardPage } from './dashboard.js';
+export { boxesPage } from './boxes.js';
+export { casesPage } from './cases.js';
+export { itemsPage } from './items.js';
+export { usersPage } from './users.js';
+export { auditLogsPage } from './audit-logs.js';
+export { reportsPage } from './reports.js';
+export { metricsPage } from './metrics.js';
+export { profilePage } from './profile.js';
