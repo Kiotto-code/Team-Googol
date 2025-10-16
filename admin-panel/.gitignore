@@ -9,8 +9,6 @@ lerna-debug.log*
 
 node_modules
 dist
-!admin-panel/dist/
-!admin-panel/dist/**
 dist-ssr
 *.local
 
@@ -24,11 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-*.venv*
-
-.env
-venv
-
-__pycache__/*
-
-*.pyc
