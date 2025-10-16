@@ -110,6 +110,13 @@ app = FastAPI(
 # Static and templates (resolve relative to this file)
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+ADMIN_PANEL_DIR = BASE_DIR / "admin-panel"
+if ADMIN_PANEL_DIR.exists():
+    app.mount(
+        "/admin-panel",
+        StaticFiles(directory=str(ADMIN_PANEL_DIR), html=True),
+        name="admin-panel",
+    )
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
