@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -109,13 +109,33 @@ app = FastAPI(
 
 # Static and templates (resolve relative to this file)
 BASE_DIR = Path(__file__).resolve().parent
+APP_ROOT = BASE_DIR.parent
+ADMIN_PANEL_DIST = APP_ROOT / "admin-panel" / "dist"
+
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+if ADMIN_PANEL_DIST.exists():
+    app.mount(
+        "/admin-panel/assets",
+        StaticFiles(directory=str(ADMIN_PANEL_DIST / "assets")),
+        name="admin-panel-assets",
+    )
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/admin-panel", response_class=HTMLResponse)
+@app.get("/admin-panel/{_full_path:path}", response_class=HTMLResponse)
+async def admin_panel(_full_path: str = ""):
+    if not ADMIN_PANEL_DIST.exists():
+        raise HTTPException(status_code=404, detail="Admin panel has not been built")
+    index_path = ADMIN_PANEL_DIST / "index.html"
+    if not index_path.exists():
+        raise HTTPException(status_code=404, detail="Admin panel entry point is missing")
+    return HTMLResponse(index_path.read_text(encoding="utf-8"))
 
 
 # Include API routers

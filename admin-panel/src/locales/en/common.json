@@ -1,0 +1,33 @@
+{
+  "app": {
+    "title": "Admin Control Center",
+    "welcome": "Welcome back, {{name}}",
+    "timezone": "Timezone",
+    "theme": "Theme",
+    "logout": "Logout",
+    "language": "Language"
+  },
+  "navigation": {
+    "login": "Login",
+    "dashboard": "Dashboard",
+    "boxes": "Boxes",
+    "cases": "Cases",
+    "items": "Items",
+    "users": "Users",
+    "auditLogs": "Audit Logs",
+    "reports": "Reports",
+    "metrics": "Metrics",
+    "health": "Health",
+    "settings": "Settings"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "bulkAction": "Run bulk action"
+  },
+  "feedback": {
+    "auditThanks": "Thank you for the feedback!",
+    "errorBoundary": "Something went wrong. Please refresh the page."
+  }
+}

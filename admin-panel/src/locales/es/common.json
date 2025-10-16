@@ -1,0 +1,33 @@
+{
+  "app": {
+    "title": "Centro de Control",
+    "welcome": "Bienvenido de nuevo, {{name}}",
+    "timezone": "Zona horaria",
+    "theme": "Tema",
+    "logout": "Cerrar sesión",
+    "language": "Idioma"
+  },
+  "navigation": {
+    "login": "Acceder",
+    "dashboard": "Panel",
+    "boxes": "Cajas",
+    "cases": "Casos",
+    "items": "Artículos",
+    "users": "Usuarios",
+    "auditLogs": "Registros",
+    "reports": "Reportes",
+    "metrics": "Métricas",
+    "health": "Salud",
+    "settings": "Ajustes"
+  },
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "apply": "Aplicar",
+    "bulkAction": "Ejecutar acción masiva"
+  },
+  "feedback": {
+    "auditThanks": "¡Gracias por tus comentarios!",
+    "errorBoundary": "Algo salió mal. Actualiza la página."
+  }
+}
