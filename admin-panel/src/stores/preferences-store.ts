@@ -14,7 +14,8 @@ type PreferencesState = {
 const resolveSystemTheme = (): Theme =>
   typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
-const defaultTimezone = DateTime.local().zoneName
+const envDefaultTimezone = import.meta.env.VITE_DEFAULT_TZ?.trim()
+const defaultTimezone = envDefaultTimezone && envDefaultTimezone.length > 0 ? envDefaultTimezone : DateTime.local().zoneName
 
 export const preferencesStore = create<PreferencesState>()(
   persist(
