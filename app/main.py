@@ -117,6 +117,13 @@ if ADMIN_PANEL_DIR.exists():
         StaticFiles(directory=str(ADMIN_PANEL_DIR), html=True),
         name="admin-panel",
     )
+IMG_DIR = BASE_DIR.parent / "img"
+if IMG_DIR.exists():
+    app.mount(
+        "/img",
+        StaticFiles(directory=str(IMG_DIR)),
+        name="img",
+    )
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" role="img" aria-label="Secure access illustration">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#334155" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#0b1220"/>
+  <g transform="translate(40,40)">
+    <rect x="0" y="0" width="560" height="560" rx="28" fill="#0f172a" stroke="#1e293b"/>
+    <g transform="translate(40,40)">
+      <circle cx="120" cy="120" r="120" fill="url(#g1)" opacity="0.18"/>
+      <circle cx="360" cy="80" r="80" fill="url(#g1)" opacity="0.12"/>
+      <circle cx="420" cy="280" r="140" fill="url(#g1)" opacity="0.08"/>
+      <g transform="translate(70,160)">
+        <rect x="0" y="0" width="360" height="220" rx="14" fill="#0b1323" stroke="#263244"/>
+        <rect x="18" y="18" width="136" height="18" rx="9" fill="#203049"/>
+        <rect x="18" y="56" width="324" height="44" rx="8" fill="#0d2037"/>
+        <rect x="18" y="112" width="324" height="44" rx="8" fill="#0d2037"/>
+        <rect x="18" y="168" width="104" height="24" rx="12" fill="#0ea5e9"/>
+        <rect x="130" y="168" width="104" height="24" rx="12" fill="#17233a"/>
+      </g>
+      <g transform="translate(260,12)">
+        <path d="M60 0c33 0 60 27 60 60v36h-12V60c0-27-21-48-48-48S12 33 12 60v36H0V60C0 27 27 0 60 0z" fill="#203049"/>
+        <rect x="18" y="60" width="84" height="72" rx="12" fill="#0ea5e9"/>
+        <circle cx="60" cy="96" r="10" fill="#0b1220"/>
+      </g>
+    </g>
+    <rect x="0" y="0" width="560" height="560" rx="28" fill="url(#g2)"/>
+  </g>
+</svg>

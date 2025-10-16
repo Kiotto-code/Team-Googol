@@ -44,6 +44,8 @@ let topbarUser;
 let healthChip;
 let readyChip;
 let contentArea;
+let menuButton;
+let keydownHandler;
 
 function createStatusChip(label) {
   const chip = document.createElement('span');
@@ -68,12 +70,14 @@ function closeSidebar() {
   if (!sidebar) return;
   sidebar.classList.remove('is-open');
   sidebarOverlay?.classList.remove('is-open');
+  if (menuButton) menuButton.setAttribute('aria-expanded', 'false');
 }
 
 function toggleSidebar() {
   if (!sidebar) return;
   sidebar.classList.toggle('is-open');
   sidebarOverlay?.classList.toggle('is-open');
+  if (menuButton) menuButton.setAttribute('aria-expanded', sidebar.classList.contains('is-open') ? 'true' : 'false');
 }
 
 async function refreshSystemStatus() {
@@ -190,6 +194,7 @@ function buildLayout() {
 
   sidebar = document.createElement('aside');
   sidebar.className = 'sidebar';
+  sidebar.id = 'primary-sidebar';
   sidebar.setAttribute('aria-label', 'Primary');
 
   const brand = document.createElement('div');
@@ -214,6 +219,10 @@ function buildLayout() {
     link.href = `#${page.route}`;
     link.dataset.route = page.route;
     link.innerHTML = `${page.icon ?? ''} <span>${page.label}</span>`;
+    link.addEventListener('click', () => {
+      // Allow keyboard/assistive tech users to get focus to content
+      setTimeout(() => contentArea?.focus(), 0);
+    });
     nav.appendChild(link);
     return link;
   });
@@ -231,15 +240,6 @@ function buildLayout() {
 
   const topbar = document.createElement('header');
   topbar.className = 'topbar';
-
-  const leftGroup = document.createElement('div');
-  leftGroup.className = 'topbar__group';
-  const toggleButton = document.createElement('button');
-  toggleButton.type = 'button';
-  toggleButton.textContent = 'Menu';
-  toggleButton.addEventListener('click', toggleSidebar);
-  leftGroup.appendChild(toggleButton);
-  topbar.appendChild(leftGroup);
 
   const statusGroup = document.createElement('div');
   statusGroup.className = 'topbar__status';
@@ -278,10 +278,17 @@ function buildLayout() {
   main.appendChild(contentArea);
 
   app.appendChild(main);
+
+  // Close sidebar with Escape for accessibility on small screens
+  keydownHandler = (e) => {
+    if (e.key === 'Escape') closeSidebar();
+  };
+  document.addEventListener('keydown', keydownHandler, { once: false });
 }
 
 function renderLogin() {
   if (router) {
+    try { router.dispose?.(); } catch {}
     router = null;
   }
   if (cleanup) {
@@ -296,16 +303,66 @@ function renderLogin() {
   navLinks = [];
   healthChip = null;
   readyChip = null;
+  if (keydownHandler) {
+    document.removeEventListener('keydown', keydownHandler);
+    keydownHandler = null;
+  }
+  // New login layout
+  const shell = document.createElement('div');
+  shell.className = 'login-shell';
+
+  const loginPanel = document.createElement('section');
+  loginPanel.className = 'login-panel';
+  loginPanel.setAttribute('aria-label', 'Sign in');
+
+  const brandRow = document.createElement('div');
+  brandRow.className = 'login-brand';
+  const brandLeft = document.createElement('div');
+  brandLeft.className = 'login-brand__left';
+  const logo = document.createElement('img');
+  logo.src = './assets/logo.svg';
+  logo.alt = 'Team Googol';
+  logo.width = 28;
+  logo.height = 28;
+  brandLeft.appendChild(logo);
+  const brandTitle = document.createElement('span');
+  brandTitle.textContent = 'Admin Control Center';
+  brandLeft.appendChild(brandTitle);
+  brandRow.appendChild(brandLeft);
+  loginPanel.appendChild(brandRow);
+
   const card = document.createElement('div');
-  card.className = 'login-card';
+  card.className = 'login-card login-card--wide';
+
+  const cardLeft = document.createElement('div');
+  cardLeft.className = 'login-card__left';
+  const ill = document.createElement('img');
+  ill.src = '/img/first_image.png';
+  ill.alt = '';
+  ill.setAttribute('aria-hidden', 'true');
+  ill.className = 'login-illustration';
+  ill.addEventListener('error', () => {
+    // Fallback if /img is not mounted or the image is missing
+    ill.src = './assets/login-illustration.svg';
+  });
+  cardLeft.appendChild(ill);
+
+  const cardRight = document.createElement('div');
+  cardRight.className = 'login-card__right';
 
   const heading = document.createElement('h1');
   heading.className = 'login-card__title';
-  heading.textContent = 'Admin Sign In';
-  card.appendChild(heading);
+  heading.textContent = 'Welcome back';
+  cardRight.appendChild(heading);
+
+  const sub = document.createElement('p');
+  sub.className = 'helper-text';
+  sub.textContent = 'Sign in with your staff credentials to access the admin panel.';
+  cardRight.appendChild(sub);
 
   const form = document.createElement('form');
   form.noValidate = true;
+  form.setAttribute('aria-describedby', 'login-help');
 
   const identifierLabel = document.createElement('label');
   identifierLabel.textContent = 'Email or student ID';
@@ -314,6 +371,7 @@ function renderLogin() {
   identifierInput.name = 'identifier';
   identifierInput.required = true;
   identifierInput.autocomplete = 'username';
+  identifierInput.placeholder = 'e.g. admin@example.com or 10001';
   identifierLabel.appendChild(identifierInput);
   form.appendChild(identifierLabel);
 
@@ -324,19 +382,37 @@ function renderLogin() {
   passwordInput.name = 'password';
   passwordInput.required = true;
   passwordInput.autocomplete = 'current-password';
+  passwordInput.placeholder = '••••••••';
   passwordLabel.appendChild(passwordInput);
   form.appendChild(passwordLabel);
 
+  const actions = document.createElement('div');
+  actions.className = 'login-actions';
   const submit = document.createElement('button');
   submit.type = 'submit';
   submit.textContent = 'Sign in';
-  form.appendChild(submit);
+  actions.appendChild(submit);
+  const helpLink = document.createElement('a');
+  helpLink.href = '#';
+  helpLink.className = 'helper-text';
+  helpLink.textContent = 'Forgot password?';
+  helpLink.onclick = (e) => { e.preventDefault(); };
+  actions.appendChild(helpLink);
+  form.appendChild(actions);
 
   const helper = document.createElement('p');
+  helper.id = 'login-help';
   helper.className = 'helper-text';
   helper.textContent = 'Access is restricted to authorized staff.';
-  card.appendChild(form);
-  card.appendChild(helper);
+  cardRight.appendChild(form);
+  cardRight.appendChild(helper);
+
+  card.appendChild(cardLeft);
+  card.appendChild(cardRight);
+  loginPanel.appendChild(card);
+  shell.appendChild(loginPanel);
+
+  app.appendChild(shell);
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -356,8 +432,6 @@ function renderLogin() {
       submit.disabled = false;
     }
   });
-
-  app.appendChild(card);
   identifierInput.focus();
 }
 

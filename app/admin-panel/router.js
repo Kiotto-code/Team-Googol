@@ -3,7 +3,8 @@ export class Router {
     this.routes = routes;
     this.onRouteChange = onRouteChange;
     this.fallback = fallback;
-    window.addEventListener('hashchange', () => this.handleRouteChange());
+  this._boundHandler = () => this.handleRouteChange();
+  window.addEventListener('hashchange', this._boundHandler);
   }
 
   start() {
@@ -37,6 +38,13 @@ export class Router {
       if (this.fallback) {
         this.fallback({ path: window.location.hash, error });
       }
+    }
+  }
+
+  dispose() {
+    if (this._boundHandler) {
+      window.removeEventListener('hashchange', this._boundHandler);
+      this._boundHandler = null;
     }
   }
 }
