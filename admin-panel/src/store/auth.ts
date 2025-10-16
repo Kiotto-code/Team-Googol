@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { api, setAuthProvider } from '@/lib/http';
 import type { AuthUser } from '@/types/auth';
 
@@ -15,6 +15,16 @@ interface AuthState {
   setTokens: (tokens: { accessToken: string; refreshToken: string }) => void;
 }
 
+const resolveAuthStorage = () => {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  return import.meta.env.VITE_AUTH_STORAGE === 'session' ? window.sessionStorage : window.localStorage;
+};
+
+const authStorage = resolveAuthStorage();
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -29,9 +39,9 @@ export const useAuthStore = create<AuthState>()(
           const { access_token: accessToken, refresh_token: refreshToken } = data;
           set({ accessToken, refreshToken });
           await get().fetchCurrentUser();
-        } catch (error) {
+        } catch (err) {
           set({ error: 'AUTH_LOGIN_FAILED' });
-          throw error;
+          throw err;
         } finally {
           set({ isLoading: false });
         }
@@ -44,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
           const { data } = await api.get<AuthUser>('/auth/me');
           set({ user: data });
           return data;
-        } catch (error) {
+        } catch {
           set({ user: null });
           return null;
         }
@@ -55,6 +65,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'admin-panel-auth',
+      storage: authStorage ? createJSONStorage(() => authStorage) : undefined,
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,

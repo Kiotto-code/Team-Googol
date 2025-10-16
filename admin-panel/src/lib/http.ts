@@ -17,8 +17,10 @@ export const setAuthProvider = (provider: AuthProvider) => {
   authProvider = provider;
 };
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api/v1/admin';
+
 export const api = axios.create({
-  baseURL: '/api/v1/admin'
+  baseURL: apiBaseUrl
 });
 
 api.interceptors.request.use((config) => {

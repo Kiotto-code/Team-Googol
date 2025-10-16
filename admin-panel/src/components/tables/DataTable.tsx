@@ -17,7 +17,7 @@ import { exportToCsv } from '@/utils/csv';
 import { useTranslation } from 'react-i18next';
 
 interface DataTableProps<TData> {
-  columns: ColumnDef<TData, any>[];
+  columns: ColumnDef<TData, unknown>[];
   data: TData[];
   isLoading?: boolean;
   onRefresh?: () => void;

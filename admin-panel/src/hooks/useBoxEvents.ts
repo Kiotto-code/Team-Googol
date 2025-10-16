@@ -26,7 +26,8 @@ export function useBoxEvents() {
 
     const connect = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const wsUrl = `${protocol}://${window.location.host}/api/v1/admin/ws/boxes?token=${accessToken}`;
+      const baseUrl = import.meta.env.VITE_WS_URL ?? `${protocol}://${window.location.host}/api/v1/admin/ws/boxes`;
+      const wsUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(accessToken)}`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
       setStatus('connecting');
