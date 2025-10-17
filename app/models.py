@@ -1,5 +1,16 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, CheckConstraint
+from typing import Any
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from .db import Base
@@ -8,7 +19,10 @@ from .db import Base
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
-        CheckConstraint("role IN ('user','admin')", name="ck_users_role_allowed"),
+        CheckConstraint(
+            "role IN ('user','admin','staff')",
+            name="ck_users_role_allowed",
+        ),
     )
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -20,9 +34,11 @@ class User(Base):
     rfid_tag: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     items_found: Mapped[int | None] = mapped_column(Integer, default=0)
     items_find: Mapped[int | None] = mapped_column(Integer, default=0)
-    # 'user' or 'admin'
+    # 'user', 'admin', or 'staff'
     role: Mapped[str] = mapped_column(String, nullable=False, default="user")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    is_disabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     found_items: Mapped[list["Item"]] = relationship(
@@ -44,6 +60,10 @@ class Item(Base):
     )
     finder_img_url: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     finder: Mapped[User | None] = relationship(back_populates="found_items")
@@ -62,6 +82,9 @@ class Box(Base):
 
     # Relationships
     cases: Mapped[list["Case"]] = relationship(back_populates="box")
+    telemetry_entries: Mapped[list["BoxTelemetry"]] = relationship(
+        back_populates="box", cascade="all, delete-orphan"
+    )
 
 
 class Case(Base):
@@ -74,9 +97,64 @@ class Case(Base):
     item_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("items.item_id"), nullable=True)
     status: Mapped[str | None] = mapped_column(String, nullable=True)
     case_close_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     box: Mapped[Box | None] = relationship(back_populates="cases")
     item: Mapped[Item | None] = relationship(back_populates="cases")
     receiver: Mapped[User | None] = relationship()
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    token_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    user: Mapped[User] = relationship()
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    audit_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    actor_user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=False)
+    action: Mapped[str] = mapped_column(String, nullable=False)
+    entity_type: Mapped[str] = mapped_column(String, nullable=False)
+    entity_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # attribute name 'metadata' is reserved in SQLAlchemy; map to column 'metadata'
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    actor: Mapped[User] = relationship(foreign_keys=[actor_user_id])
+
+
+class BoxTelemetry(Base):
+    __tablename__ = "box_telemetry"
+
+    telemetry_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    box_id: Mapped[int] = mapped_column(Integer, ForeignKey("boxes.box_id"), index=True)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+    box: Mapped[Box] = relationship(back_populates="telemetry_entries")
+
+
+class IdempotencyKey(Base):
+    __tablename__ = "idempotency_keys"
+    __table_args__ = (
+        UniqueConstraint("scope", "key", name="uq_idempotency_scope_key"),
+    )
+
+    idempotency_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    scope: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    key: Mapped[str] = mapped_column(String, nullable=False)
+    response_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    response_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
