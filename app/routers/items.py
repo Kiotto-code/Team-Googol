@@ -568,3 +568,64 @@ async def upload_item_public(
     background_tasks.add_task(perform_open_box)
 
     return new_item
+
+
+@public_router.post("/query", status_code=status.HTTP_200_OK)
+async def query_items_public(
+    description: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Public query endpoint:
+    - Accepts a text description.
+    - Searches for the top 3 most similar active items (status='active').
+    - Uses both image and description embeddings.
+    - Only returns items with similarity > 0.4.
+    """
+    # Generate query embedding
+    query_emb = get_text_embedding(description).detach().cpu().numpy().flatten()
+
+    # Get all active items from DB
+    items = db.query(models.Item).filter(models.Item.status == "active").all()
+    if not items:
+        raise HTTPException(status_code=404, detail="No active items found")
+
+    results = []
+    for item in items:
+        try:
+            img_score = 0.0
+            desc_score = 0.0
+
+            # Compare with image embedding
+            if item.image_embedding:
+                img_emb = np.array(json.loads(item.image_embedding), dtype=np.float32)
+                img_score = float(np.dot(query_emb, img_emb))
+
+            # Compare with description embedding
+            if item.description_embedding:
+                desc_emb = np.array(json.loads(item.description_embedding), dtype=np.float32)
+                desc_score = float(np.dot(query_emb, desc_emb))
+
+            # Weighted average (favor description more)
+            final_score = (0.6 * desc_score + 0.4 * img_score) if desc_score != 0 else img_score
+
+            # Keep only those above threshold
+            if final_score > 0.4:
+                results.append({
+                    "item_id": item.item_id,
+                    "description": item.description,
+                    "gemini_description": item.gemini_description,
+                    "image_url": item.image_url,
+                    "score": round(final_score, 4),
+                })
+        except Exception:
+            continue
+
+    # Sort by descending similarity and take top 3
+    results.sort(key=lambda x: x["score"], reverse=True)
+    top_results = results[:3]
+
+    if not top_results:
+        raise HTTPException(status_code=404, detail="No similar items found (similarity > 0.4)")
+
+    return {"results": top_results}
