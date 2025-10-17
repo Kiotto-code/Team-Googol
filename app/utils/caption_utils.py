@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from PIL import Image
 import mimetypes
 
-load_dotenv("../.env")
+load_dotenv(".env")
 
 api_key = os.getenv("GOOGLE_API_KEY")
 

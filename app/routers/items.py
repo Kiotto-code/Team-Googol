@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 from datetime import datetime
 from typing import Iterable
 
@@ -24,7 +25,7 @@ from ..dependencies.auth import require_roles
 from ..services import audit as audit_service
 from ..services import items as item_service
 from ..utils.caption_utils import generate_caption_with_gemini
-from ..utils.clip_utils import get_text_embedding, UPLOAD_FOLDER
+from ..utils.clip_utils import get_text_embedding, UPLOAD_FOLDER, get_image_embedding
 from ..utils.upload_utils import is_lighting_good
 
 admin_access = require_roles("admin", "staff")
@@ -484,5 +485,86 @@ async def upload_item(
         refresh_image=True,
         refresh_description=True,
     )
+
+    return new_item
+
+
+@public_router.post("/upload", response_model=schemas.ItemRead, status_code=status.HTTP_201_CREATED)
+async def upload_item_public(
+    image: UploadFile,
+    background_tasks: BackgroundTasks,
+    finder_user_id: int = Form(...),
+    box_id : int = Form(...),
+    description: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Public upload endpoint:
+    - Accepts image, finder_user_id, and optional description.
+    - Checks lighting quality.
+    - Generates AI caption using Gemini.
+    - Saves item in DB and schedules embedding creation.
+    """
+
+    filename = secure_filename(image.filename)
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+    # Save uploaded image
+    with open(filepath, "wb") as buffer:
+        buffer.write(await image.read())
+
+    # Validate lighting
+    good, brightness, contrast = is_lighting_good(filepath)
+    if not good:
+        os.remove(filepath)
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Lighting is not good enough, please re-upload.",
+                "brightness": brightness,
+                "contrast": contrast,
+            },
+        )
+
+    # Generate caption using Gemini
+    custom_prompt = (
+        "Output as: Color: <…>; Type: <…>; Material: <…>; Features: <…>; Optional: Brand/Markings: <…>."
+    )
+    gemini_caption = generate_caption_with_gemini(filepath, prompt=custom_prompt)
+    combined_caption = f"{description}. {gemini_caption}" if description else gemini_caption
+    
+    img_emb = get_image_embedding(filepath).detach().cpu().numpy().flatten().tolist()
+    desc_emb = get_text_embedding(combined_caption).detach().cpu().numpy().flatten().tolist()
+
+    # Save new item to DB
+    new_item = models.Item(
+        gemini_description=gemini_caption,
+        description=combined_caption,
+        image_embedding=json.dumps(img_emb),  # store as JSON string
+        description_embedding=json.dumps(desc_emb),
+        image_url=filepath,
+        status="active",  # you can change to "pending_review" if you want moderation
+        finder_user_id=finder_user_id,
+    )
+
+    db.add(new_item)
+    db.flush()  # so item_id becomes available
+
+    db.commit()
+    db.refresh(new_item)
+    
+    box = db.query(models.Box).filter(models.Box.box_id == box_id).first()
+    if not box:
+        raise HTTPException(status_code=404, detail=f"Box {box_id} not found")
+
+    if not box.status:
+        raise HTTPException(status_code=409, detail=f"Box {box_id} is disabled")
+
+    async def perform_open_box():
+        box.last_accessed = datetime.now()
+        box.door_status = True
+        db.commit()
+
+    background_tasks.add_task(perform_open_box)
 
     return new_item

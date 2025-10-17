@@ -51,6 +51,7 @@ class Item(Base):
 
     item_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    gemini_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
     image_embedding: Mapped[str | None] = mapped_column(Text, nullable=True)
     description_embedding: Mapped[str | None] = mapped_column(Text, nullable=True)
