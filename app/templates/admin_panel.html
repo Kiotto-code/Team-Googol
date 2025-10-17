@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Control Panel</title>
+    <link rel="stylesheet" href="/static/admin-panel.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">Team-Googol</div>
+        <nav>
+          <a href="/admin-panel" class="nav-item active">Dashboard</a>
+          <a href="/docs" class="nav-item">API Documentation</a>
+          <a href="/admin/reports/summary" class="nav-item">Reports</a>
+          <a href="/system/health" class="nav-item">System Health</a>
+        </nav>
+        <div class="sidebar-footer">
+          <span class="tag">Admin</span>
+          <span class="tag">IoT</span>
+        </div>
+      </aside>
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <h1>Operations Control Center</h1>
+            <p class="subtitle">
+              Formal overview of device telemetry, case processing, and network
+              stability.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn ghost">Download Report</button>
+            <button class="btn primary">Create Alert</button>
+          </div>
+        </header>
+
+        <section class="filters">
+          <div class="input-group">
+            <label for="cluster">Cluster</label>
+            <select id="cluster">
+              <option>All Facilities</option>
+              <option>North Logistics Hub</option>
+              <option>Downtown Processing Center</option>
+              <option>Airport Intake</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="timeframe">Timeframe</label>
+            <select id="timeframe">
+              <option>Past 24 Hours</option>
+              <option>Past 7 Days</option>
+              <option>Past 30 Days</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="severity">Alert Level</label>
+            <select id="severity">
+              <option>All</option>
+              <option>Informational</option>
+              <option>Warning</option>
+              <option>Critical</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="grid metrics">
+          <article class="card">
+            <div class="card-header">
+              <span class="label">Active Devices</span>
+              <span class="status success">Stable</span>
+            </div>
+            <div class="value">128</div>
+            <div class="trend positive">+6% vs yesterday</div>
+          </article>
+          <article class="card">
+            <div class="card-header">
+              <span class="label">Items Processed</span>
+              <span class="status neutral">On Track</span>
+            </div>
+            <div class="value">742</div>
+            <div class="trend">Pending audits: 14</div>
+          </article>
+          <article class="card">
+            <div class="card-header">
+              <span class="label">Critical Alerts</span>
+              <span class="status danger">Investigate</span>
+            </div>
+            <div class="value">5</div>
+            <div class="trend negative">3 new in last hour</div>
+          </article>
+          <article class="card">
+            <div class="card-header">
+              <span class="label">Mean Response Time</span>
+              <span class="status success">SLA Met</span>
+            </div>
+            <div class="value">2m 14s</div>
+            <div class="trend">95th percentile: 4m 03s</div>
+          </article>
+        </section>
+
+        <section class="grid wider">
+          <article class="card">
+            <div class="card-title">Device Fleet Status</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Device</th>
+                  <th>Location</th>
+                  <th>Battery</th>
+                  <th>Signal</th>
+                  <th>Last Check-in</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Locker Sensor #42</td>
+                  <td>North Hub</td>
+                  <td><span class="pill success">92%</span></td>
+                  <td>Excellent</td>
+                  <td>2 minutes ago</td>
+                </tr>
+                <tr>
+                  <td>Entry Camera #7</td>
+                  <td>Airport Intake</td>
+                  <td><span class="pill neutral">58%</span></td>
+                  <td>Good</td>
+                  <td>11 minutes ago</td>
+                </tr>
+                <tr>
+                  <td>Smart Bin #5</td>
+                  <td>Downtown Center</td>
+                  <td><span class="pill danger">18%</span></td>
+                  <td>Fair</td>
+                  <td>28 minutes ago</td>
+                </tr>
+                <tr>
+                  <td>Rover Drone #3</td>
+                  <td>North Hub</td>
+                  <td><span class="pill success">76%</span></td>
+                  <td>Excellent</td>
+                  <td>16 minutes ago</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+          <article class="card">
+            <div class="card-title">Case Throughput</div>
+            <div class="chart-placeholder">
+              <div class="chart-grid">
+                <span class="bar" style="height: 75%"></span>
+                <span class="bar" style="height: 55%"></span>
+                <span class="bar" style="height: 90%"></span>
+                <span class="bar" style="height: 62%"></span>
+                <span class="bar" style="height: 80%"></span>
+              </div>
+            </div>
+            <ul class="legend">
+              <li><span class="swatch primary"></span>Resolved cases</li>
+              <li><span class="swatch neutral"></span>Pending investigation</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="grid wider">
+          <article class="card">
+            <div class="card-title">Recent Administrative Activity</div>
+            <div class="timeline">
+              <div class="timeline-item">
+                <span class="dot success"></span>
+                <div>
+                  <div class="timeline-title">Case #AF-218 assigned to Staff Ops</div>
+                  <div class="timeline-meta">09:24 · Assigned by L. Daniels</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="dot warning"></span>
+                <div>
+                  <div class="timeline-title">Battery anomaly flagged for Smart Bin #5</div>
+                  <div class="timeline-meta">08:56 · Automated alert</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="dot success"></span>
+                <div>
+                  <div class="timeline-title">Audit log export completed</div>
+                  <div class="timeline-meta">08:12 · Requested by Admin Console</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="dot danger"></span>
+                <div>
+                  <div class="timeline-title">Unauthorized badge attempt at Downtown Center</div>
+                  <div class="timeline-meta">07:49 · Security escalation opened</div>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-title">Network &amp; Power Health</div>
+            <div class="health-grid">
+              <div class="health-card">
+                <div class="label">Network Availability</div>
+                <div class="value">99.4%</div>
+                <div class="trend positive">↑ 0.3% vs last week</div>
+              </div>
+              <div class="health-card">
+                <div class="label">Power Utilization</div>
+                <div class="value">68%</div>
+                <div class="trend negative">↓ -4% vs baseline</div>
+              </div>
+              <div class="health-card">
+                <div class="label">Packet Loss</div>
+                <div class="value">0.7%</div>
+                <div class="trend">Within tolerance</div>
+              </div>
+              <div class="health-card">
+                <div class="label">Service Tickets</div>
+                <div class="value">12 open</div>
+                <div class="trend">5 awaiting vendor response</div>
+              </div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
