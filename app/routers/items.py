@@ -512,6 +512,8 @@ async def upload_item_public(
     # Save uploaded image
     with open(filepath, "wb") as buffer:
         buffer.write(await image.read())
+        
+    public_url = f"http://127.0.0.1:8000/uploads/{filename}"
 
     # Validate lighting
     good, brightness, contrast = is_lighting_good(filepath)
@@ -542,7 +544,7 @@ async def upload_item_public(
         description=combined_caption,
         image_embedding=json.dumps(img_emb),  # store as JSON string
         description_embedding=json.dumps(desc_emb),
-        image_url=filepath,
+        image_url=public_url,
         status="active",  # you can change to "pending_review" if you want moderation
         finder_user_id=finder_user_id,
     )
@@ -629,3 +631,41 @@ async def query_items_public(
         raise HTTPException(status_code=404, detail="No similar items found (similarity > 0.4)")
 
     return {"results": top_results}
+
+
+@public_router.post("/claim", response_model=schemas.CaseRead, status_code=status.HTTP_201_CREATED)
+def claim_item(payload: schemas.CaseCreatePayload, db: Session = Depends(get_db)):
+    """
+    Create a new case when an item is claimed.
+    Sets status to 'claimed'.
+    """
+    # Check if item exists
+    item = db.query(models.Item).filter(models.Item.item_id == payload.item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Check if box exists
+    box = db.query(models.Box).filter(models.Box.box_id == payload.box_id).first()
+    if not box:
+        raise HTTPException(status_code=404, detail="Box not found")
+
+    # Check if receiver exists
+    receiver = db.query(models.User).filter(models.User.user_id == payload.reciver_id).first()
+    if not receiver:
+        raise HTTPException(status_code=404, detail="Receiver not found")
+
+    # Create new case
+    new_case = models.Case(
+        item_id=payload.item_id,
+        reciver_id=payload.reciver_id,
+        box_id=payload.box_id,
+        status="claimed",
+        remarks=payload.remarks,
+        created_at=datetime.utcnow(),
+    )
+
+    db.add(new_case)
+    db.commit()
+    db.refresh(new_case)
+
+    return new_case

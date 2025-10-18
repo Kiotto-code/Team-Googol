@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 # SQLite URL
-SQLALCHEMY_DATABASE_URL = "sqlite:///app/app.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
 
 # For SQLite, check_same_thread should be False when using with FastAPI
 engine = create_engine(

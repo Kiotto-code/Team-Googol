@@ -46,7 +46,7 @@ class UserUpdate(BaseModel):
     student_id: Optional[int] = None
     rfid_tag: Optional[str] = None
     items_found: Optional[int] = None
-    items_find: Optional[int] = None
+    items_lost: Optional[int] = None
     role: Optional[Literal["user", "admin", "staff"]] = None
     is_disabled: Optional[bool] = None
 
@@ -139,7 +139,11 @@ class ItemUpdate(BaseModel):
     finder_img_url: Optional[str] = None
     status: Optional[str] = None
 
-
+class CaseCreatePayload(BaseModel):
+    item_id: int
+    reciver_id: int
+    box_id: int
+    
 class PaginatedItems(BaseModel):
     data: List[ItemRead]
     meta: PaginationMeta

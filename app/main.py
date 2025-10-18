@@ -145,3 +145,14 @@ app.include_router(audit_logs.router)
 app.include_router(system.router)
 app.include_router(admin_reports.metrics_router)
 app.include_router(admin_reports.reports_router)
+
+import os
+from fastapi.staticfiles import StaticFiles
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+
+# Create uploads directory if not exists
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
