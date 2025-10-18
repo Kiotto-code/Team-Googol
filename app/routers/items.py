@@ -703,3 +703,64 @@ def cancel_case(payload: schemas.CaseCancelPayload, db: Session = Depends(get_db
     db.refresh(case)
 
     return case
+
+
+import threading
+
+@public_router.post("/collect", response_model=schemas.CaseRead, status_code=status.HTTP_200_OK)
+def collect_item(payload: schemas.CaseCollectPayload, db: Session = Depends(get_db)):
+    """
+    Marks a box door status as active (True) for collection. 
+    Starts a 5-minute timer. 
+    If the case status is not marked as "collected" after 5 minutes,
+    automatically resets the box, case, and item.
+    """
+
+    # --- Find records ---
+    box = db.query(models.Box).filter(models.Box.box_id == payload.box_id).first()
+    case = db.query(models.Case).filter(models.Case.found_id == payload.case_id).first()
+    item = db.query(models.Item).filter(models.Item.item_id == payload.item_id).first()
+
+    if not box:
+        raise HTTPException(status_code=404, detail="Box not found")
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # --- Activate box ---
+    box.status = True
+    db.commit()
+
+    # --- Define background function ---
+    def timeout_reset():
+        with db.bind.connect() as conn:
+            # Refresh states from database
+            case_status = conn.execute(
+                models.Case.__table__.select().where(models.Case.found_id == payload.case_id)
+            ).fetchone()
+
+            if case_status and case_status.status != "collected":
+                # Reset everything if not collected
+                conn.execute(
+                    models.Box.__table__.update()
+                    .where(models.Box.box_id == payload.box_id)
+                    .values(status=False)
+                )
+                conn.execute(
+                    models.Case.__table__.update()
+                    .where(models.Case.found_id == payload.case_id)
+                    .values(status="uncollected")
+                )
+                conn.execute(
+                    models.Item.__table__.update()
+                    .where(models.Item.item_id == payload.item_id)
+                    .values(status="active")
+                )
+                conn.commit()
+
+    # --- Start timer thread (5 minutes = 300 seconds) ---
+    timer = threading.Timer(300, timeout_reset)
+    timer.start()
+
+    return case
