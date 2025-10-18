@@ -654,6 +654,9 @@ def claim_item(payload: schemas.CaseCreatePayload, db: Session = Depends(get_db)
     if not receiver:
         raise HTTPException(status_code=404, detail="Receiver not found")
 
+    item.status = "claimed"
+    db.add(item)
+    
     # Create new case
     new_case = models.Case(
         item_id=payload.item_id,
@@ -669,3 +672,34 @@ def claim_item(payload: schemas.CaseCreatePayload, db: Session = Depends(get_db)
     db.refresh(new_case)
 
     return new_case
+
+
+
+@public_router.post("/cancel", response_model=schemas.CaseRead, status_code=status.HTTP_200_OK)
+def cancel_case(payload: schemas.CaseCancelPayload, db: Session = Depends(get_db)):
+    """
+    Cancel a claimed case:
+    - Sets case.status = 'cancelled'
+    - Sets item.status = 'active'
+    - Updates case_close_at to now
+    """
+    # --- Find case ---
+    case = db.query(models.Case).filter(models.Case.found_id == payload.case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # --- Find item ---
+    item = db.query(models.Item).filter(models.Item.item_id == payload.item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # --- Update both records ---
+    case.status = "cancelled"
+    case.case_close_at = datetime.utcnow()
+    item.status = "active"
+
+    db.add_all([case, item])
+    db.commit()
+    db.refresh(case)
+
+    return case
