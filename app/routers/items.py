@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable
 
 import numpy as np
@@ -764,3 +764,47 @@ def collect_item(payload: schemas.CaseCollectPayload, db: Session = Depends(get_
     timer.start()
 
     return case
+
+
+@public_router.post("/collected-successfully", status_code=status.HTTP_200_OK)
+def collected_successfully(payload: schemas.CaseCollectedPayload, db: Session = Depends(get_db)):
+    """
+    Marks an item as successfully collected:
+      - Closes box door
+      - Updates case and item statuses
+      - Increments receiver's items_lost count
+    """
+
+    # 1️⃣ Retrieve records
+    case = db.query(models.Case).filter(models.Case.found_id == payload.case_id).first()
+    box = db.query(models.Box).filter(models.Box.box_id == payload.box_id).first()
+    item = db.query(models.Item).filter(models.Item.item_id == payload.item_id).first()
+
+    if not case or not box or not item:
+        raise HTTPException(status_code=404, detail="Case, Box, or Item not found")
+
+    # 2️⃣ Retrieve receiver (the user who claimed the item)
+    receiver = db.query(models.User).filter(models.User.user_id == case.reciver_id).first()
+
+    # 3️⃣ Update records
+    box.door_status = False
+    case.status = "collected"
+    case.case_close_at = datetime.now(timezone.utc)
+    item.status = "collected"
+
+    # 4️⃣ Update receiver stats
+    if receiver:
+        receiver.items_lost = (receiver.items_lost or 0) + 1
+
+    # 5️⃣ Commit changes
+    db.commit()
+    db.refresh(case)
+
+    return {
+        "message": "Item collected successfully.",
+        "case_id": case.found_id,
+        "box_id": box.box_id,
+        "item_id": item.item_id,
+        "receiver_id": receiver.user_id if receiver else None,
+        "receiver_items_lost": receiver.items_lost if receiver else None,
+    }

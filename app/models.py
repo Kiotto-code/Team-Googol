@@ -33,7 +33,7 @@ class User(Base):
     student_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     rfid_tag: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     items_found: Mapped[int | None] = mapped_column(Integer, default=0)
-    items_find: Mapped[int | None] = mapped_column(Integer, default=0)
+    items_lost: Mapped[int | None] = mapped_column(Integer, default=0)
     # 'user', 'admin', or 'staff'
     role: Mapped[str] = mapped_column(String, nullable=False, default="user")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
