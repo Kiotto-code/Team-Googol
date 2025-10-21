@@ -148,6 +148,16 @@ class CaseCancelPayload(BaseModel):
     case_id: int
     item_id: int
     
+class CaseCollectPayload(BaseModel):
+    case_id: int
+    item_id: int
+    box_id: int
+
+class CaseCollectedPayload(BaseModel):
+    case_id: int
+    item_id: int
+    box_id: int
+    
 class PaginatedItems(BaseModel):
     data: List[ItemRead]
     meta: PaginationMeta
