@@ -152,8 +152,12 @@ if UPLOAD_PAGE_DIR.exists():
     )
 
 @app.get("/upload")
-async def redirect_to_upload_page():
-    return RedirectResponse(url="/upload-page/testv2.html")
+def redirect_to_index():
+    return RedirectResponse(url="/upload-page/")
+
+# @app.get("/upload")
+# async def redirect_to_upload_page():
+#     return RedirectResponse(url="/upload-page/testv2.html")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
