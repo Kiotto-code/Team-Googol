@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FINDR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #0d0d0d;
+        color: #fff;
+      }
+
+      .logo-font {
+        font-family: "Space Grotesk", sans-serif;
+      }
+
+      .glass-card {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+        border-radius: 1rem;
+      }
+
+      .slide-enter {
+        opacity: 0;
+        transform: translateY(25px);
+      }
+
+      .slide-enter-active {
+        opacity: 1;
+        transform: translateY(0);
+        transition: all 0.4s ease;
+      }
+
+      input,
+      textarea {
+        background-color: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.2s ease;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background-color: rgba(255, 255, 255, 0.12);
+      }
+
+      .btn-primary {
+        background: #2563eb;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: #1d4ed8;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header
+      class="w-full py-6 bg-[#111] text-center shadow-md border-b border-[#1f1f1f]"
+    >
+      <h1
+        class="logo-font text-5xl md:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400"
+      >
+        FINDR
+      </h1>
+    </header>
+
+    <!-- Main App -->
+    <main
+      id="app"
+      class="flex-grow flex flex-col justify-center items-center px-6 py-10 md:px-10"
+    ></main>
+
+    <script>
+      const app = document.getElementById("app");
+      let currentPage = "home";
+      let loggedIn = false;
+
+      function render() {
+        app.innerHTML = "";
+        const container = document.createElement("div");
+        container.className =
+          "glass-card slide-enter w-full max-w-lg mx-auto p-8 md:p-10 shadow-xl";
+
+        if (currentPage === "home") {
+          container.innerHTML = `
+            <h2 class="text-3xl md:text-4xl font-semibold text-center mb-6">Want to upload a lost item?</h2>
+            <p class="text-gray-400 text-center mb-8 text-base md:text-lg">
+              Login as a student first to continue.
+            </p>
+
+            <form id="homeLoginForm" class="flex flex-col gap-5">
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Student ID</label>
+                <input type="text" id="studentId" placeholder="Enter Student ID" class="w-full px-4 py-3 rounded-md" required />
+              </div>
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Password</label>
+                <input type="password" id="password" placeholder="Enter Password" class="w-full px-4 py-3 rounded-md" required />
+              </div>
+              <button type="submit" class="btn-primary py-3 rounded-lg font-semibold text-white w-full">Login</button>
+            </form>
+
+            <p class="text-gray-400 text-sm mt-6 text-center">
+              Haven't registered yet? 
+              <button id="goRegister" class="text-blue-400 hover:underline">Register now</button>
+            </p>
+          `;
+        }
+
+        else if (currentPage === "register") {
+          container.innerHTML = `
+            <h2 class="text-3xl md:text-4xl font-semibold mb-6 text-center">Register</h2>
+            <form id="registerForm" class="flex flex-col gap-5">
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Full Name</label>
+                <input type="text" id="name" placeholder="Your Name" class="w-full px-4 py-3 rounded-md" required />
+              </div>
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Student ID</label>
+                <input type="text" id="studentId" placeholder="e.g. 1234" class="w-full px-4 py-3 rounded-md" required />
+              </div>
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Email</label>
+                <input type="email" id="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-md" required />
+              </div>
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Password</label>
+                <input type="password" id="password" placeholder="Create Password" class="w-full px-4 py-3 rounded-md" required />
+              </div>
+              <button type="submit" class="btn-primary py-3 rounded-lg font-semibold text-white w-full">Register</button>
+            </form>
+            <p class="text-gray-400 text-sm mt-6 text-center">
+              Already a user?
+              <button id="goLogin" class="text-blue-400 hover:underline">Login instead</button>
+            </p>
+          `;
+        }
+
+        else if (currentPage === "upload") {
+          container.innerHTML = `
+            <h2 class="text-3xl md:text-4xl font-semibold mb-8 text-center">Upload Lost Item</h2>
+            <form id="uploadForm" class="flex flex-col gap-6">
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Upload Image</label>
+                <input type="file" id="imageUpload" accept="image/*" class="w-full px-4 py-3 rounded-md" required />
+                <div id="imagePreview" class="w-full h-56 bg-[#1f1f1f] rounded-md flex items-center justify-center text-gray-500 text-sm mt-3">
+                  No image selected
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm mb-2 text-gray-300">Description</label>
+                <textarea id="description" rows="4" placeholder="Describe the item..." class="w-full px-4 py-3 rounded-md"></textarea>
+              </div>
+              <button type="submit" class="btn-primary py-3 rounded-lg font-semibold text-white w-full">Upload</button>
+            </form>
+            <div class="mt-8 text-center">
+              <button id="logout" class="text-gray-400 hover:text-white text-sm">← Logout</button>
+            </div>
+          `;
+        }
+
+        app.appendChild(container);
+        requestAnimationFrame(() =>
+          container.classList.add("slide-enter-active")
+        );
+
+        // event bindings
+        const homeLoginForm = document.getElementById("homeLoginForm");
+        const registerForm = document.getElementById("registerForm");
+        const uploadForm = document.getElementById("uploadForm");
+
+        const goRegister = document.getElementById("goRegister");
+        const goLogin = document.getElementById("goLogin");
+        const logout = document.getElementById("logout");
+
+        if (goRegister) goRegister.onclick = () => switchPage("register");
+        if (goLogin) goLogin.onclick = () => switchPage("home");
+        if (logout)
+          logout.onclick = () => {
+            loggedIn = false;
+            switchPage("home");
+          };
+
+        if (homeLoginForm) {
+          homeLoginForm.onsubmit = (e) => {
+            e.preventDefault();
+            const id = document.getElementById("studentId").value;
+            const pass = document.getElementById("password").value;
+            if (id === "1234" && pass === "1234") {
+              loggedIn = true;
+              switchPage("upload");
+            } else {
+              alert("Invalid Student ID or Password");
+            }
+          };
+        }
+
+        if (registerForm) {
+          registerForm.onsubmit = (e) => {
+            e.preventDefault();
+            alert("Registration successful! Please login now.");
+            switchPage("home");
+          };
+        }
+
+        if (uploadForm) {
+          const imgInput = document.getElementById("imageUpload");
+          const preview = document.getElementById("imagePreview");
+
+          imgInput.addEventListener("change", () => {
+            const file = imgInput.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-md"/>`;
+              };
+              reader.readAsDataURL(file);
+            } else {
+              preview.innerHTML = "No image selected";
+            }
+          });
+
+          uploadForm.onsubmit = (e) => {
+            e.preventDefault();
+            alert("Item uploaded successfully!");
+            uploadForm.reset();
+            preview.innerHTML = "No image selected";
+          };
+        }
+      }
+
+      function switchPage(page) {
+        currentPage = page;
+        render();
+      }
+
+      render();
+    </script>
+  </body>
+</html>

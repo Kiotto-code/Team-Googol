@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -107,6 +107,22 @@ app = FastAPI(
     openapi_tags=openapi_tags,
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+# Allow your frontend origins
+origins = [
+    "http://127.0.0.1:5501",
+    "http://localhost:5501",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],   # or ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers=["*"],
+)
+
 # Static and templates (resolve relative to this file)
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -126,6 +142,18 @@ if IMG_DIR.exists():
     )
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+UPLOAD_PAGE_DIR = BASE_DIR / "upload-page"
+
+if UPLOAD_PAGE_DIR.exists():
+    app.mount(
+        "/upload-page",
+        StaticFiles(directory=str(UPLOAD_PAGE_DIR), html=True),
+        name="upload-page",
+    )
+
+@app.get("/upload")
+async def redirect_to_upload_page():
+    return RedirectResponse(url="/upload-page/testv2.html")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):

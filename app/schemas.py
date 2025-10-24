@@ -12,7 +12,7 @@ class UserBase(BaseModel):
     student_id: Optional[int] = None
     rfid_tag: Optional[str] = None
     items_found: Optional[int] = 0
-    items_find: Optional[int] = 0
+    items_lost: Optional[int] = 0
     role: Literal["user", "admin", "staff"] = "user"
 
 

@@ -392,8 +392,8 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         student_id=user.student_id,
         rfid_tag=user.rfid_tag,
         items_found=user.items_found or 0,
-        items_find=user.items_find or 0,
-        role=user.role if hasattr(user, "role") and user.role else "user",
+        items_lost=user.items_lost or 0,
+        role="user",
         password=hashed_password,
     )
     db.add(db_user)

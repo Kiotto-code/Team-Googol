@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FINDR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #0d0d0d;
+        color: #fff;
+      }
+
+      .logo-font {
+        font-family: "Space Grotesk", sans-serif;
+      }
+
+      .glass-card {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      .slide-enter {
+        opacity: 0;
+        transform: translateY(25px);
+      }
+
+      .slide-enter-active {
+        opacity: 1;
+        transform: translateY(0);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      input,
+      textarea {
+        background-color: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.2s ease;
+      }
+
+      input::placeholder,
+      textarea::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        transform: translateY(-1px);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.2s ease;
+      }
+
+      .btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+
+      .image-preview-container {
+        position: relative;
+        overflow: hidden;
+        border: 2px dashed rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      .image-preview-container:hover {
+        border-color: rgba(59, 130, 246, 0.5);
+      }
+
+      .image-preview-container.has-image {
+        border-style: solid;
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+
+      .file-input-label {
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .file-input-label:hover {
+        color: #3b82f6;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .fade-in {
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .header-glow {
+        text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+      }
+
+      .divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+      }
+
+      .error-message {
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+      }
+
+      .success-message {
+        background-color: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #86efac;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+      }
+
+      .spinner {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top: 2px solid #3b82f6;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
+        margin-right: 0.5rem;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header
+      class="w-full py-8 bg-[#111] text-center shadow-md border-b border-[#1f1f1f]"
+    >
+      <h1
+        class="logo-font text-5xl md:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow"
+      >
+        FINDR
+      </h1>
+      <p class="text-gray-500 text-sm mt-2 tracking-wide">Lost & Found Made Easy</p>
+    </header>
+
+    <!-- Main App -->
+    <main
+      id="app"
+      class="flex-grow flex flex-col justify-center items-center px-6 py-10 md:px-10"
+    ></main>
+
+    <script>
+      const app = document.getElementById("app");
+      const API_BASE = "http://127.0.0.1:8000";
+      let currentPage = "home";
+      let userId = localStorage.getItem("userId");
+
+      function showError(message) {
+        return `<div class="error-message">${message}</div>`;
+      }
+
+      function showSuccess(message) {
+        return `<div class="success-message">${message}</div>`;
+      }
+
+      function render() {
+        app.innerHTML = "";
+        const container = document.createElement("div");
+        container.className =
+          "glass-card slide-enter w-full max-w-lg mx-auto p-8 md:p-10 shadow-xl";
+
+        if (currentPage === "home") {
+          container.innerHTML = `
+            <div class="text-center mb-8">
+              <h2 class="text-3xl md:text-4xl font-semibold mb-3">Welcome Back</h2>
+              <p class="text-gray-400 text-base md:text-lg">
+                Login to upload a lost item
+              </p>
+            </div>
+
+            <div id="loginMessage"></div>
+
+            <form id="homeLoginForm" class="flex flex-col gap-5">
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">Student ID</label>
+                <input 
+                  type="text" 
+                  id="studentId" 
+                  placeholder="Enter your Student ID" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                  required 
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">Password</label>
+                <input 
+                  type="password" 
+                  id="password" 
+                  placeholder="Enter your password" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                  required 
+                />
+              </div>
+              <button type="submit" id="loginBtn" class="btn-primary py-3.5 rounded-lg font-semibold text-white w-full mt-2">
+                Login
+              </button>
+            </form>
+
+            <div class="divider my-6"></div>
+
+            <p class="text-gray-400 text-sm text-center">
+              Don't have an account? 
+              <button id="goRegister" class="text-blue-400 hover:text-blue-300 font-medium transition-colors">Register now</button>
+            </p>
+          `;
+        }
+
+        else if (currentPage === "register") {
+          container.innerHTML = `
+            <div class="text-center mb-8">
+              <h2 class="text-3xl md:text-4xl font-semibold mb-3">Create Account</h2>
+              <p class="text-gray-400 text-base">Join FINDR to help find lost items</p>
+            </div>
+
+            <div id="registerMessage"></div>
+
+            <form id="registerForm" class="flex flex-col gap-5">
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">Full Name</label>
+                <input 
+                  type="text" 
+                  id="name" 
+                  placeholder="John Doe" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                  required 
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">Student ID</label>
+                <input 
+                  type="text" 
+                  id="studentId" 
+                  placeholder="e.g. 1234" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                  required 
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">Phone Number</label>
+                <input 
+                  type="tel" 
+                  id="phoneNumber" 
+                  placeholder="+60123456789" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                  required 
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">Email Address (Optional)</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  placeholder="john.doe@university.edu" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">RFID Tag (Optional)</label>
+                <input 
+                  type="text" 
+                  id="rfidTag" 
+                  placeholder="RFID Tag Number" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">Password</label>
+                <input 
+                  type="password" 
+                  id="password" 
+                  placeholder="Create a strong password" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                  required 
+                />
+              </div>
+              <button type="submit" id="registerBtn" class="btn-primary py-3.5 rounded-lg font-semibold text-white w-full mt-2">
+                Create Account
+              </button>
+            </form>
+
+            <div class="divider my-6"></div>
+
+            <p class="text-gray-400 text-sm text-center">
+              Already have an account?
+              <button id="goLogin" class="text-blue-400 hover:text-blue-300 font-medium transition-colors">Login here</button>
+            </p>
+          `;
+        }
+
+        else if (currentPage === "upload") {
+          container.innerHTML = `
+            <div class="text-center mb-8">
+              <h2 class="text-3xl md:text-4xl font-semibold mb-3">Upload Lost Item</h2>
+              <p class="text-gray-400 text-base">Help others find what they've lost</p>
+            </div>
+
+            <div id="uploadMessage"></div>
+
+            <form id="uploadForm" class="flex flex-col gap-6">
+              <div>
+                <label class="block text-sm font-medium mb-3 text-gray-300">Item Photo</label>
+                <div id="imagePreview" class="image-preview-container w-full h-64 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-gray-500 text-sm">
+                  <div class="text-center p-6">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <label for="imageUpload" class="file-input-label text-blue-400 font-medium">
+                      Click to upload image
+                    </label>
+                    <p class="text-gray-600 text-xs mt-2">PNG, JPG up to 10MB</p>
+                  </div>
+                </div>
+                <input type="file" id="imageUpload" accept="image/*" required />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-3 text-gray-300">Box ID</label>
+                <input 
+                  type="number" 
+                  id="boxId" 
+                  placeholder="Enter Box ID" 
+                  class="w-full px-4 py-3 rounded-lg text-base" 
+                  required 
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-3 text-gray-300">Description (Optional)</label>
+                <textarea 
+                  id="description" 
+                  rows="4" 
+                  placeholder="Describe the item in detail (color, brand, location found, etc.)" 
+                  class="w-full px-4 py-3 rounded-lg text-base resize-none"
+                ></textarea>
+              </div>
+
+              <button type="submit" id="uploadBtn" class="btn-primary py-3.5 rounded-lg font-semibold text-white w-full">
+                Upload Item
+              </button>
+            </form>
+
+            <div class="divider my-6"></div>
+
+            <div class="text-center">
+              <button id="logout" class="btn-secondary px-6 py-2 rounded-lg text-sm font-medium transition-all">
+                Logout
+              </button>
+            </div>
+          `;
+        }
+
+        app.appendChild(container);
+        requestAnimationFrame(() =>
+          container.classList.add("slide-enter-active")
+        );
+
+        // Event bindings
+        const homeLoginForm = document.getElementById("homeLoginForm");
+        const registerForm = document.getElementById("registerForm");
+        const uploadForm = document.getElementById("uploadForm");
+
+        const goRegister = document.getElementById("goRegister");
+        const goLogin = document.getElementById("goLogin");
+        const logout = document.getElementById("logout");
+
+        if (goRegister) goRegister.onclick = () => switchPage("register");
+        if (goLogin) goLogin.onclick = () => switchPage("home");
+        if (logout) {
+          logout.onclick = () => {
+            localStorage.removeItem("userId");
+            userId = null;
+            switchPage("home");
+          };
+        }
+
+        // Login form handler
+        if (homeLoginForm) {
+          homeLoginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const loginBtn = document.getElementById("loginBtn");
+            const messageDiv = document.getElementById("loginMessage");
+            const studentId = document.getElementById("studentId").value;
+            const password = document.getElementById("password").value;
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<div class="spinner"></div>Logging in...';
+            messageDiv.innerHTML = '';
+
+            try {
+              const response = await fetch(`${API_BASE}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                  student_id: studentId, 
+                  password: password 
+                }),
+              });
+
+              const data = await response.json();
+
+              if (response.ok) {
+                localStorage.setItem("userId", data.user_id);
+                userId = data.user_id;
+                messageDiv.innerHTML = showSuccess("Login successful! Redirecting...");
+                setTimeout(() => switchPage("upload"), 1000);
+              } else {
+                messageDiv.innerHTML = showError(data.detail || "Login failed");
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Login';
+              }
+            } catch (error) {
+              messageDiv.innerHTML = showError("Network error. Please try again.");
+              loginBtn.disabled = false;
+              loginBtn.innerHTML = 'Login';
+            }
+          };
+        }
+
+        // Register form handler
+        if (registerForm) {
+          registerForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const registerBtn = document.getElementById("registerBtn");
+            const messageDiv = document.getElementById("registerMessage");
+            
+            const payload = {
+              name: document.getElementById("name").value,
+              student_id: document.getElementById("studentId").value,
+              phone_number: document.getElementById("phoneNumber").value,
+              email: document.getElementById("email").value || null,
+              rfid_tag: document.getElementById("rfidTag").value || null,
+              password: document.getElementById("password").value,
+            };
+
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<div class="spinner"></div>Creating account...';
+            messageDiv.innerHTML = '';
+
+            try {
+              const response = await fetch(`${API_BASE}/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+
+              const data = await response.json();
+
+              if (response.ok) {
+                messageDiv.innerHTML = showSuccess("Registration successful! Please login now.");
+                setTimeout(() => switchPage("home"), 2000);
+              } else {
+                messageDiv.innerHTML = showError(data.detail || "Registration failed");
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = 'Create Account';
+              }
+            } catch (error) {
+              messageDiv.innerHTML = showError("Network error. Please try again.");
+              registerBtn.disabled = false;
+              registerBtn.innerHTML = 'Create Account';
+            }
+          };
+        }
+
+        // Upload form handler
+        if (uploadForm) {
+          const imgInput = document.getElementById("imageUpload");
+          const preview = document.getElementById("imagePreview");
+
+          imgInput.addEventListener("change", () => {
+            const file = imgInput.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                preview.classList.add('has-image');
+                preview.innerHTML = `
+                  <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg fade-in"/>
+                  <label for="imageUpload" class="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                    <span class="text-white font-medium">Change Image</span>
+                  </label>
+                `;
+              };
+              reader.readAsDataURL(file);
+            }
+          });
+
+          uploadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const uploadBtn = document.getElementById("uploadBtn");
+            const messageDiv = document.getElementById("uploadMessage");
+            const imageFile = document.getElementById("imageUpload").files[0];
+            const boxId = document.getElementById("boxId").value;
+            const description = document.getElementById("description").value;
+
+            if (!userId) {
+              messageDiv.innerHTML = showError("User not logged in. Please login again.");
+              return;
+            }
+
+            if (!imageFile) {
+              messageDiv.innerHTML = showError("Please select an image.");
+              return;
+            }
+
+            const formData = new FormData();
+            formData.append("image", imageFile);
+            formData.append("finder_user_id", userId);
+            formData.append("box_id", boxId);
+            if (description) {
+              formData.append("description", description);
+            }
+
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<div class="spinner"></div>Uploading...';
+            messageDiv.innerHTML = '';
+
+            try {
+              const response = await fetch(`${API_BASE}/upload`, {
+                method: "POST",
+                body: formData,
+              });
+
+              const data = await response.json();
+
+              if (response.ok) {
+                messageDiv.innerHTML = showSuccess("Item uploaded successfully!");
+                uploadForm.reset();
+                preview.classList.remove('has-image');
+                preview.innerHTML = `
+                  <div class="text-center p-6">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <label for="imageUpload" class="file-input-label text-blue-400 font-medium">
+                      Click to upload image
+                    </label>
+                    <p class="text-gray-600 text-xs mt-2">PNG, JPG up to 10MB</p>
+                  </div>
+                `;
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = 'Upload Item';
+              } else {
+                const errorDetail = typeof data.detail === 'object' ? data.detail.error : data.detail;
+                messageDiv.innerHTML = showError(errorDetail || "Upload failed");
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = 'Upload Item';
+              }
+            } catch (error) {
+              messageDiv.innerHTML = showError("Network error. Please try again.");
+              uploadBtn.disabled = false;
+              uploadBtn.innerHTML = 'Upload Item';
+            }
+          };
+        }
+      }
+
+      function switchPage(page) {
+        currentPage = page;
+        render();
+      }
+
+      // Check if user is logged in on load
+      if (userId) {
+        currentPage = "upload";
+      }
+
+      render();
+    </script>
+  </body>
+</html>
