@@ -21,8 +21,20 @@ class UserCreate(UserBase):
     
 
 class UserLogin(BaseModel):
-    student_id: str
+    # identifier can be a student ID (numeric) or an email address
+    identifier: Optional[str] = None
+    # Back-compat: allow legacy clients to send student_id
+    student_id: Optional[str] = None
     password: str
+
+    @model_validator(mode="after")
+    def _normalize_identifier(self):
+        if not self.identifier and self.student_id:
+            # promote legacy field
+            self.identifier = str(self.student_id)
+        if not self.identifier:
+            raise ValueError("identifier or student_id is required")
+        return self
 
 
 class UserRead(UserBase):
