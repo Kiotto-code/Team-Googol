@@ -612,7 +612,7 @@ async def query_items_public(
             final_score = (0.6 * desc_score + 0.4 * img_score) if desc_score != 0 else img_score
 
             # Keep only those above threshold
-            if final_score > 0.4:
+            if final_score > 0.45:
                 results.append({
                     "item_id": item.item_id,
                     "description": item.description,

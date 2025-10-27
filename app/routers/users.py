@@ -421,4 +421,5 @@ def login_user(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     return {
         "message": "Login successful",
         "user_id": user.user_id,
+        "name": user.name
     }
