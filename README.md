@@ -75,3 +75,18 @@ Example create payloads:
 ## DB Schema
 
 The SQLite DB is created automatically at startup with tables: users, items, boxes, cases, matching the provided design (auto-increment PKs, FKs, uniques, timestamps with default now()).
+
+## Smart Box Firmware (ESP32-S3-CAM)
+
+An Arduino sketch for the ESP32-S3 smart locker lives in `firmware/smart_box/`. The firmware drives the TFT, RFID, PCF8575 I/O expander, MFRC522 reader, and on-board camera using non-blocking timers and the shared SPI bus.
+
+### Building with Arduino IDE
+
+1. Install the ESP32 board package v2.0.11 or newer from Espressif.
+2. Open `firmware/smart_box/SmartBox.ino` in Arduino IDE.
+3. From **Tools → Board**, pick **ESP32S3 Dev Module**.
+4. Enable PSRAM (Tools → PSRAM → Enabled) and choose QSPI mode if available. Leave Flash at 80 MHz and `Huge APP` partition for camera buffers.
+5. Install required libraries if prompted: `Adafruit ST7735 and ST7789 Library`, `Adafruit GFX Library`, `MFRC522`, and `QRCode`.
+6. Connect the ESP32-S3-CAM board via USB, select the correct port, then click **Upload**.
+
+On boot, the display shows Wi-Fi status and a QR code for `/upload-page?box_id=SMART_BOX_001`. Further validation steps are listed in `firmware/smart_box/TEST_PLAN.md`.
