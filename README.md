@@ -45,6 +45,40 @@ Admin APIs (require admin/staff role):
 - Boxes: GET/POST /boxes
 - Cases: GET/POST /cases
 
+### Smart box firmware API
+
+ESP32 smart boxes interact with the backend through `/api/v1/boxes` endpoints. Each handler
+returns a `DeviceBoxActionResponse` payload:
+
+```json
+{
+  "box_id": 1,
+  "action": "deposit_unlock",
+  "box_status": true,
+  "door_status": true,
+  "telemetry_id": 42,
+  "user_id": null,
+  "metadata": {"request_id": "req-123"}
+}
+```
+
+Endpoints and request bodies:
+
+| Endpoint | Purpose | Request body |
+| --- | --- | --- |
+| `POST /api/v1/boxes/{box_id}/deposit/unlock` | Unlock door for a deposit when the box is available. | `{"request_id": "req-123", "device_id": "ESP32-01"}` |
+| `POST /api/v1/boxes/{box_id}/deposit/complete` | Mark the deposit complete, close the door, and flip the box to FULL. | `{"request_id": "req-124", "load": 1, "door_closed": true}` |
+| `POST /api/v1/boxes/{box_id}/pickup/validate` | Validate a pickup via RFID and unlock the door. | `{"request_id": "req-200", "rfid_uid": "RF123"}` |
+| `POST /api/v1/boxes/{box_id}/pickup/complete` | Mark a pickup as completed and return the box to AVAILABLE (optional photo metadata allowed). | `{"request_id": "req-201", "rfid_uid": "RF123", "photo_url": "https://..."}` |
+| `POST /api/v1/boxes/{box_id}/door-timeout` | Log a door-open timeout with duration information. | `{"request_id": "req-300", "duration_seconds": 120, "door_open": true}` |
+| `POST /api/v1/boxes/{box_id}/activity` | Record IR sensor activity while the door is closed. | `{"request_id": "req-400", "triggered": true, "sensor_value": 512}` |
+
+All device endpoints enforce the following invariants:
+
+- A box must be AVAILABLE (`box.status == true`) to start a deposit flow.
+- A box must be FULL (`box.status == false`) to start a pickup flow.
+- Door state transitions (`door_status`) always mirror the hardware request and are recorded in box telemetry and audit logs.
+
 Example create payloads:
 
 - POST /users

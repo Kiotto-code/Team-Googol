@@ -9,6 +9,7 @@ from sqlalchemy import text
 from .routers import audit_logs, users, items, boxes, cases
 from .routers import admin_auth, admin_reports, system
 from .routers import activity as activity_router
+from .routers import device_boxes
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -91,6 +92,7 @@ openapi_tags = [
     {"name": "admin-items", "description": "Administrative item management endpoints."},
     {"name": "items", "description": "Public item discovery endpoints."},
     {"name": "admin-boxes", "description": "Administrative storage box management."},
+    {"name": "device-boxes", "description": "Firmware-facing smart box integration APIs."},
     {"name": "admin-cases", "description": "Administrative case tracking endpoints."},
     {"name": "admin-audit-logs", "description": "Administrative audit log access."},
     {"name": "system", "description": "Health and readiness probes."},
@@ -173,6 +175,7 @@ app.include_router(items.admin_router)
 app.include_router(items.public_router)
 app.include_router(boxes.router)
 app.include_router(boxes.ws_router)
+app.include_router(device_boxes.router)
 app.include_router(cases.router)
 app.include_router(audit_logs.router)
 app.include_router(system.router)
