@@ -404,7 +404,19 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @public_router.post("/login")
 def login_user(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.student_id == credentials.student_id).first()
+    identifier = credentials.identifier.strip() if credentials.identifier else ""
+
+    user = None
+    # Try email first if it looks like an email
+    if "@" in identifier:
+        user = db.query(models.User).filter(models.User.email == identifier).first()
+    else:
+        # Fallback: treat as student_id if numeric; otherwise force not found
+        try:
+            sid = int(identifier)
+            user = db.query(models.User).filter(models.User.student_id == sid).first()
+        except (TypeError, ValueError):
+            user = None
 
     if (
         not user
@@ -415,7 +427,7 @@ def login_user(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid student ID or password",
+            detail="Invalid credentials",
         )
 
     return {

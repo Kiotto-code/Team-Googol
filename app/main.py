@@ -8,6 +8,7 @@ from .db import engine, Base
 from sqlalchemy import text
 from .routers import audit_logs, users, items, boxes, cases
 from .routers import admin_auth, admin_reports, system
+from .routers import activity as activity_router
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -177,6 +178,7 @@ app.include_router(audit_logs.router)
 app.include_router(system.router)
 app.include_router(admin_reports.metrics_router)
 app.include_router(admin_reports.reports_router)
+app.include_router(activity_router.router)
 
 import os
 from fastapi.staticfiles import StaticFiles
@@ -188,3 +190,8 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+# Activity directory for POST /log/activity
+ACTIVITY_DIR = os.path.join(BASE_DIR, "activity")
+os.makedirs(ACTIVITY_DIR, exist_ok=True)
+app.mount("/activity", StaticFiles(directory=ACTIVITY_DIR), name="activity")
