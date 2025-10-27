@@ -331,6 +331,51 @@ class BoxActionResponse(BaseModel):
     telemetry: Optional[dict[str, Any]] = None
 
 
+class DeviceBoxActionResponse(BaseModel):
+    box_id: int
+    action: str
+    box_status: Optional[bool] = None
+    door_status: Optional[bool] = None
+    telemetry_id: Optional[int] = None
+    user_id: Optional[int] = None
+    metadata: dict[str, Any] | None = None
+
+
+class BoxDepositUnlockRequest(BaseModel):
+    request_id: str
+    device_id: Optional[str] = None
+
+
+class BoxDepositCompleteRequest(BaseModel):
+    request_id: str
+    load: Optional[int] = None
+    door_closed: bool = True
+
+
+class BoxPickupValidationRequest(BaseModel):
+    request_id: str
+    rfid_uid: str
+
+
+class BoxPickupCompleteRequest(BaseModel):
+    request_id: str
+    rfid_uid: Optional[str] = None
+    photo_url: Optional[str] = None
+    photo_taken_at: Optional[datetime] = None
+
+
+class BoxDoorTimeoutRequest(BaseModel):
+    request_id: str
+    duration_seconds: int = Field(..., ge=1)
+    door_open: bool = True
+
+
+class BoxInfraredActivityRequest(BaseModel):
+    request_id: str
+    triggered: bool
+    sensor_value: Optional[int] = None
+
+
 class BoxTelemetryRead(BaseModel):
     telemetry_id: int
     box_id: int
