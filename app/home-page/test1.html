@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>FINDR</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* --- EXACT STYLES FROM ORIGINAL --- */
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: #0d0d0d;
+            color: #fff;
+        }
+
+        .logo-font {
+            font-family: "Space Grotesk", sans-serif;
+        }
+
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .slide-enter {
+            opacity: 0;
+            transform: translateY(25px);
+        }
+
+        .slide-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input,
+        textarea {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .header-glow {
+            text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+        }
+
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* NEW HOMEPAGE STYLES */
+        .hero-section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-title {
+            font-size: clamp(4rem, 12vw, 8rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.25rem, 4vw, 1.75rem);
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+            min-height: 2.5rem;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 3px;
+            background-color: #fff;
+            margin-left: 4px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.875rem;
+            animation: bounce 2s infinite;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .scroll-indicator.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-10px) translateX(-50%); }
+            60% { transform: translateY(-5px) translateX(-50%); }
+        }
+
+        .scroll-indicator svg {
+            margin-top: 0.5rem;
+        }
+
+        .main-content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            padding-top: 0;
+        }
+
+        .main-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(17, 17, 17, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 1rem 0;
+            transform: translateY(-100%);
+            transition: transform 0.4s ease;
+            border-bottom: 1px solid rgba(31, 31, 31, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header.visible {
+            transform: translateY(0);
+        }
+
+        .header .logo-font {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+
+        .header .tagline {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: opacity 0.5s ease;
+        }
+
+        .particles.hidden {
+            opacity: 0;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(59, 130, 246, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #111;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            max-width: 7xl;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-content {
+                flex-direction: row;
+                justify-content: space-between;
+                text-align: left;
+            }
+        }
+
+        /* New Modern Section Styles */
+        .section {
+            padding: 5rem 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* How It Works Section */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        @media (min-width: 768px) {
+            .steps-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .step-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .step-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #1e40af;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .step-description {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        /* Benefits Section */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        @media (min-width: 768px) {
+            .benefits-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .benefit-card {
+            padding: 2rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .benefit-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 1.5rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .benefit-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .benefit-description {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 5rem 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+        }
+
+        .cta-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .cta-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.125rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+        }
+
+        /* Feature Highlight */
+        .feature-highlight {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        @media (min-width: 768px) {
+            .feature-highlight {
+                flex-direction: row;
+                text-align: left;
+            }
+            
+            .feature-highlight.reverse {
+                flex-direction: row-reverse;
+            }
+        }
+
+        .feature-content {
+            flex: 1;
+            padding: 2rem;
+        }
+
+        .feature-visual {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .visual-card {
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* NEW HEADER STYLES */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .header-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-left: auto;
+        }
+
+        .user-greeting {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-right: 1rem;
+        }
+
+        .login-toggle {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .login-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: rgba(239, 68, 68, 0.9);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Login Slider Styles */
+        .login-slider {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 350px;
+            height: 100vh;
+            background: rgba(17, 17, 17, 0.98);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 2rem;
+            transition: right 0.3s ease;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
+
+        .login-slider.active {
+            right: 0;
+        }
+
+        .login-slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-slider-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close-slider {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .close-slider:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-input {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .login-btn {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .register-link a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .success-message {
+            color: #10b981;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* Navigation Menu Styles */
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100vh;
+            background: rgba(17, 17, 17, 0.98);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 2rem;
+            transition: left 0.3s ease;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
+
+        .nav-menu.active {
+            left: 0;
+        }
+
+        .nav-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-menu-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close-nav {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .close-nav:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-link svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .menu-toggle {
+                display: none;
+            }
+            
+            .header-actions {
+                gap: 1.5rem;
+            }
+            
+            .desktop-nav {
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+            }
+            
+            .desktop-nav-link {
+                color: rgba(255, 255, 255, 0.7);
+                text-decoration: none;
+                font-size: 0.9rem;
+                transition: color 0.2s ease;
+                padding: 0.5rem 0.75rem;
+                border-radius: 0.5rem;
+            }
+            
+            .desktop-nav-link:hover {
+                color: white;
+                background: rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        @media (max-width: 767px) {
+            .desktop-nav {
+                display: none;
+            }
+            
+            .header-brand .tagline {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    <!-- Overlay for login slider and navigation -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Login Slider -->
+    <div class="login-slider" id="loginSlider">
+        <div class="login-slider-header">
+            <h2 class="login-slider-title">Login to FINDR</h2>
+            <button class="close-slider" id="closeSlider">&times;</button>
+        </div>
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="identifier" class="form-label">Email or Student ID</label>
+                <input type="text" id="identifier" class="form-input" placeholder="Enter your email or student ID" required>
+            </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+            </div>
+            <div class="error-message" id="loginError"></div>
+            <div class="success-message" id="loginSuccess"></div>
+            <button type="submit" class="btn-primary login-btn" id="loginBtn">
+                Login
+            </button>
+            <div class="register-link">
+                Haven't registered? <a href="http://127.0.0.1:8000/register">Register now</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Navigation Menu -->
+    <div class="nav-menu" id="navMenu">
+        <div class="nav-menu-header">
+            <h2 class="nav-menu-title">Menu</h2>
+            <button class="close-nav" id="closeNav">&times;</button>
+        </div>
+        <div class="nav-links">
+            <a href="http://127.0.0.1:8000/query" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Search Items
+            </a>
+            <a href="http://127.0.0.1:8000/leaderboard" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 8V16M12 11V16M8 14V16M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Leaderboard
+            </a>
+            <a href="http://127.0.0.1:8000/register" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Register
+            </a>
+        </div>
+    </div>
+
+    <!-- Fixed Header (initially hidden) -->
+    <header class="header">
+        <div class="header-container">
+            <button class="menu-toggle" id="menuToggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            
+            <div class="header-brand">
+                <h1 class="logo-font font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
+                    FINDR.
+                </h1>
+                <p class="text-gray-500 tagline tracking-wide">Lost & Found Made Easy.</p>
+            </div>
+            
+            <div class="header-actions">
+                <div class="desktop-nav">
+                    <a href="http://127.0.0.1:8000/query" class="desktop-nav-link">Search Items</a>
+                    <a href="http://127.0.0.1:8000/leaderboard" class="desktop-nav-link">Leaderboard</a>
+                </div>
+                
+                <div class="user-greeting" id="userGreeting" style="display: none;"></div>
+                <button class="login-toggle" id="loginToggle">Login</button>
+                <button class="logout-btn" id="logoutBtn" style="display: none;">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="particles" id="particles"></div>
+        <h1 class="logo-font hero-title text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
+            FINDR.
+        </h1>
+        <div class="hero-subtitle" id="typing-text">
+            <span id="typed-text"></span><span class="typing-cursor"></span>
+        </div>
+        <div class="scroll-indicator" id="scrollIndicator">
+            Discover how it works
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M12 19L19 12M12 19L5 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content flex-grow">
+        <!-- Introduction Section -->
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title">The Future of Lost & Found</h2>
+                <p class="section-subtitle">FINDR combines smart physical boxes with AI-powered technology to make lost-and-found simple, secure, and efficient across campus.</p>
+                
+                <div class="feature-highlight">
+                    <div class="feature-content">
+                        <h3 class="text-2xl font-bold mb-4">Smart Automated Box + AI Web App</h3>
+                        <p class="text-gray-300 mb-4">Our system seamlessly connects physical secure drop-off points with intelligent digital matching to reunite you with your lost items faster than ever.</p>
+                        <p class="text-gray-300">No more lost items piling up in random offices. No more endless searching through unorganized lost-and-found areas.</p>
+                    </div>
+                    <div class="feature-visual">
+                        <div class="visual-card">
+                            Smart Box + AI Platform
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="section" style="background: rgba(255, 255, 255, 0.02);">
+            <div class="container">
+                <h2 class="section-title">How FINDR. Works</h2>
+                <p class="section-subtitle">Three simple steps to recover your lost items</p>
+                
+                <div class="steps-grid">
+                    <div class="step-card glass-card">
+                        <div style="position: relative;">
+                            <div class="step-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 4V20M20 12H4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="step-number">1</div>
+                        </div>
+                        <h3 class="step-title">Found an Item?</h3>
+                        <p class="step-description">Scan the QR code on any FINDR box, take a picture in the web app, and securely place the item inside the box.</p>
+                    </div>
+                    
+                    <div class="step-card glass-card">
+                        <div style="position: relative;">
+                            <div class="step-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="step-number">2</div>
+                        </div>
+                        <h3 class="step-title">Lost Something?</h3>
+                        <p class="step-description">Search with a simple description in our web app. Our AI instantly matches your query to items in FINDR boxes.</p>
+                    </div>
+                    
+                    <div class="step-card glass-card">
+                        <div style="position: relative;">
+                            <div class="step-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="white" stroke-width="2"/>
+                                    <path d="M2 12C2 12 5 6 12 6C19 6 22 12 22 12C22 12 19 18 12 18C5 18 2 12 2 12Z" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="step-number">3</div>
+                        </div>
+                        <h3 class="step-title">Claim Your Item</h3>
+                        <p class="step-description">If matched, simply scan your RFID card at the box to unlock it and retrieve your item securely.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Benefits Section -->
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title">Why Choose FINDR?</h2>
+                <p class="section-subtitle">Experience the next generation of campus lost-and-found</p>
+                
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#3b82f6" stroke-width="2"/>
+                                <path d="M12 16V12" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M12 8H12.01" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="benefit-title">Security</h3>
+                        <p class="benefit-description">Automated locking system with RFID authentication prevents unauthorized access to your belongings.</p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 6V12L16 14M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="benefit-title">Efficiency</h3>
+                        <p class="benefit-description">No more endless searching. Our AI-powered matching dramatically reduces the time to find lost items.</p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 12H21M3 6H21M3 18H21" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="benefit-title">Accessibility</h3>
+                        <p class="benefit-description">Easy item drop-off at any FINDR box and convenient item search anytime, anywhere through our web app.</p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="benefit-title">Scalability</h3>
+                        <p class="benefit-description">Multiple FINDR boxes can be deployed across campus, creating a comprehensive lost-and-found network.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="container">
+                <h2 class="cta-title">Ready to Experience Smart Lost & Found?</h2>
+                <p class="cta-description">Join the FINDR community today and never worry about lost items again. Register now as a student and start using our smart boxes.</p>
+                <a href="http://127.0.0.1:8000/register" class="btn-primary cta-button text-white">
+                    Get Started Now
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-font footer-logo text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">
+                    FINDR.
+                </div>
+                <p class="footer-copyright">© 2025 FINDR. All rights reserved.</p>
+            </div> 
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="#" class="footer-link">Contact</a>
+                <a href="#" class="footer-link">About</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Typing effect variables
+        const taglines = [
+            "Smart Lost & Found.",
+            "AI-Powered Recovery.",
+            "Secure Automated Boxes.",
+            "Campus-Wide Solution."
+        ];
+        let currentTaglineIndex = 0;
+        let currentCharIndex = 0;
+        let isDeleting = false;
+        let typingSpeed = 100;
+        
+        // DOM elements
+        const typedTextElement = document.getElementById("typed-text");
+        const mainContent = document.querySelector(".main-content");
+        const header = document.querySelector(".header");
+        const scrollIndicator = document.getElementById("scrollIndicator");
+        const particles = document.getElementById("particles");
+        
+        // Login slider elements
+        const loginSlider = document.getElementById("loginSlider");
+        const overlay = document.getElementById("overlay");
+        const loginToggle = document.getElementById("loginToggle");
+        const closeSlider = document.getElementById("closeSlider");
+        const loginForm = document.getElementById("loginForm");
+        const loginBtn = document.getElementById("loginBtn");
+        const loginError = document.getElementById("loginError");
+        const loginSuccess = document.getElementById("loginSuccess");
+        const userGreeting = document.getElementById("userGreeting");
+        const logoutBtn = document.getElementById("logoutBtn");
+        
+        // Navigation elements
+        const navMenu = document.getElementById("navMenu");
+        const menuToggle = document.getElementById("menuToggle");
+        const closeNav = document.getElementById("closeNav");
+
+        // Initialize the page
+        document.addEventListener("DOMContentLoaded", function() {
+            // Start typing effect
+            typeEffect();
+            
+            // Create floating particles
+            createParticles();
+            
+            // Set up scroll listener
+            window.addEventListener("scroll", handleScroll);
+            
+            // Set up login slider functionality
+            setupLoginSlider();
+            
+            // Set up navigation menu
+            setupNavigation();
+            
+            // Check if user is already logged in
+            checkLoginStatus();
+        });
+
+        // Typing effect function
+        function typeEffect() {
+            const currentTagline = taglines[currentTaglineIndex];
+            
+            if (isDeleting) {
+                // Deleting text
+                typedTextElement.textContent = currentTagline.substring(0, currentCharIndex - 1);
+                currentCharIndex--;
+                typingSpeed = 50;
+            } else {
+                // Typing text
+                typedTextElement.textContent = currentTagline.substring(0, currentCharIndex + 1);
+                currentCharIndex++;
+                typingSpeed = 100;
+            }
+            
+            // Check if we've finished typing the current tagline
+            if (!isDeleting && currentCharIndex === currentTagline.length) {
+                // Pause at the end of typing
+                typingSpeed = 1500;
+                isDeleting = true;
+            } else if (isDeleting && currentCharIndex === 0) {
+                // Move to next tagline
+                isDeleting = false;
+                currentTaglineIndex = (currentTaglineIndex + 1) % taglines.length;
+                typingSpeed = 500;
+            }
+            
+            setTimeout(typeEffect, typingSpeed);
+        }
+
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById("particles");
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement("div");
+                particle.classList.add("particle");
+                
+                // Random size between 2px and 6px
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                // Random animation duration
+                const duration = Math.random() * 20 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                const delay = Math.random() * 5;
+                particle.style.animationDelay = `${delay}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Handle scroll to show/hide content
+        function handleScroll() {
+            const scrollPosition = window.scrollY;
+            const windowHeight = window.innerHeight;
+            
+            // Show main content when scrolled past 40% of viewport height
+            if (scrollPosition > windowHeight * 0.4) {
+                mainContent.classList.add("visible");
+                header.classList.add("visible");
+                scrollIndicator.classList.add("hidden");
+                particles.classList.add("hidden");
+            } else {
+                mainContent.classList.remove("visible");
+                header.classList.remove("visible");
+                scrollIndicator.classList.remove("hidden");
+                particles.classList.remove("hidden");
+            }
+        }
+
+        // Setup login slider functionality
+        function setupLoginSlider() {
+            // Open login slider
+            loginToggle.addEventListener("click", function() {
+                loginSlider.classList.add("active");
+                overlay.classList.add("active");
+                document.body.style.overflow = "hidden";
+            });
+            
+            // Close login slider
+            closeSlider.addEventListener("click", closeLoginSlider);
+            overlay.addEventListener("click", closeLoginSlider);
+            
+            // Handle login form submission
+            loginForm.addEventListener("submit", handleLogin);
+            
+            // Handle logout
+            logoutBtn.addEventListener("click", handleLogout);
+        }
+
+        // Setup navigation menu
+        function setupNavigation() {
+            // Open navigation menu
+            menuToggle.addEventListener("click", function() {
+                navMenu.classList.add("active");
+                overlay.classList.add("active");
+                document.body.style.overflow = "hidden";
+            });
+            
+            // Close navigation menu
+            closeNav.addEventListener("click", closeNavMenu);
+            overlay.addEventListener("click", closeNavMenu);
+        }
+
+        // Close login slider
+        function closeLoginSlider() {
+            loginSlider.classList.remove("active");
+            overlay.classList.remove("active");
+            document.body.style.overflow = "";
+            // Reset form and messages
+            loginForm.reset();
+            hideMessage(loginError);
+            hideMessage(loginSuccess);
+        }
+
+        // Close navigation menu
+        function closeNavMenu() {
+            navMenu.classList.remove("active");
+            overlay.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+
+        // Handle login form submission
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const identifier = document.getElementById("identifier").value.trim();
+            const password = document.getElementById("password").value;
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner"></span> Logging in...';
+            hideMessage(loginError);
+            hideMessage(loginSuccess);
+            
+            try {
+                // Make API call to login endpoint
+                const response = await fetch('http://127.0.0.1:8000/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        identifier: identifier,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Login successful
+                    showMessage(loginSuccess, "Login successful!");
+                    
+                    // Store user data in localStorage
+                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('user_name', data.name);
+                    
+                    // Update UI to show logged in state
+                    setTimeout(() => {
+                        closeLoginSlider();
+                        updateLoginUI();
+                    }, 1000);
+                } else {
+                    // Login failed
+                    showMessage(loginError, data.detail || "Login failed. Please try again.");
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage(loginError, "An error occurred. Please try again.");
+            } finally {
+                // Reset button state
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Login';
+            }
+        }
+
+        // Handle logout
+        function handleLogout() {
+            // Clear localStorage
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('user_name');
+            
+            // Update UI to show logged out state
+            updateLoginUI();
+        }
+
+        // Check if user is logged in
+        function checkLoginStatus() {
+            const userId = localStorage.getItem('user_id');
+            const userName = localStorage.getItem('user_name');
+            
+            if (userId && userName) {
+                // User is logged in
+                updateLoginUI();
+            }
+        }
+
+        // Update UI based on login status
+        function updateLoginUI() {
+            const userId = localStorage.getItem('user_id');
+            const userName = localStorage.getItem('user_name');
+            
+            if (userId && userName) {
+                // User is logged in
+                const firstName = userName.split(' ')[0]; // Extract first name
+                userGreeting.textContent = `Hi, ${firstName}`;
+                userGreeting.style.display = 'block';
+                logoutBtn.style.display = 'block';
+                loginToggle.style.display = 'none';
+            } else {
+                // User is logged out
+                userGreeting.style.display = 'none';
+                logoutBtn.style.display = 'none';
+                loginToggle.style.display = 'block';
+            }
+        }
+
+        // Helper function to show message
+        function showMessage(element, message) {
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // Helper function to hide message
+        function hideMessage(element) {
+            element.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

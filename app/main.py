@@ -145,6 +145,21 @@ if IMG_DIR.exists():
     )
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# HOME PAGE
+HOME_PAGE_DIR = BASE_DIR / "home-page"
+
+if HOME_PAGE_DIR.exists():
+    app.mount(
+        "/home-page",
+        StaticFiles(directory=str(HOME_PAGE_DIR), html=True),
+        name="home-page",
+    )
+
+@app.get("/home")
+def redirect_to_index():
+    return RedirectResponse(url="/home-page/")
+
+# REGISTER PAGE
 REGISTER_PAGE_DIR = BASE_DIR / "register-page"
 
 if REGISTER_PAGE_DIR.exists():
@@ -158,6 +173,21 @@ if REGISTER_PAGE_DIR.exists():
 def redirect_to_index():
     return RedirectResponse(url="/register-page/")
 
+# QUERY PAGE
+QUERY_PAGE_DIR = BASE_DIR / "query-page"
+
+if QUERY_PAGE_DIR.exists():
+    app.mount(
+        "/query-page",
+        StaticFiles(directory=str(QUERY_PAGE_DIR), html=True),
+        name="query-page",
+    )
+
+@app.get("/query")
+def redirect_to_index():
+    return RedirectResponse(url="/query-page/")
+
+# UPLOAD PAGE
 UPLOAD_PAGE_DIR = BASE_DIR / "upload-page"
 
 if UPLOAD_PAGE_DIR.exists():
@@ -170,10 +200,6 @@ if UPLOAD_PAGE_DIR.exists():
 @app.get("/upload")
 def redirect_to_index():
     return RedirectResponse(url="/upload-page/")
-
-# @app.get("/upload")
-# async def redirect_to_upload_page():
-#     return RedirectResponse(url="/upload-page/testv2.html")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
