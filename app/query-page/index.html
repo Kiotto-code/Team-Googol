@@ -171,7 +171,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			z-index: 50;
+			z-index: 9999;
 			padding: 1rem;
 			opacity: 0;
 			transition: opacity 0.3s ease;
@@ -272,23 +272,112 @@
 			object-fit: cover;
 			background-color: #1a1a1a;
 		}
+
+		/* EXACT HEADER STYLES FROM ORIGINAL */
+		.header {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			background-color: rgba(17, 17, 17, 0.95);
+			backdrop-filter: blur(10px);
+			z-index: 100;
+			padding: 2rem 0;
+			border-bottom: 1px solid rgba(31, 31, 31, 1);
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+
+		.header .logo-font {
+			font-size: 3rem;
+			font-weight: 700;
+		}
+
+		.header .tagline {
+			font-size: 0.875rem;
+			margin-top: 0.5rem;
+		}
+
+		/* Main content with padding to account for fixed header */
+		.main-content {
+			padding-top: 160px; /* Enough space for the header */
+			min-height: calc(100vh - 160px); /* Ensure footer stays at bottom */
+		}
+
+		/* Footer Styles */
+		.footer {
+			background-color: #111;
+			border-top: 1px solid rgba(255, 255, 255, 0.1);
+			padding: 2rem 0;
+			margin-top: auto;
+		}
+
+		.footer-content {
+			max-width: 7xl;
+			margin: 0 auto;
+			padding: 0 1.5rem;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+			gap: 1rem;
+		}
+
+		.footer-logo {
+			font-size: 1.5rem;
+			font-weight: 700;
+		}
+
+		.footer-links {
+			display: flex;
+			gap: 1.5rem;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+
+		.footer-link {
+			color: rgba(255, 255, 255, 0.6);
+			text-decoration: none;
+			font-size: 0.875rem;
+			transition: color 0.2s ease;
+		}
+
+		.footer-link:hover {
+			color: rgba(255, 255, 255, 0.9);
+		}
+
+		.footer-copyright {
+			color: rgba(255, 255, 255, 0.4);
+			font-size: 0.75rem;
+			margin-top: 0.5rem;
+		}
+
+		@media (min-width: 768px) {
+			.footer-content {
+				flex-direction: row;
+				justify-content: space-between;
+				text-align: left;
+			}
+		}
 	</style>
 </head>
 
 <body class="min-h-screen flex flex-col">
-	<!-- Header -->
-	<header class="w-full py-8 bg-[#111] text-center shadow-md border-b border-[#1f1f1f]">
-		<h1
-			class="logo-font text-5xl md:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
-			FINDR.
-		</h1>
-		<p class="text-gray-500 text-sm mt-2 tracking-wide">Lost & Found Made Easy.</p>
+	<!-- Fixed Header (exact size from original) -->
+	<header class="header">
+		<div class="max-w-7xl mx-auto px-6 flex flex-col items-center">
+			<h1 class="logo-font font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
+				FINDR.
+			</h1>
+			<p class="text-gray-500 tagline tracking-wide">Lost & Found Made Easy.</p>
+		</div>
 	</header>
 
-	<!-- Main -->
-	<main class="flex-grow px-6 py-10 md:px-10">
+	<br><br><br>
+
+	<!-- Main Content with proper padding -->
+	<main class="main-content flex-grow">
 		<!-- Search Section -->
-		<div class="max-w-4xl mx-auto mb-10">
+		<div class="max-w-4xl mx-auto mb-10 px-6 md:px-10">
 			<div class="glass-card slide-enter slide-enter-active p-8 md:p-10 shadow-xl">
 				<div class="text-center mb-8">
 					<h2 class="text-3xl md:text-4xl font-semibold mb-3">Lost an item?</h2>
@@ -316,10 +405,28 @@
 		</div>
 
 		<!-- Results Section -->
-		<div class="max-w-7xl mx-auto">
+		<div class="max-w-7xl mx-auto px-6 md:px-10 pb-10">
 			<div id="resultsContainer"></div>
 		</div>
 	</main>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<div class="footer-content">
+			<div class="footer-brand">
+				<div class="logo-font footer-logo text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">
+					FINDR.
+				</div>
+				<p class="footer-copyright">© 2025 FINDR. All rights reserved.</p>
+			</div> 
+			<div class="footer-links">
+				<a href="#" class="footer-link">Privacy Policy</a>
+				<a href="#" class="footer-link">Terms of Service</a>
+				<a href="#" class="footer-link">Contact</a>
+				<a href="#" class="footer-link">About</a>
+			</div>
+		</div>
+	</footer>
 
 	<!-- Image Modal -->
 	<div id="modal" class="modal-overlay hidden">
@@ -372,13 +479,13 @@
 
 	<script>
 		const API_BASE = "http://127.0.0.1:8000/api/v1";
-
+		
+		// DOM elements
 		const form = document.getElementById("queryForm");
 		const messageBox = document.getElementById("queryMessage");
 		const resultsContainer = document.getElementById("resultsContainer");
 		const modal = document.getElementById("modal");
 		const modalImage = document.getElementById("modalImage");
-		const modalDescription = document.getElementById("modalDescription");
 		const modalAiDescription = document.getElementById("modalAiDescription");
 		const modalScore = document.getElementById("modalScore");
 		const closeModalBtn = document.getElementById("closeModalBtn");
@@ -391,160 +498,169 @@
 
 		let currentItem = null;
 
-		// Search form handler
-		form.addEventListener("submit", async (e) => {
-			e.preventDefault();
-			messageBox.innerHTML = "";
-			resultsContainer.innerHTML = "";
+		// Initialize the page
+		document.addEventListener("DOMContentLoaded", function() {
+			// Initialize search functionality
+			initSearch();
+		});
 
-			const description = document.getElementById("description").value.trim();
-			if (!description) {
-				messageBox.innerHTML = `<div class="error-message">Please enter a description to search.</div>`;
-				return;
-			}
+		// Initialize search functionality
+		function initSearch() {
+			// Search form handler
+			form.addEventListener("submit", async (e) => {
+				e.preventDefault();
+				messageBox.innerHTML = "";
+				resultsContainer.innerHTML = "";
 
-			const btn = document.getElementById("queryBtn");
-			btn.disabled = true;
-			btn.innerHTML = `<div class="spinner"></div> Searching...`;
-
-			try {
-				const formData = new FormData();
-				formData.append("description", description);
-
-				const res = await fetch(`${API_BASE}/items/query`, {
-					method: "POST",
-					body: formData,
-				});
-
-				const data = await res.json();
-
-				if (!res.ok) {
-					messageBox.innerHTML = `<div class="error-message">${data.detail || "No similar items found."}</div>`;
+				const description = document.getElementById("description").value.trim();
+				if (!description) {
+					messageBox.innerHTML = `<div class="error-message">Please enter a description to search.</div>`;
 					return;
 				}
 
-				if (data.results && data.results.length > 0) {
-					messageBox.innerHTML = `<div class="success-message">Found ${data.results.length} similar item(s)</div>`;
-					
-					// Apply centered layout for 1-2 items, grid for 3+
-					if (data.results.length <= 2) {
-						resultsContainer.className = "results-centered";
-					} else {
-						resultsContainer.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+				const btn = document.getElementById("queryBtn");
+				btn.disabled = true;
+				btn.innerHTML = `<div class="spinner"></div> Searching...`;
+
+				try {
+					const formData = new FormData();
+					formData.append("description", description);
+
+					const res = await fetch(`${API_BASE}/items/query`, {
+						method: "POST",
+						body: formData,
+					});
+
+					const data = await res.json();
+
+					if (!res.ok) {
+						messageBox.innerHTML = `<div class="error-message">${data.detail || "No similar items found."}</div>`;
+						return;
 					}
 
-					data.results.forEach(item => {
-						const card = document.createElement("div");
-						card.className = "result-card fade-in";
+					if (data.results && data.results.length > 0) {
+						messageBox.innerHTML = `<div class="success-message">Found ${data.results.length} similar item(s)</div>`;
+						
+						// Apply centered layout for 1-2 items, grid for 3+
+						if (data.results.length <= 2) {
+							resultsContainer.className = "results-centered";
+						} else {
+							resultsContainer.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+						}
 
-						card.innerHTML = `
-							<img src="${item.image_url}" alt="Item Image" class="result-image" data-view="true" />
-							<div class="result-info">
-								<p class="result-score mb-2.5 text-sm">Similarity: ${item.score}</p>
-								<button class="btn-primary w-full py-2 rounded-lg font-semibold text-white text-sm" data-claim="true">
-									Claim Item
-								</button>
-							</div>
-						`;
+						data.results.forEach(item => {
+							const card = document.createElement("div");
+							card.className = "result-card fade-in";
 
-						// View image on image click
-						const img = card.querySelector('[data-view="true"]');
-						img.addEventListener("click", () => openModal(item));
+							card.innerHTML = `
+								<img src="${item.image_url}" alt="Item Image" class="result-image" data-view="true" />
+								<div class="result-info">
+									<p class="result-score mb-2.5 text-sm">Similarity: ${item.score}</p>
+									<button class="btn-primary w-full py-2 rounded-lg font-semibold text-white text-sm" data-claim="true">
+										Claim Item
+									</button>
+								</div>
+							`;
 
-						// Claim on button click
-						const claimBtn = card.querySelector('[data-claim="true"]');
-						claimBtn.addEventListener("click", (e) => {
-							e.stopPropagation();
-							openConfirmModal(item);
+							// View image on image click
+							const img = card.querySelector('[data-view="true"]');
+							img.addEventListener("click", () => openModal(item));
+
+							// Claim on button click
+							const claimBtn = card.querySelector('[data-claim="true"]');
+							claimBtn.addEventListener("click", (e) => {
+								e.stopPropagation();
+								openConfirmModal(item);
+							});
+
+							resultsContainer.appendChild(card);
 						});
-
-						resultsContainer.appendChild(card);
-					});
-				} else {
-					messageBox.innerHTML = `<div class="error-message">No items found matching your description.</div>`;
+					} else {
+						messageBox.innerHTML = `<div class="error-message">No items found matching your description.</div>`;
+					}
+				} catch (error) {
+					messageBox.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+				} finally {
+					btn.disabled = false;
+					btn.innerHTML = "Search";
 				}
-			} catch (error) {
-				messageBox.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
-			} finally {
-				btn.disabled = false;
-				btn.innerHTML = "Search";
+			});
+
+			// Open image modal
+			function openModal(item) {
+				currentItem = item;
+				modalImage.src = item.image_url;
+				modalAiDescription.textContent = item.gemini_description || "No AI description available";
+				modalScore.textContent = `Similarity Score: ${item.score}`;
+				
+				modal.classList.remove("hidden");
+				setTimeout(() => modal.classList.add("show"), 10);
 			}
-		});
 
-		// Open image modal
-		function openModal(item) {
-			currentItem = item;
-			modalImage.src = item.image_url;
-			modalAiDescription.textContent = item.gemini_description || "No AI description available";
-			modalScore.textContent = `Similarity Score: ${item.score}`;
-			
-			modal.classList.remove("hidden");
-			setTimeout(() => modal.classList.add("show"), 10);
-		}
-
-		// Close image modal
-		function closeModal() {
-			modal.classList.remove("show");
-			setTimeout(() => {
-				modal.classList.add("hidden");
-				currentItem = null;
-			}, 300);
-		}
-
-		closeModalBtn.addEventListener("click", closeModal);
-
-		modal.addEventListener("click", (e) => {
-			if (e.target === modal) {
-				closeModal();
+			// Close image modal
+			function closeModal() {
+				modal.classList.remove("show");
+				setTimeout(() => {
+					modal.classList.add("hidden");
+					currentItem = null;
+				}, 300);
 			}
-		});
 
-		// Open confirmation modal
-		function openConfirmModal(item) {
-			currentItem = item;
-			confirmImage.src = item.image_url;
-			confirmDescription.textContent = item.description || "No description available";
-			
-			confirmModal.classList.remove("hidden");
-			setTimeout(() => confirmModal.classList.add("show"), 10);
-		}
+			closeModalBtn.addEventListener("click", closeModal);
 
-		// Close confirmation modal
-		function closeConfirmModal() {
-			confirmModal.classList.remove("show");
-			setTimeout(() => {
-				confirmModal.classList.add("hidden");
-				currentItem = null;
-			}, 300);
-		}
-
-		confirmNoBtn.addEventListener("click", closeConfirmModal);
-
-		confirmModal.addEventListener("click", (e) => {
-			if (e.target === confirmModal) {
-				closeConfirmModal();
-			}
-		});
-
-		// Confirm claim
-		confirmYesBtn.addEventListener("click", () => {
-			if (currentItem) {
-				// Add your claim API logic here
-				alert(`Item claimed successfully!\nItem ID: ${currentItem.item_id || "N/A"}`);
-				closeConfirmModal();
-			}
-		});
-
-		// ESC key to close modals
-		document.addEventListener("keydown", (e) => {
-			if (e.key === "Escape") {
-				if (!confirmModal.classList.contains("hidden")) {
-					closeConfirmModal();
-				} else if (!modal.classList.contains("hidden")) {
+			modal.addEventListener("click", (e) => {
+				if (e.target === modal) {
 					closeModal();
 				}
+			});
+
+			// Open confirmation modal
+			function openConfirmModal(item) {
+				currentItem = item;
+				confirmImage.src = item.image_url;
+				confirmDescription.textContent = item.description || "No description available";
+				
+				confirmModal.classList.remove("hidden");
+				setTimeout(() => confirmModal.classList.add("show"), 10);
 			}
-		});
+
+			// Close confirmation modal
+			function closeConfirmModal() {
+				confirmModal.classList.remove("show");
+				setTimeout(() => {
+					confirmModal.classList.add("hidden");
+					currentItem = null;
+				}, 300);
+			}
+
+			confirmNoBtn.addEventListener("click", closeConfirmModal);
+
+			confirmModal.addEventListener("click", (e) => {
+				if (e.target === confirmModal) {
+					closeConfirmModal();
+				}
+			});
+
+			// Confirm claim
+			confirmYesBtn.addEventListener("click", () => {
+				if (currentItem) {
+					// Add your claim API logic here
+					alert(`Item claimed successfully!\nItem ID: ${currentItem.item_id || "N/A"}`);
+					closeConfirmModal();
+				}
+			});
+
+			// ESC key to close modals
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "Escape") {
+					if (!confirmModal.classList.contains("hidden")) {
+						closeConfirmModal();
+					} else if (!modal.classList.contains("hidden")) {
+						closeModal();
+					}
+				}
+			});
+		}
 	</script>
 </body>
 
