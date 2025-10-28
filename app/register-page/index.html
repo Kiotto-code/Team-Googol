@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>FINDR | Register</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* --- EXACT STYLES FROM ORIGINAL --- */
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: #0d0d0d;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .logo-font {
+            font-family: "Space Grotesk", sans-serif;
+        }
+
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .slide-enter {
+            opacity: 0;
+            transform: translateY(25px);
+        }
+
+        .slide-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input,
+        textarea {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .success-message {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .header-glow {
+            text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+        }
+
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* EXACT HEADER STYLES FROM ORIGINAL - FIXED POSITION */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(17, 17, 17, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 2rem 0;
+            border-bottom: 1px solid rgba(31, 31, 31, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header .logo-font {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+
+        .header .tagline {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #111;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            max-width: 7xl;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-content {
+                flex-direction: row;
+                justify-content: space-between;
+                text-align: left;
+            }
+        }
+
+        /* Registration specific styles */
+        .registration-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            padding-top: 140px; /* Account for fixed header */
+        }
+
+        .registration-card {
+            width: 100%;
+            max-width: 1200px; /* Increased for side-by-side layout */
+        }
+
+        .registration-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .registration-content {
+                flex-direction: row;
+                align-items: stretch;
+            }
+        }
+
+        .form-section {
+            flex: 1;
+        }
+
+        .info-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .field-error {
+            color: #fca5a5;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        /* Info section styles */
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .benefits-list li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0.75rem;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .benefit-icon {
+            margin-right: 1rem;
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .benefit-content h3 {
+            margin: 0 0 0.25rem 0;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .benefit-content p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        .info-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .info-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+            font-size: 1.125rem;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    <!-- Header - EXACT SAME AS ORIGINAL -->
+    <header class="header">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col items-center">
+            <h1 class="logo-font font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
+                FINDR.
+            </h1>
+            <p class="text-gray-500 tagline tracking-wide">Lost & Found Made Easy.</p>
+        </div>
+    </header>
+
+	<br><br><br>
+    <!-- Registration Section -->
+    <main class="registration-container">
+        <div class="registration-card">
+            <div class="registration-content">
+                <!-- Info Section (Desktop only) -->
+                <div class="info-section hidden lg:block">
+                    <div class="glass-card p-8 h-full">
+                        <h2 class="info-title">Join FINDR. Today</h2>
+                        <p class="info-subtitle">Create your account and never lose track of your belongings again</p>
+                        
+                        <ul class="benefits-list">
+                            <li>
+                                <div class="benefit-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M20 6L9 17L4 12" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="benefit-content">
+                                    <h3>Instant Item Matching</h3>
+                                    <p>Our AI-powered system instantly matches your lost items with found items in our database</p>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="benefit-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#3b82f6" stroke-width="2"/>
+                                        <path d="M12 16V12" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M12 8H12.01" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="benefit-content">
+                                    <h3>RFID Integration</h3>
+                                    <p>Register your RFID tags for automatic item identification when found on campus</p>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="benefit-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="#3b82f6" stroke-width="2"/>
+                                        <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="#3b82f6" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <div class="benefit-content">
+                                    <h3>Campus Community</h3>
+                                    <p>Join thousands of students who help each other recover lost items every day</p>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="benefit-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="#3b82f6" stroke-width="2"/>
+                                        <path d="M19.4 15C19.2669 15.3042 19.1338 15.6084 19.0007 15.9125C18.5296 16.9166 17.8589 17.8058 17.0355 18.5185C15.293 20.0665 12.9156 20.9666 10.4318 20.9985C7.94801 21.0304 5.54654 20.1922 3.75734 18.6912C2.75863 17.8389 2.00096 16.7715 1.55264 15.5875C1.35791 15.0438 1.20319 14.4848 1.09028 13.9156C1.03089 13.6136 1.25795 13.3301 1.56591 13.2958C4.13567 12.9938 6.34918 11.4818 7.7166 9.25977C9.08402 7.03773 9.45826 4.33515 8.73491 1.84845C8.67778 1.65788 8.74874 1.45117 8.91186 1.33334C9.07498 1.21551 9.29717 1.21095 9.46543 1.32165C12.2998 3.22893 14.5384 5.97977 15.8246 9.16977C17.1108 12.3598 17.367 15.8138 16.556 19.0875C16.4829 19.3917 16.761 19.6667 17.074 19.5833C18.1738 19.2958 19.2291 18.85 20.2083 18.2583C20.8138 17.8875 21.3833 17.4625 21.9083 16.9917C22.0917 16.825 22.0917 16.5417 21.9167 16.3667C20.8167 15.2667 19.4 15 19.4 15Z" stroke="#3b82f6" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <div class="benefit-content">
+                                    <h3>Smart Notifications</h3>
+                                    <p>Get instant alerts when items matching your description are found on campus</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Form Section -->
+                <div class="form-section">
+                    <div class="glass-card slide-enter slide-enter-active p-8 md:p-10 shadow-xl">
+                        <div class="text-center mb-8">
+                            <h2 class="text-3xl md:text-4xl font-semibold mb-3">Create Account</h2>
+                            <p class="text-gray-400 text-base md:text-lg">Join our community to report lost and found items</p>
+                        </div>
+
+                        <div id="messageBox"></div>
+
+                        <form id="registrationForm">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label for="name" class="form-label">Full Name *</label>
+                                    <input 
+                                        type="text" 
+                                        id="name" 
+                                        name="name" 
+                                        class="w-full px-4 py-3 rounded-lg text-base" 
+                                        required 
+                                    />
+                                    <div class="field-error" id="nameError">Please enter your full name</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="studentId" class="form-label">Student ID *</label>
+                                    <input 
+                                        type="text" 
+                                        id="studentId" 
+                                        name="studentId" 
+                                        class="w-full px-4 py-3 rounded-lg text-base" 
+                                        required 
+                                    />
+                                    <div class="field-error" id="studentIdError">Please enter your student ID</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phone" class="form-label">Phone Number *</label>
+                                <input 
+                                    type="tel" 
+                                    id="phone" 
+                                    name="phone" 
+                                    class="w-full px-4 py-3 rounded-lg text-base" 
+                                    required 
+                                />
+                                <div class="field-error" id="phoneError">Please enter a valid phone number</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    name="email" 
+                                    class="w-full px-4 py-3 rounded-lg text-base" 
+                                />
+                                <div class="field-error" id="emailError">Please enter a valid email address</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rfid" class="form-label">RFID Tag</label>
+                                <input 
+                                    type="text" 
+                                    id="rfid" 
+                                    name="rfid" 
+                                    class="w-full px-4 py-3 rounded-lg text-base" 
+                                />
+                                <div class="field-error" id="rfidError">This RFID tag is already registered</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label for="password" class="form-label">Password *</label>
+                                    <input 
+                                        type="password" 
+                                        id="password" 
+                                        name="password" 
+                                        class="w-full px-4 py-3 rounded-lg text-base" 
+                                        required 
+                                    />
+                                    <div class="field-error" id="passwordError">Password must be at least 6 characters</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="confirmPassword" class="form-label">Confirm Password *</label>
+                                    <input 
+                                        type="password" 
+                                        id="confirmPassword" 
+                                        name="confirmPassword" 
+                                        class="w-full px-4 py-3 rounded-lg text-base" 
+                                        required 
+                                    />
+                                    <div class="field-error" id="confirmPasswordError">Passwords do not match</div>
+                                </div>
+                            </div>
+                            
+                            <div class="button-group">
+                                <button type="button" class="btn-secondary px-6 py-3 rounded-lg font-semibold text-white" id="backButton">
+                                    Back
+                                </button>
+                                <button type="submit" class="btn-primary px-6 py-3 rounded-lg font-semibold text-white" id="registerBtn">
+                                    Register
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-font footer-logo text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">
+                    FINDR.
+                </div>
+                <p class="footer-copyright">© 2025 FINDR. All rights reserved.</p>
+            </div> 
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="#" class="footer-link">Contact</a>
+                <a href="#" class="footer-link">About</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000/api/v1";
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registrationForm');
+            const backButton = document.getElementById('backButton');
+            const messageBox = document.getElementById('messageBox');
+            const registerBtn = document.getElementById('registerBtn');
+            
+            // Back button functionality
+            backButton.addEventListener('click', function() {
+                window.location.href = 'http://127.0.0.1:8000/home-page';
+            });
+            
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Reset error messages
+                const errorMessages = document.querySelectorAll('.field-error');
+                errorMessages.forEach(msg => {
+                    msg.style.display = 'none';
+                });
+                messageBox.innerHTML = '';
+                
+                // Basic validation
+                let isValid = true;
+                
+                // Name validation
+                if (!form.name.value.trim()) {
+                    document.getElementById('nameError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                // Student ID validation
+                if (!form.studentId.value.trim()) {
+                    document.getElementById('studentIdError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                // Phone validation
+                if (!form.phone.value.trim()) {
+                    document.getElementById('phoneError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                // Email validation (optional)
+                if (form.email.value && !isValidEmail(form.email.value)) {
+                    document.getElementById('emailError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                // Password validation
+                if (!form.password.value || form.password.value.length < 6) {
+                    document.getElementById('passwordError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                // Confirm password validation
+                if (form.password.value !== form.confirmPassword.value) {
+                    document.getElementById('confirmPasswordError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (isValid) {
+                    // Show loading state
+                    registerBtn.disabled = true;
+                    registerBtn.innerHTML = `<div class="spinner"></div> Registering...`;
+                    
+                    try {
+                        // Prepare registration data
+                        const registrationData = {
+                            name: form.name.value.trim(),
+                            student_id: form.studentId.value.trim(),
+                            phone_number: form.phone.value.trim(),
+                            email: form.email.value.trim() || null,
+                            rfid_tag: form.rfid.value.trim() || null,
+                            password: form.password.value,
+                            items_found: 0,
+                            items_lost: 0
+                        };
+                        
+                        // Send registration request
+                        const response = await fetch(`${API_BASE}/users/register`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(registrationData)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // Registration successful
+                            messageBox.innerHTML = `<div class="success-message">Registration successful! Redirecting to home page...</div>`;
+                            
+                            // Redirect to home page after a short delay
+                            setTimeout(function() {
+                                window.location.href = 'http://127.0.0.1:8000/home-page';
+                            }, 2000);
+                        } else {
+                            // Handle API errors
+                            let errorMessage = 'Registration failed. Please try again.';
+                            
+                            if (data.detail) {
+                                if (typeof data.detail === 'string') {
+                                    errorMessage = data.detail;
+                                } else if (data.detail.student_id) {
+                                    errorMessage = 'Student ID already registered';
+                                } else if (data.detail.email) {
+                                    errorMessage = 'Email already registered';
+                                } else if (data.detail.rfid_tag) {
+                                    errorMessage = 'RFID tag already registered';
+                                }
+                            }
+                            
+                            messageBox.innerHTML = `<div class="error-message">${errorMessage}</div>`;
+                        }
+                    } catch (error) {
+                        console.error('Registration error:', error);
+                        messageBox.innerHTML = `<div class="error-message">Network error. Please check your connection and try again.</div>`;
+                    } finally {
+                        // Reset button state
+                        registerBtn.disabled = false;
+                        registerBtn.innerHTML = 'Register';
+                    }
+                }
+            });
+            
+            // Helper function to validate email
+            function isValidEmail(email) {
+                const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                return re.test(String(email).toLowerCase());
+            }
+        });
+    </script>
+</body>
+</html>

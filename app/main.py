@@ -145,6 +145,19 @@ if IMG_DIR.exists():
     )
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+REGISTER_PAGE_DIR = BASE_DIR / "register-page"
+
+if REGISTER_PAGE_DIR.exists():
+    app.mount(
+        "/register-page",
+        StaticFiles(directory=str(REGISTER_PAGE_DIR), html=True),
+        name="register-page",
+    )
+
+@app.get("/register")
+def redirect_to_index():
+    return RedirectResponse(url="/register-page/")
+
 UPLOAD_PAGE_DIR = BASE_DIR / "upload-page"
 
 if UPLOAD_PAGE_DIR.exists():
