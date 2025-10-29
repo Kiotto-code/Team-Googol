@@ -7,16 +7,16 @@
 
 #include "config.h"
 
-struct LookupResult {
+struct BoxLookupResult {
   bool success;
   bool allowDeposit;
   bool allowPickup;
   String message;
 };
 
-class NetworkClient {
+class BoxNetworkClient {
 public:
-  NetworkClient() : _lastAttempt(0), _connected(false) {}
+  BoxNetworkClient() : _lastAttempt(0), _connected(false) {}
 
   void begin() {
     WiFi.mode(WIFI_STA);
@@ -68,8 +68,8 @@ public:
     return code > 0 && code < 400;
   }
 
-  LookupResult lookupTag(const String &uid) {
-    LookupResult result{false, false, false, ""};
+  BoxLookupResult lookupTag(const String &uid) {
+    BoxLookupResult result{false, false, false, ""};
     if (!isConnected()) {
       result.message = "Offline";
       return result;

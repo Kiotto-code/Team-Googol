@@ -5,7 +5,7 @@
 #include "camera.h"
 #include "config.h"
 #include "display.h"
-#include "network.h"
+#include "box_network.h"
 #include "pcf8575.h"
 #include "rfid.h"
 #include "state_machine.h"
@@ -14,7 +14,7 @@ SPIClass sharedSPI(FSPI);
 Display display;
 RfidReader rfid;
 CameraController cameraController;
-NetworkClient networkClient;
+BoxNetworkClient networkClient;
 Pcf8575Expander pcf8575;
 SmartBoxStateMachine stateMachine(display, rfid, cameraController, networkClient, pcf8575);
 

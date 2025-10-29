@@ -7,7 +7,7 @@
 #include "camera.h"
 #include "config.h"
 #include "display.h"
-#include "network.h"
+#include "box_network.h"
 #include "pcf8575.h"
 #include "rfid.h"
 
@@ -36,7 +36,7 @@ struct SmartBoxContext {
 class SmartBoxStateMachine {
 public:
   SmartBoxStateMachine(Display &display, RfidReader &rfid, CameraController &camera,
-                       NetworkClient &network, Pcf8575Expander &pcf)
+                       BoxNetworkClient &network, Pcf8575Expander &pcf)
       : _display(display), _rfid(rfid), _camera(camera), _network(network), _pcf(pcf) {}
 
   void begin() {
@@ -175,7 +175,7 @@ private:
       return;
     }
     ++_ctx.lookupAttempts;
-    LookupResult res = _network.lookupTag(_ctx.pendingUid);
+    BoxLookupResult res = _network.lookupTag(_ctx.pendingUid);
     if (!res.success) {
       _display.showError(res.message);
       _ctx.lookupNextAttempt = now + NETWORK_REQUEST_TIMEOUT_MS;
@@ -293,7 +293,7 @@ private:
   Display &_display;
   RfidReader &_rfid;
   CameraController &_camera;
-  NetworkClient &_network;
+  BoxNetworkClient &_network;
   Pcf8575Expander &_pcf;
   SmartBoxContext _ctx;
 };
