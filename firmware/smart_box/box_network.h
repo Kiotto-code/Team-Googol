@@ -107,7 +107,10 @@ public:
     }
     client.setTimeout(NETWORK_REQUEST_TIMEOUT_MS);
     client.addHeader("Content-Type", "application/octet-stream");
-    int code = client.POST(jpeg.data(), jpeg.size());
+    // HTTPClient::POST expects a mutable pointer even though it does not modify
+    // the payload, so cast away constness from the vector's data buffer.
+    auto *mutablePayload = const_cast<uint8_t *>(jpeg.data());
+    int code = client.POST(mutablePayload, jpeg.size());
     client.end();
     return code > 0 && code < 400;
   }
