@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -189,7 +189,6 @@ def redirect_to_index():
 
 # UPLOAD PAGE
 UPLOAD_PAGE_DIR = BASE_DIR / "upload-page"
-
 if UPLOAD_PAGE_DIR.exists():
     app.mount(
         "/upload-page",
@@ -197,9 +196,11 @@ if UPLOAD_PAGE_DIR.exists():
         name="upload-page",
     )
 
-@app.get("/upload")
-def redirect_to_index():
-    return RedirectResponse(url="/upload-page/")
+@app.get("/upload", response_class=FileResponse)
+async def upload_page(request: Request):
+    # Serve the HTML file directly from upload-page/
+    file_path = UPLOAD_PAGE_DIR / "index.html"
+    return FileResponse(file_path)
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):

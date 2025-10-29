@@ -1,252 +1,1010 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FINDR</title>
+    <title>FINDR | Upload Item</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
+        rel="stylesheet">
     <style>
-      body {
-        font-family: "Poppins", sans-serif;
-        background-color: #0d0d0d;
-        color: #fff;
-      }
+        /* --- EXACT STYLES FROM REGISTER PAGE --- */
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: #0d0d0d;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
 
-      .logo-font {
-        font-family: "Space Grotesk", sans-serif;
-      }
+        .logo-font {
+            font-family: "Space Grotesk", sans-serif;
+        }
 
-      .glass-card {
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(16px);
-        border-radius: 1rem;
-      }
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
 
-      .slide-enter {
-        opacity: 0;
-        transform: translateY(25px);
-      }
+        .slide-enter {
+            opacity: 0;
+            transform: translateY(25px);
+        }
 
-      .slide-enter-active {
-        opacity: 1;
-        transform: translateY(0);
-        transition: all 0.4s ease;
-      }
+        .slide-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-      input,
-      textarea {
-        background-color: rgba(255, 255, 255, 0.08);
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        transition: all 0.2s ease;
-      }
+        input,
+        textarea {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
 
-      input:focus,
-      textarea:focus {
-        outline: none;
-        border-color: #3b82f6;
-        background-color: rgba(255, 255, 255, 0.12);
-      }
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
 
-      .btn-primary {
-        background: #2563eb;
-        transition: all 0.3s ease;
-      }
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
 
-      .btn-primary:hover {
-        background: #1d4ed8;
-      }
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .success-message {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .header-glow {
+            text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+        }
+
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* EXACT HEADER STYLES FROM REGISTER PAGE - FIXED POSITION */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(17, 17, 17, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 2rem 0;
+            border-bottom: 1px solid rgba(31, 31, 31, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header .logo-font {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+
+        .header .tagline {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #111;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            max-width: 7xl;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-content {
+                flex-direction: row;
+                justify-content: space-between;
+                text-align: left;
+            }
+        }
+
+        /* Upload specific styles */
+        .upload-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            padding-top: 140px; /* Account for fixed header */
+        }
+
+        .upload-card {
+            width: 100%;
+            max-width: 500px; /* Single column layout */
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .field-error {
+            color: #fca5a5;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        /* Image upload styles */
+        .image-preview-container {
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            border-radius: 0.75rem;
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .image-preview-container:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .image-preview-container.has-image {
+            border-style: solid;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .file-input-label {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-input-label:hover {
+            color: #3b82f6;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Welcome message styles */
+        .welcome-message {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .welcome-message strong {
+            color: #fff;
+        }
+
+        /* Divider for login/register pages */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.1),
+                    transparent);
+            margin: 1.5rem 0;
+        }
     </style>
-  </head>
+</head>
 
-  <body class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <header
-      class="w-full py-6 bg-[#111] text-center shadow-md border-b border-[#1f1f1f]"
-    >
-      <h1
-        class="logo-font text-5xl md:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400"
-      >
-        FINDR
-      </h1>
+<body class="min-h-screen flex flex-col">
+    <!-- Header - EXACT SAME AS REGISTER PAGE -->
+    <header class="header">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col items-center">
+            <h1 class="logo-font font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
+                FINDR.
+            </h1>
+            <p class="text-gray-500 tagline tracking-wide">Lost & Found Made Easy.</p>
+        </div>
     </header>
 
-    <!-- Main App -->
-    <main
-      id="app"
-      class="flex-grow flex flex-col justify-center items-center px-6 py-10 md:px-10"
-    ></main>
+    <!-- Main Content - Dynamic based on login state -->
+    <main class="upload-container">
+        <div class="upload-card">
+            <div class="glass-card slide-enter slide-enter-active p-8 md:p-10 shadow-xl" id="formContainer">
+                <!-- Content will be dynamically loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-font footer-logo text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">
+                    FINDR.
+                </div>
+                <p class="footer-copyright">© 2025 FINDR. All rights reserved.</p>
+            </div> 
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="#" class="footer-link">Contact</a>
+                <a href="#" class="footer-link">About</a>
+            </div>
+        </div>
+    </footer>
 
     <script>
-      const app = document.getElementById("app");
-      let currentPage = "home";
-      let loggedIn = false;
+        const API_BASE = "http://127.0.0.1:8000/api/v1";
+        let currentPage = "login";
+        let userId = localStorage.getItem("userId");
+        let userName = localStorage.getItem("userName");
 
-      function render() {
-        app.innerHTML = "";
-        const container = document.createElement("div");
-        container.className =
-          "glass-card slide-enter w-full max-w-lg mx-auto p-8 md:p-10 shadow-xl";
-
-        if (currentPage === "home") {
-          container.innerHTML = `
-            <h2 class="text-3xl md:text-4xl font-semibold text-center mb-6">Want to upload a lost item?</h2>
-            <p class="text-gray-400 text-center mb-8 text-base md:text-lg">
-              Login as a student first to continue.
-            </p>
-
-            <form id="homeLoginForm" class="flex flex-col gap-5">
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Student ID</label>
-                <input type="text" id="studentId" placeholder="Enter Student ID" class="w-full px-4 py-3 rounded-md" required />
-              </div>
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Password</label>
-                <input type="password" id="password" placeholder="Enter Password" class="w-full px-4 py-3 rounded-md" required />
-              </div>
-              <button type="submit" class="btn-primary py-3 rounded-lg font-semibold text-white w-full">Login</button>
-            </form>
-
-            <p class="text-gray-400 text-sm mt-6 text-center">
-              Haven't registered yet? 
-              <button id="goRegister" class="text-blue-400 hover:underline">Register now</button>
-            </p>
-          `;
-        }
-
-        else if (currentPage === "register") {
-          container.innerHTML = `
-            <h2 class="text-3xl md:text-4xl font-semibold mb-6 text-center">Register</h2>
-            <form id="registerForm" class="flex flex-col gap-5">
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Full Name</label>
-                <input type="text" id="name" placeholder="Your Name" class="w-full px-4 py-3 rounded-md" required />
-              </div>
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Student ID</label>
-                <input type="text" id="studentId" placeholder="e.g. 1234" class="w-full px-4 py-3 rounded-md" required />
-              </div>
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Email</label>
-                <input type="email" id="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-md" required />
-              </div>
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Password</label>
-                <input type="password" id="password" placeholder="Create Password" class="w-full px-4 py-3 rounded-md" required />
-              </div>
-              <button type="submit" class="btn-primary py-3 rounded-lg font-semibold text-white w-full">Register</button>
-            </form>
-            <p class="text-gray-400 text-sm mt-6 text-center">
-              Already a user?
-              <button id="goLogin" class="text-blue-400 hover:underline">Login instead</button>
-            </p>
-          `;
-        }
-
-        else if (currentPage === "upload") {
-          container.innerHTML = `
-            <h2 class="text-3xl md:text-4xl font-semibold mb-8 text-center">Upload Lost Item</h2>
-            <form id="uploadForm" class="flex flex-col gap-6">
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Upload Image</label>
-                <input type="file" id="imageUpload" accept="image/*" class="w-full px-4 py-3 rounded-md" required />
-                <div id="imagePreview" class="w-full h-56 bg-[#1f1f1f] rounded-md flex items-center justify-center text-gray-500 text-sm mt-3">
-                  No image selected
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm mb-2 text-gray-300">Description</label>
-                <textarea id="description" rows="4" placeholder="Describe the item..." class="w-full px-4 py-3 rounded-md"></textarea>
-              </div>
-              <button type="submit" class="btn-primary py-3 rounded-lg font-semibold text-white w-full">Upload</button>
-            </form>
-            <div class="mt-8 text-center">
-              <button id="logout" class="text-gray-400 hover:text-white text-sm">← Logout</button>
-            </div>
-          `;
-        }
-
-        app.appendChild(container);
-        requestAnimationFrame(() =>
-          container.classList.add("slide-enter-active")
-        );
-
-        // event bindings
-        const homeLoginForm = document.getElementById("homeLoginForm");
-        const registerForm = document.getElementById("registerForm");
-        const uploadForm = document.getElementById("uploadForm");
-
-        const goRegister = document.getElementById("goRegister");
-        const goLogin = document.getElementById("goLogin");
-        const logout = document.getElementById("logout");
-
-        if (goRegister) goRegister.onclick = () => switchPage("register");
-        if (goLogin) goLogin.onclick = () => switchPage("home");
-        if (logout)
-          logout.onclick = () => {
-            loggedIn = false;
-            switchPage("home");
-          };
-
-        if (homeLoginForm) {
-          homeLoginForm.onsubmit = (e) => {
-            e.preventDefault();
-            const id = document.getElementById("studentId").value;
-            const pass = document.getElementById("password").value;
-            if (id === "1234" && pass === "1234") {
-              loggedIn = true;
-              switchPage("upload");
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            if (userId && userName) {
+                currentPage = "upload";
             } else {
-              alert("Invalid Student ID or Password");
+                currentPage = "login";
             }
-          };
-        }
+            
+            render();
+        });
 
-        if (registerForm) {
-          registerForm.onsubmit = (e) => {
-            e.preventDefault();
-            alert("Registration successful! Please login now.");
-            switchPage("home");
-          };
-        }
+        function render() {
+            const formContainer = document.getElementById('formContainer');
+            
+            // --- LOGIN PAGE ---
+            if (currentPage === "login") {
+                formContainer.innerHTML = `
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl md:text-4xl font-semibold mb-3">Login to Upload</h2>
+                        <p class="text-gray-400 text-base md:text-lg">Please login to upload found items</p>
+                    </div>
 
-        if (uploadForm) {
-          const imgInput = document.getElementById("imageUpload");
-          const preview = document.getElementById("imagePreview");
+                    <div id="messageBox"></div>
 
-          imgInput.addEventListener("change", () => {
-            const file = imgInput.files[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-md"/>`;
-              };
-              reader.readAsDataURL(file);
-            } else {
-              preview.innerHTML = "No image selected";
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="identifier" class="form-label">Student ID or Email *</label>
+                            <input 
+                                type="text" 
+                                id="identifier" 
+                                name="identifier" 
+                                class="w-full px-4 py-3 rounded-lg text-base" 
+                                placeholder="Enter your Student ID or Email"
+                                required 
+                            />
+                            <div class="field-error" id="identifierError">Please enter your Student ID or Email</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password *</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class="w-full px-4 py-3 rounded-lg text-base" 
+                                placeholder="Enter your password"
+                                required 
+                            />
+                            <div class="field-error" id="passwordError">Please enter your password</div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-lg font-semibold text-white" id="loginBtn">
+                                Login
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="divider"></div>
+
+                    <p class="text-gray-400 text-sm text-center">
+                        Don't have an account?
+                        <button id="goRegister" type="button" class="text-blue-400 hover:text-blue-300 font-medium transition-colors">Register now</button>
+                    </p>
+                `;
             }
-          });
+            
+            // --- REGISTER PAGE ---
+            else if (currentPage === "register") {
+                formContainer.innerHTML = `
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl md:text-4xl font-semibold mb-3">Create Account</h2>
+                        <p class="text-gray-400 text-base md:text-lg">Join our community to upload found items</p>
+                    </div>
 
-          uploadForm.onsubmit = (e) => {
-            e.preventDefault();
-            alert("Item uploaded successfully!");
-            uploadForm.reset();
-            preview.innerHTML = "No image selected";
-          };
+                    <div id="messageBox"></div>
+
+                    <form id="registerForm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input 
+                                    type="text" 
+                                    id="name" 
+                                    name="name" 
+                                    class="w-full px-4 py-3 rounded-lg text-base" 
+                                    required 
+                                />
+                                <div class="field-error" id="nameError">Please enter your full name</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="studentId" class="form-label">Student ID *</label>
+                                <input 
+                                    type="text" 
+                                    id="studentId" 
+                                    name="studentId" 
+                                    class="w-full px-4 py-3 rounded-lg text-base" 
+                                    required 
+                                />
+                                <div class="field-error" id="studentIdError">Please enter your student ID</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="phone" class="form-label">Phone Number *</label>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                class="w-full px-4 py-3 rounded-lg text-base" 
+                                required 
+                            />
+                            <div class="field-error" id="phoneError">Please enter a valid phone number</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                class="w-full px-4 py-3 rounded-lg text-base" 
+                            />
+                            <div class="field-error" id="emailError">Please enter a valid email address</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="rfid" class="form-label">RFID Tag</label>
+                            <input 
+                                type="text" 
+                                id="rfid" 
+                                name="rfid" 
+                                class="w-full px-4 py-3 rounded-lg text-base" 
+                            />
+                            <div class="field-error" id="rfidError">This RFID tag is already registered</div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="password" class="form-label">Password *</label>
+                                <input 
+                                    type="password" 
+                                    id="password" 
+                                    name="password" 
+                                    class="w-full px-4 py-3 rounded-lg text-base" 
+                                    required 
+                                />
+                                <div class="field-error" id="passwordError">Password must be at least 6 characters</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirmPassword" class="form-label">Confirm Password *</label>
+                                <input 
+                                    type="password" 
+                                    id="confirmPassword" 
+                                    name="confirmPassword" 
+                                    class="w-full px-4 py-3 rounded-lg text-base" 
+                                    required 
+                                />
+                                <div class="field-error" id="confirmPasswordError">Passwords do not match</div>
+                            </div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button type="button" class="btn-secondary px-6 py-3 rounded-lg font-semibold text-white" id="backToLogin">
+                                Back to Login
+                            </button>
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-lg font-semibold text-white" id="registerBtn">
+                                Register
+                            </button>
+                        </div>
+                    </form>
+                `;
+            }
+            
+            // --- UPLOAD PAGE ---
+            else if (currentPage === "upload") {
+                formContainer.innerHTML = `
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl md:text-4xl font-semibold mb-3">Upload Found Item</h2>
+                        <p class="text-gray-400 text-base md:text-lg">Help reunite someone with their lost belongings</p>
+                    </div>
+
+                    <div class="welcome-message">
+                        Welcome back, <strong>${userName}</strong>! Ready to help someone find their lost item?
+                    </div>
+
+                    <div id="messageBox"></div>
+
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="imageUpload" class="form-label">Item Photo *</label>
+                            <div id="imagePreview" class="image-preview-container w-full h-64 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-gray-500 text-sm">
+                                <div class="text-center p-6">
+                                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <label for="imageUpload" class="file-input-label text-blue-400 font-medium">
+                                        Click to upload image
+                                    </label>
+                                    <p class="text-gray-600 text-xs mt-2">PNG, JPG up to 10MB</p>
+                                </div>
+                            </div>
+                            <input type="file" id="imageUpload" accept="image/*" required />
+                            <div class="field-error" id="imageError">Please upload an image of the item</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="boxId" class="form-label">Box ID *</label>
+                            <input 
+                                type="number" 
+                                id="boxId" 
+                                name="boxId" 
+                                class="w-full px-4 py-3 rounded-lg text-base" 
+                                placeholder="Enter the Box ID where you found the item"
+                                required 
+                            />
+                            <div class="field-error" id="boxIdError">Please enter a valid Box ID</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea 
+                                id="description" 
+                                name="description" 
+                                rows="4" 
+                                class="w-full px-4 py-3 rounded-lg text-base resize-none"
+                                placeholder="Describe the item in detail (color, brand, location found, condition, etc.)"
+                            ></textarea>
+                            <div class="field-error" id="descriptionError">Description must be less than 500 characters</div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-lg font-semibold text-white" id="uploadBtn">
+                                Upload Item
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="divider"></div>
+
+                    <div class="text-center">
+                        <button id="logout" type="button" class="btn-secondary px-6 py-2 rounded-lg text-sm font-medium transition-all">
+                            Logout
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Set up event handlers after rendering
+            setupEventHandlers();
         }
-      }
 
-      function switchPage(page) {
-        currentPage = page;
-        render();
-      }
+        function setupEventHandlers() {
+            // Navigation buttons
+            const goRegister = document.getElementById("goRegister");
+            const backToLogin = document.getElementById("backToLogin");
+            const logout = document.getElementById("logout");
 
-      render();
+            if (goRegister) {
+                goRegister.addEventListener("click", () => {
+                    currentPage = "register";
+                    render();
+                });
+            }
+            
+            if (backToLogin) {
+                backToLogin.addEventListener("click", () => {
+                    currentPage = "login";
+                    render();
+                });
+            }
+            
+            if (logout) {
+                logout.addEventListener("click", () => {
+                    localStorage.removeItem("userId");
+                    localStorage.removeItem("userName");
+                    userId = null;
+                    userName = null;
+                    currentPage = "login";
+                    render();
+                });
+            }
+
+            // --- LOGIN FORM HANDLER ---
+            const loginForm = document.getElementById("loginForm");
+            if (loginForm) {
+                loginForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    
+                    // Reset error messages
+                    const errorMessages = document.querySelectorAll('.field-error');
+                    errorMessages.forEach(msg => {
+                        msg.style.display = 'none';
+                    });
+                    
+                    const messageBox = document.getElementById('messageBox');
+                    const loginBtn = document.getElementById('loginBtn');
+                    
+                    // Basic validation
+                    let isValid = true;
+                    
+                    if (!loginForm.identifier.value.trim()) {
+                        document.getElementById('identifierError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!loginForm.password.value) {
+                        document.getElementById('passwordError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (isValid) {
+                        // Show loading state
+                        loginBtn.disabled = true;
+                        loginBtn.innerHTML = `<div class="spinner"></div> Logging in...`;
+                        messageBox.innerHTML = '';
+                        
+                        try {
+                            const response = await fetch(`${API_BASE}/users/login`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    identifier: loginForm.identifier.value.trim(),
+                                    password: loginForm.password.value
+                                }),
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                // Store user info
+                                localStorage.setItem("userId", data.user_id);
+                                localStorage.setItem("userName", data.name);
+                                userId = data.user_id;
+                                userName = data.name;
+                                
+                                messageBox.innerHTML = `<div class="success-message">Login successful! Redirecting...</div>`;
+                                
+                                // Switch to upload page
+                                setTimeout(() => {
+                                    currentPage = "upload";
+                                    render();
+                                }, 1500);
+                            } else {
+                                messageBox.innerHTML = `<div class="error-message">${data.detail || "Login failed"}</div>`;
+                                loginBtn.disabled = false;
+                                loginBtn.innerHTML = "Login";
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            messageBox.innerHTML = `<div class="error-message">Network error. Please try again.</div>`;
+                            loginBtn.disabled = false;
+                            loginBtn.innerHTML = "Login";
+                        }
+                    }
+                });
+            }
+
+            // --- REGISTER FORM HANDLER ---
+            const registerForm = document.getElementById("registerForm");
+            if (registerForm) {
+                registerForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    
+                    // Reset error messages
+                    const errorMessages = document.querySelectorAll('.field-error');
+                    errorMessages.forEach(msg => {
+                        msg.style.display = 'none';
+                    });
+                    
+                    const messageBox = document.getElementById('messageBox');
+                    const registerBtn = document.getElementById('registerBtn');
+                    
+                    // Basic validation
+                    let isValid = true;
+                    
+                    // Name validation
+                    if (!registerForm.name.value.trim()) {
+                        document.getElementById('nameError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    // Student ID validation
+                    if (!registerForm.studentId.value.trim()) {
+                        document.getElementById('studentIdError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    // Phone validation
+                    if (!registerForm.phone.value.trim()) {
+                        document.getElementById('phoneError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    // Email validation (optional)
+                    if (registerForm.email.value && !isValidEmail(registerForm.email.value)) {
+                        document.getElementById('emailError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    // Password validation
+                    if (!registerForm.password.value || registerForm.password.value.length < 6) {
+                        document.getElementById('passwordError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    // Confirm password validation
+                    if (registerForm.password.value !== registerForm.confirmPassword.value) {
+                        document.getElementById('confirmPasswordError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (isValid) {
+                        // Show loading state
+                        registerBtn.disabled = true;
+                        registerBtn.innerHTML = `<div class="spinner"></div> Registering...`;
+                        messageBox.innerHTML = '';
+                        
+                        try {
+                            // Prepare registration data
+                            const registrationData = {
+                                name: registerForm.name.value.trim(),
+                                student_id: registerForm.studentId.value.trim(),
+                                phone_number: registerForm.phone.value.trim(),
+                                email: registerForm.email.value.trim() || null,
+                                rfid_tag: registerForm.rfid.value.trim() || null,
+                                password: registerForm.password.value,
+                                items_found: 0,
+                                items_lost: 0
+                            };
+                            
+                            // Send registration request
+                            const response = await fetch(`${API_BASE}/users/register`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(registrationData)
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (response.ok) {
+                                messageBox.innerHTML = `<div class="success-message">Registration successful! Please login with your credentials.</div>`;
+                                
+                                // Switch to login page after a short delay
+                                setTimeout(() => {
+                                    currentPage = "login";
+                                    render();
+                                }, 2000);
+                            } else {
+                                // Handle API errors
+                                let errorMessage = 'Registration failed. Please try again.';
+                                
+                                if (data.detail) {
+                                    if (typeof data.detail === 'string') {
+                                        errorMessage = data.detail;
+                                    } else if (data.detail.student_id) {
+                                        errorMessage = 'Student ID already registered';
+                                    } else if (data.detail.email) {
+                                        errorMessage = 'Email already registered';
+                                    } else if (data.detail.rfid_tag) {
+                                        errorMessage = 'RFID tag already registered';
+                                    }
+                                }
+                                
+                                messageBox.innerHTML = `<div class="error-message">${errorMessage}</div>`;
+                                registerBtn.disabled = false;
+                                registerBtn.innerHTML = 'Register';
+                            }
+                        } catch (error) {
+                            console.error('Registration error:', error);
+                            messageBox.innerHTML = `<div class="error-message">Network error. Please check your connection and try again.</div>`;
+                            registerBtn.disabled = false;
+                            registerBtn.innerHTML = 'Register';
+                        }
+                    }
+                });
+            }
+
+            // --- UPLOAD FORM HANDLER ---
+            const uploadForm = document.getElementById("uploadForm");
+            if (uploadForm) {
+                const imgInput = document.getElementById("imageUpload");
+                const preview = document.getElementById("imagePreview");
+                
+                // Image preview handler
+                imgInput.addEventListener("change", () => {
+                    const file = imgInput.files[0];
+                    if (file) {
+                        // Validate file type
+                        if (!file.type.match('image.*')) {
+                            document.getElementById('imageError').textContent = 'Please select an image file (PNG, JPG, etc.)';
+                            document.getElementById('imageError').style.display = 'block';
+                            return;
+                        }
+                        
+                        // Validate file size (10MB)
+                        if (file.size > 10 * 1024 * 1024) {
+                            document.getElementById('imageError').textContent = 'Image must be less than 10MB';
+                            document.getElementById('imageError').style.display = 'block';
+                            return;
+                        }
+                        
+                        document.getElementById('imageError').style.display = 'none';
+                        
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            preview.classList.add('has-image');
+                            preview.innerHTML = `
+                                <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg fade-in"/>
+                                <label for="imageUpload" class="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                    <span class="text-white font-medium">Change Image</span>
+                                </label>
+                            `;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                // Upload form submission
+                uploadForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    
+                    // Reset error messages
+                    const errorMessages = document.querySelectorAll('.field-error');
+                    errorMessages.forEach(msg => {
+                        msg.style.display = 'none';
+                    });
+                    
+                    const messageBox = document.getElementById('messageBox');
+                    const uploadBtn = document.getElementById('uploadBtn');
+                    const imageFile = document.getElementById("imageUpload").files[0];
+                    const boxId = document.getElementById("boxId").value;
+                    const description = document.getElementById("description").value;
+                    
+                    // Basic validation
+                    let isValid = true;
+                    
+                    // Image validation
+                    if (!imgInput.files || !imgInput.files[0]) {
+                        document.getElementById('imageError').textContent = 'Please upload an image of the item';
+                        document.getElementById('imageError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    // Box ID validation
+                    if (!uploadForm.boxId.value.trim()) {
+                        document.getElementById('boxIdError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    // Description validation (optional, but check length if provided)
+                    if (uploadForm.description.value && uploadForm.description.value.length > 500) {
+                        document.getElementById('descriptionError').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (isValid) {
+                        // Show loading state
+                        uploadBtn.disabled = true;
+                        uploadBtn.innerHTML = `<div class="spinner"></div> Uploading...`;
+                        messageBox.innerHTML = '';
+                        
+                        try {
+                            // Prepare form data
+                            const formData = new FormData();
+                            formData.append('image', imageFile);
+                            formData.append('finder_user_id', userId);
+                            formData.append('box_id', boxId);
+                            
+                            if (description) {
+                                formData.append('description', description);
+                            }
+                            
+                            // Send upload request
+                            const response = await fetch(`${API_BASE}/items/upload`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (response.ok) {
+                                // Upload successful
+                                messageBox.innerHTML = `<div class="success-message">Item uploaded successfully! Thank you for helping the community.</div>`;
+                                
+                                // Reset form
+                                uploadForm.reset();
+                                preview.classList.remove('has-image');
+                                preview.innerHTML = `
+                                    <div class="text-center p-6">
+                                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <label for="imageUpload" class="file-input-label text-blue-400 font-medium">
+                                            Click to upload image
+                                        </label>
+                                        <p class="text-gray-600 text-xs mt-2">PNG, JPG up to 10MB</p>
+                                    </div>
+                                `;
+                            } else {
+                                // Handle API errors
+                                let errorMessage = 'Upload failed. Please try again.';
+                                
+                                if (data.detail) {
+                                    if (typeof data.detail === 'string') {
+                                        errorMessage = data.detail;
+                                    } else if (data.detail.error) {
+                                        errorMessage = data.detail.error;
+                                    } else if (data.detail.image) {
+                                        errorMessage = 'Invalid image file. Please try another image.';
+                                    } else if (data.detail.box_id) {
+                                        errorMessage = 'Invalid Box ID. Please check and try again.';
+                                    }
+                                }
+                                
+                                messageBox.innerHTML = `<div class="error-message">${errorMessage}</div>`;
+                            }
+                        } catch (error) {
+                            console.error('Upload error:', error);
+                            messageBox.innerHTML = `<div class="error-message">Network error. Please check your connection and try again.</div>`;
+                        } finally {
+                            // Reset button state
+                            uploadBtn.disabled = false;
+                            uploadBtn.innerHTML = 'Upload Item';
+                        }
+                    }
+                });
+            }
+        }
+
+        // Helper function to validate email
+        function isValidEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
     </script>
-  </body>
+</body>
 </html>

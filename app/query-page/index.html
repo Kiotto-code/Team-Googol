@@ -2,666 +2,1350 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<script src="https://cdn.tailwindcss.com"></script>
-	<title>FINDR | Search Lost Items</title>
-	<link
-		href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
-		rel="stylesheet">
-	<style>
-		/* --- EXACT STYLES FROM ORIGINAL --- */
-		body {
-			font-family: "Poppins", sans-serif;
-			background-color: #0d0d0d;
-			color: #fff;
-		}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>FINDR | Search Lost Items</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* --- EXACT STYLES FROM ORIGINAL --- */
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: #0d0d0d;
+            color: #fff;
+        }
 
-		.logo-font {
-			font-family: "Space Grotesk", sans-serif;
-		}
+        .logo-font {
+            font-family: "Space Grotesk", sans-serif;
+        }
 
-		.glass-card {
-			background-color: rgba(255, 255, 255, 0.05);
-			backdrop-filter: blur(16px);
-			border-radius: 1rem;
-			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-		}
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
 
-		.slide-enter {
-			opacity: 0;
-			transform: translateY(25px);
-		}
+        .slide-enter {
+            opacity: 0;
+            transform: translateY(25px);
+        }
 
-		.slide-enter-active {
-			opacity: 1;
-			transform: translateY(0);
-			transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-		}
+        .slide-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-		input,
-		textarea {
-			background-color: rgba(255, 255, 255, 0.08);
-			color: #fff;
-			border: 1px solid rgba(255, 255, 255, 0.15);
-			transition: all 0.2s ease;
-		}
+        input,
+        textarea {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
 
-		input::placeholder,
-		textarea::placeholder {
-			color: rgba(255, 255, 255, 0.4);
-		}
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
 
-		input:focus,
-		textarea:focus {
-			outline: none;
-			border-color: #3b82f6;
-			background-color: rgba(255, 255, 255, 0.12);
-			box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-		}
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
 
-		.btn-primary {
-			background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-			transition: all 0.3s ease;
-			box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-		}
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
 
-		.btn-primary:hover:not(:disabled) {
-			background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-			box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-			transform: translateY(-1px);
-		}
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            transform: translateY(-1px);
+        }
 
-		.btn-primary:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
-		.divider {
-			height: 1px;
-			background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-		}
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        }
 
-		.error-message {
-			background-color: rgba(239, 68, 68, 0.1);
-			border: 1px solid rgba(239, 68, 68, 0.3);
-			color: #fca5a5;
-			padding: 0.75rem 1rem;
-			border-radius: 0.5rem;
-			margin-bottom: 1rem;
-			font-size: 0.875rem;
-		}
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
 
-		.success-message {
-			background-color: rgba(34, 197, 94, 0.1);
-			border: 1px solid rgba(34, 197, 94, 0.3);
-			color: #86efac;
-			padding: 0.75rem 1rem;
-			border-radius: 0.5rem;
-			margin-bottom: 1rem;
-			font-size: 0.875rem;
-		}
+        .success-message {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
 
-		.header-glow {
-			text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
-		}
+        .header-glow {
+            text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+        }
 
-		.result-card {
-			background-color: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 0.75rem;
-			overflow: hidden;
-			transition: transform 0.2s ease, border-color 0.2s ease;
-		}
+        .result-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
 
-		.result-card:hover {
-			transform: translateY(-2px);
-			border-color: rgba(59, 130, 246, 0.3);
-		}
+        .result-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
 
-		.result-image {
-			width: 100%;
-			aspect-ratio: 5 / 7;
-			object-fit: cover;
-			background-color: #1a1a1a;
-			cursor: pointer;
-		}
+        .result-image {
+            width: 100%;
+            aspect-ratio: 5 / 7;
+            object-fit: cover;
+            background-color: #1a1a1a;
+            cursor: pointer;
+        }
 
-		.result-info {
-			padding: 1rem;
-		}
+        .result-info {
+            padding: 1rem;
+        }
 
-		.result-score {
-			font-size: 0.875rem;
-			color: #60a5fa;
-			margin-top: 0.25rem;
-		}
+        .result-score {
+            font-size: 0.875rem;
+            color: #60a5fa;
+            margin-top: 0.25rem;
+        }
 
-		.spinner {
-			border: 2px solid rgba(255, 255, 255, 0.1);
-			border-top: 2px solid #3b82f6;
-			border-radius: 50%;
-			width: 20px;
-			height: 20px;
-			animation: spin 0.8s linear infinite;
-			display: inline-block;
-			margin-right: 0.5rem;
-		}
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
 
-		@keyframes spin {
-			0% { transform: rotate(0deg); }
-			100% { transform: rotate(360deg); }
-		}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-		.fade-in {
-			animation: fadeIn 0.3s ease;
-		}
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
 
-		@keyframes fadeIn {
-			from { opacity: 0; }
-			to { opacity: 1; }
-		}
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
-		/* Modal styles */
-		.modal-overlay {
-			position: fixed;
-			inset: 0;
-			background-color: rgba(0, 0, 0, 0.8);
-			backdrop-filter: blur(8px);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 9999;
-			padding: 1rem;
-			opacity: 0;
-			transition: opacity 0.3s ease;
-		}
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-		.modal-overlay.show {
-			opacity: 1;
-		}
+        .modal-overlay.show {
+            opacity: 1;
+        }
 
-		.modal-content {
-			background-color: rgba(255, 255, 255, 0.05);
-			backdrop-filter: blur(16px);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 1rem;
-			max-width: 600px;
-			width: 100%;
-			max-height: 90vh;
-			display: flex;
-			flex-direction: column;
-			transform: scale(0.9);
-			transition: transform 0.3s ease;
-		}
+        .modal-content {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
 
-		.modal-overlay.show .modal-content {
-			transform: scale(1);
-		}
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
 
-		.modal-image-container {
-			flex-shrink: 0;
-			max-height: 50vh;
-			overflow: hidden;
-			background-color: #1a1a1a;
-		}
+        .modal-image-container {
+            flex-shrink: 0;
+            max-height: 50vh;
+            overflow: hidden;
+            background-color: #1a1a1a;
+        }
 
-		.modal-body {
-			flex: 1;
-			overflow-y: auto;
-			padding: 1.5rem;
-		}
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
 
-		.modal-image {
-			width: 100%;
-			height: 100%;
-			max-height: 50vh;
-			aspect-ratio: 5 / 7;
-			object-fit: contain;
-			background-color: #1a1a1a;
-		}
+        .modal-image {
+            width: 100%;
+            height: 100%;
+            max-height: 50vh;
+            aspect-ratio: 5 / 7;
+            object-fit: contain;
+            background-color: #1a1a1a;
+        }
 
-		.btn-secondary {
-			background-color: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.15);
-			transition: all 0.2s ease;
-		}
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
 
-		.btn-secondary:hover {
-			background-color: rgba(255, 255, 255, 0.1);
-			border-color: rgba(255, 255, 255, 0.25);
-		}
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
 
-		/* Center grid when 1-2 items */
-		.results-centered {
-			display: flex;
-			justify-content: center;
-			gap: 1.5rem;
-			flex-wrap: wrap;
-		}
+        /* Center grid when 1-2 items */
+        .results-centered {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
 
-		.results-centered .result-card {
-			width: 100%;
-			max-width: 240px;
-		}
+        .results-centered .result-card {
+            width: 100%;
+            max-width: 240px;
+        }
 
-		@media (min-width: 640px) {
-			.results-centered .result-card {
-				max-width: 260px;
-			}
-		}
+        @media (min-width: 640px) {
+            .results-centered .result-card {
+                max-width: 260px;
+            }
+        }
 
-		/* Confirmation modal */
-		.confirm-modal-content {
-			max-width: 450px;
-			max-height: 90vh;
-			display: flex;
-			flex-direction: column;
-		}
+        /* Confirmation modal */
+        .confirm-modal-content {
+            max-width: 450px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-		.confirm-modal-body {
-			flex: 1;
-			overflow-y: auto;
-			padding: 1.5rem;
-		}
+        .confirm-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
 
-		.confirm-modal-image {
-			width: 100%;
-			max-height: 45vh;
-			aspect-ratio: 5 / 7;
-			object-fit: cover;
-			background-color: #1a1a1a;
-		}
+        .confirm-modal-image {
+            width: 100%;
+            max-height: 45vh;
+            aspect-ratio: 5 / 7;
+            object-fit: cover;
+            background-color: #1a1a1a;
+        }
 
-		/* EXACT HEADER STYLES FROM ORIGINAL */
-		.header {
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			background-color: rgba(17, 17, 17, 0.95);
-			backdrop-filter: blur(10px);
-			z-index: 100;
-			padding: 2rem 0;
-			border-bottom: 1px solid rgba(31, 31, 31, 1);
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-		}
+        /* EXACT HEADER STYLES FROM LATEST VERSION */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(17, 17, 17, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 2rem 0;
+            transform: translateY(0);
+            transition: transform 0.4s ease;
+            border-bottom: 1px solid rgba(31, 31, 31, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
 
-		.header .logo-font {
-			font-size: 3rem;
-			font-weight: 700;
-		}
+        .header .logo-font {
+            font-size: 3rem;
+            font-weight: 700;
+        }
 
-		.header .tagline {
-			font-size: 0.875rem;
-			margin-top: 0.5rem;
-		}
+        .header .tagline {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
 
-		/* Main content with padding to account for fixed header */
-		.main-content {
-			padding-top: 160px; /* Enough space for the header */
-			min-height: calc(100vh - 160px); /* Ensure footer stays at bottom */
-		}
+        /* UPDATED HEADER STYLES FOR MOBILE */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: none;
+            margin: 0 auto;
+            padding: 20px 1.5rem 30px; 
+        }
 
-		/* Footer Styles */
-		.footer {
-			background-color: #111;
-			border-top: 1px solid rgba(255, 255, 255, 0.1);
-			padding: 2rem 0;
-			margin-top: auto;
-		}
+        .header-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
 
-		.footer-content {
-			max-width: 7xl;
-			margin: 0 auto;
-			padding: 0 1.5rem;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			text-align: center;
-			gap: 1rem;
-		}
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.6rem;
+            margin-left: auto;
+        }
 
-		.footer-logo {
-			font-size: 1.5rem;
-			font-weight: 700;
-		}
+        .user-greeting {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.3rem;
+            margin-right: auto;
+        }
 
-		.footer-links {
-			display: flex;
-			gap: 1.5rem;
-			flex-wrap: wrap;
-			justify-content: center;
-		}
+        .login-toggle {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
 
-		.footer-link {
-			color: rgba(255, 255, 255, 0.6);
-			text-decoration: none;
-			font-size: 0.875rem;
-			transition: color 0.2s ease;
-		}
+        .login-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
 
-		.footer-link:hover {
-			color: rgba(255, 255, 255, 0.9);
-		}
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: rgba(239, 68, 68, 0.9);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
 
-		.footer-copyright {
-			color: rgba(255, 255, 255, 0.4);
-			font-size: 0.75rem;
-			margin-top: 0.5rem;
-		}
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
 
-		@media (min-width: 768px) {
-			.footer-content {
-				flex-direction: row;
-				justify-content: space-between;
-				text-align: left;
-			}
-		}
-	</style>
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* IMPROVED NAVIGATION STYLES */
+        .desktop-nav {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .desktop-nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            position: relative;
+        }
+
+        .desktop-nav-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .desktop-nav-link.active {
+            color: white;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .desktop-nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .desktop-nav-link:hover::after,
+        .desktop-nav-link.active::after {
+            width: 80%;
+        }
+
+        /* MOBILE STYLES */
+        @media (max-width: 767px) {
+            .header-container {
+                padding: 15px 1rem 20px;
+                justify-content: space-between;
+                position: relative;
+            }
+            
+            .menu-toggle {
+                display: flex;
+                order: 1;
+                margin-right: auto;
+            }
+            
+            .header-brand {
+                position: static;
+                transform: none;
+                order: 2;
+                flex: 1;
+                text-align: center;
+                margin: 0 auto;
+            }
+            
+            .header-actions {
+                order: 3;
+                margin-left: 0;
+                gap: 0.8rem;
+            }
+            
+            .desktop-nav {
+                display: none;
+            }
+            
+            .header-brand .tagline {
+                display: none;
+            }
+            
+            .user-greeting {
+                display: none !important;
+            }
+            
+            .header .logo-font {
+                font-size: 2rem;
+            }
+            
+            .login-toggle, .logout-btn {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .menu-toggle {
+                display: none;
+            }
+            
+            .header-container {
+                padding: 20px 5rem 30px;
+            }
+            
+            .user-greeting {
+                display: block;
+            }
+        }
+
+        /* Login Slider Styles */
+        .login-slider {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 350px;
+            height: 100vh;
+            background: rgba(17, 17, 17, 0.98);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 2rem;
+            transition: right 0.3s ease;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
+
+        .login-slider.active {
+            right: 0;
+        }
+
+        .login-slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-slider-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close-slider {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .close-slider:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-input {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .login-btn {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .register-link a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .success-message {
+            color: #10b981;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* Navigation Menu Styles */
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100vh;
+            background: rgba(17, 17, 17, 0.98);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 2rem;
+            transition: left 0.3s ease;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
+
+        .nav-menu.active {
+            left: 0;
+        }
+
+        .nav-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-menu-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close-nav {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .close-nav:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-link svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Main content with padding to account for fixed header */
+        .main-content {
+            padding-top: 160px; /* Enough space for the header */
+            min-height: calc(100vh - 160px); /* Ensure footer stays at bottom */
+        }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #111;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            max-width: 7xl;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-content {
+                flex-direction: row;
+                justify-content: space-between;
+                text-align: left;
+            }
+        }
+    </style>
 </head>
 
 <body class="min-h-screen flex flex-col">
-	<!-- Fixed Header (exact size from original) -->
-	<header class="header">
-		<div class="max-w-7xl mx-auto px-6 flex flex-col items-center">
-			<h1 class="logo-font font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
-				FINDR.
-			</h1>
-			<p class="text-gray-500 tagline tracking-wide">Lost & Found Made Easy.</p>
-		</div>
-	</header>
+    <!-- Overlay for login slider and navigation -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Login Slider -->
+    <div class="login-slider" id="loginSlider">
+        <div class="login-slider-header">
+            <h2 class="login-slider-title">Login to FINDR</h2>
+            <button class="close-slider" id="closeSlider">&times;</button>
+        </div>
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="identifier" class="form-label">Email or Student ID</label>
+                <input type="text" id="identifier" class="form-input" placeholder="Enter your email or student ID" required>
+            </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+            </div>
+            <div class="error-message" id="loginError"></div>
+            <div class="success-message" id="loginSuccess"></div>
+            <button type="submit" class="btn-primary login-btn" id="loginBtn">
+                Login
+            </button>
+            <div class="register-link">
+                Haven't registered? <a href="http://127.0.0.1:8000/register">Register now</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Navigation Menu -->
+    <div class="nav-menu" id="navMenu">
+        <div class="nav-menu-header">
+            <h2 class="nav-menu-title">Menu</h2>
+            <button class="close-nav" id="closeNav">&times;</button>
+        </div>
+        <div class="nav-links">
+            <a href="http://127.0.0.1:8000/home" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Home
+            </a>
+            <a href="http://127.0.0.1:8000/query" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Search Items
+            </a>
+            <a href="http://127.0.0.1:8000/leaderboard" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 8V16M12 11V16M8 14V16M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Leaderboard
+            </a>
+            <a href="http://127.0.0.1:8000/register" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Register
+            </a>
+        </div>
+    </div>
+
+    <!-- Fixed Header (exact same as latest version) -->
+    <header class="header">
+        <div class="header-container">
+            <!-- User greeting on the far left -->
+            <div class="user-greeting" id="userGreeting" style="display: none;"></div>
+            
+            <!-- Hamburger menu for mobile -->
+            <button class="menu-toggle" id="menuToggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            
+            <!-- Centered logo -->
+            <div class="header-brand">
+                <h1 class="logo-font font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 header-glow">
+                    FINDR.
+                </h1>
+                <p class="text-gray-500 tagline tracking-wide">Lost & Found Made Easy.</p>
+            </div>
+            
+            <!-- Navigation and login on the far right -->
+            <div class="header-actions">
+                <div class="desktop-nav">
+                    <a href="http://127.0.0.1:8000/home" class="desktop-nav-link">Home</a>
+                    <a href="http://127.0.0.1:8000/query" class="desktop-nav-link active">Search</a>
+                    <a href="http://127.0.0.1:8000/leaderboard" class="desktop-nav-link">Leaderboard</a>
+                </div>
+                
+                <button class="login-toggle" id="loginToggle">Login</button>
+                <button class="logout-btn" id="logoutBtn" style="display: none;">Logout</button>
+            </div>
+        </div>
+    </header>
 
 	<br><br><br>
+    <!-- Main Content with proper padding -->
+    <main class="main-content flex-grow">
+        <!-- Search Section -->
+        <div class="max-w-4xl mx-auto mb-10 px-6 md:px-10">
+            <div class="glass-card slide-enter slide-enter-active p-8 md:p-10 shadow-xl">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl md:text-4xl font-semibold mb-3">Lost an item?</h2>
+                    <p class="text-gray-400 text-base md:text-lg">Describe what you lost (color, model, brand, etc.)</p>
+                </div>
 
-	<!-- Main Content with proper padding -->
-	<main class="main-content flex-grow">
-		<!-- Search Section -->
-		<div class="max-w-4xl mx-auto mb-10 px-6 md:px-10">
-			<div class="glass-card slide-enter slide-enter-active p-8 md:p-10 shadow-xl">
-				<div class="text-center mb-8">
-					<h2 class="text-3xl md:text-4xl font-semibold mb-3">Lost an item?</h2>
-					<p class="text-gray-400 text-base md:text-lg">Describe what you lost (color, model, brand, etc.)</p>
-				</div>
+                <div id="queryMessage"></div>
 
-				<div id="queryMessage"></div>
+                <form id="queryForm" class="flex flex-col md:flex-row gap-4">
+                    <input 
+                        type="text" 
+                        id="description" 
+                        placeholder="e.g. black Nike water bottle"
+                        class="flex-1 px-4 py-3 rounded-lg text-base" 
+                        required 
+                    />
+                    <button 
+                        type="submit" 
+                        id="queryBtn"
+                        class="btn-primary px-8 py-3 rounded-lg font-semibold text-white whitespace-nowrap">
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
 
-				<form id="queryForm" class="flex flex-col md:flex-row gap-4">
-					<input 
-						type="text" 
-						id="description" 
-						placeholder="e.g. black Nike water bottle"
-						class="flex-1 px-4 py-3 rounded-lg text-base" 
-						required 
-					/>
-					<button 
-						type="submit" 
-						id="queryBtn"
-						class="btn-primary px-8 py-3 rounded-lg font-semibold text-white whitespace-nowrap">
-						Search
-					</button>
-				</form>
-			</div>
-		</div>
+        <!-- Results Section -->
+        <div class="max-w-7xl mx-auto px-6 md:px-10 pb-10">
+            <div id="resultsContainer"></div>
+        </div>
+    </main>
 
-		<!-- Results Section -->
-		<div class="max-w-7xl mx-auto px-6 md:px-10 pb-10">
-			<div id="resultsContainer"></div>
-		</div>
-	</main>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-font footer-logo text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">
+                    FINDR.
+                </div>
+                <p class="footer-copyright">© 2025 FINDR. All rights reserved.</p>
+            </div> 
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="#" class="footer-link">Contact</a>
+                <a href="#" class="footer-link">About</a>
+            </div>
+        </div>
+    </footer>
 
-	<!-- Footer -->
-	<footer class="footer">
-		<div class="footer-content">
-			<div class="footer-brand">
-				<div class="logo-font footer-logo text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">
-					FINDR.
-				</div>
-				<p class="footer-copyright">© 2025 FINDR. All rights reserved.</p>
-			</div> 
-			<div class="footer-links">
-				<a href="#" class="footer-link">Privacy Policy</a>
-				<a href="#" class="footer-link">Terms of Service</a>
-				<a href="#" class="footer-link">Contact</a>
-				<a href="#" class="footer-link">About</a>
-			</div>
-		</div>
-	</footer>
+    <!-- Image Modal -->
+    <div id="modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-image-container">
+                <img id="modalImage" src="" alt="Item Image" class="modal-image" />
+            </div>
+            <div class="modal-body">
+                <h3 class="text-2xl font-semibold mb-4">Item Details</h3>
+                <div id="modalAiDescription" class="mb-4 text-gray-300 text-lg leading-relaxed"></div>
+                <p id="modalScore" class="text-lg text-blue-400 mb-6"></p>
+                
+                <div class="flex justify-end">
+                    <button 
+                        id="closeModalBtn"
+                        class="btn-secondary px-6 py-2.5 rounded-lg font-semibold text-white">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-	<!-- Image Modal -->
-	<div id="modal" class="modal-overlay hidden">
-		<div class="modal-content">
-			<div class="modal-image-container">
-				<img id="modalImage" src="" alt="Item Image" class="modal-image" />
-			</div>
-			<div class="modal-body">
-				<h3 class="text-2xl font-semibold mb-4">Item Details</h3>
-				<div id="modalAiDescription" class="mb-4 text-gray-300 text-lg leading-relaxed"></div>
-				<p id="modalScore" class="text-lg text-blue-400 mb-6"></p>
-				
-				<div class="flex justify-end">
-					<button 
-						id="closeModalBtn"
-						class="btn-secondary px-6 py-2.5 rounded-lg font-semibold text-white">
-						Close
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal-content confirm-modal-content">
+            <div class="confirm-modal-body">
+                <h3 class="text-2xl font-semibold mb-3 text-center">Are you sure this is your item?</h3>
+                
+                <div class="glass-card p-3 mb-5">
+                    <img id="confirmImage" src="" alt="Item" class="confirm-modal-image rounded-lg mb-2" />
+                    <p id="confirmDescription" class="text-sm text-gray-300 text-center"></p>
+                </div>
 
-	<!-- Confirmation Modal -->
-	<div id="confirmModal" class="modal-overlay hidden">
-		<div class="modal-content confirm-modal-content">
-			<div class="confirm-modal-body">
-				<h3 class="text-2xl font-semibold mb-3 text-center">Are you sure this is your item?</h3>
-				
-				<div class="glass-card p-3 mb-5">
-					<img id="confirmImage" src="" alt="Item" class="confirm-modal-image rounded-lg mb-2" />
-					<p id="confirmDescription" class="text-sm text-gray-300 text-center"></p>
-				</div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button 
+                        id="confirmYesBtn"
+                        class="btn-primary flex-1 py-2.5 rounded-lg font-semibold text-white">
+                        Yes, This Is Mine
+                    </button>
+                    <button 
+                        id="confirmNoBtn"
+                        class="btn-secondary flex-1 py-2.5 rounded-lg font-semibold text-white">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-				<div class="flex flex-col sm:flex-row gap-3">
-					<button 
-						id="confirmYesBtn"
-						class="btn-primary flex-1 py-2.5 rounded-lg font-semibold text-white">
-						Yes, This Is Mine
-					</button>
-					<button 
-						id="confirmNoBtn"
-						class="btn-secondary flex-1 py-2.5 rounded-lg font-semibold text-white">
-						Cancel
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+    <script>
+        const API_BASE = "http://127.0.0.1:8000/api/v1";
+        
+        // DOM elements
+        const form = document.getElementById("queryForm");
+        const messageBox = document.getElementById("queryMessage");
+        const resultsContainer = document.getElementById("resultsContainer");
+        const modal = document.getElementById("modal");
+        const modalImage = document.getElementById("modalImage");
+        const modalAiDescription = document.getElementById("modalAiDescription");
+        const modalScore = document.getElementById("modalScore");
+        const closeModalBtn = document.getElementById("closeModalBtn");
 
-	<script>
-		const API_BASE = "http://127.0.0.1:8000/api/v1";
-		
-		// DOM elements
-		const form = document.getElementById("queryForm");
-		const messageBox = document.getElementById("queryMessage");
-		const resultsContainer = document.getElementById("resultsContainer");
-		const modal = document.getElementById("modal");
-		const modalImage = document.getElementById("modalImage");
-		const modalAiDescription = document.getElementById("modalAiDescription");
-		const modalScore = document.getElementById("modalScore");
-		const closeModalBtn = document.getElementById("closeModalBtn");
+        const confirmModal = document.getElementById("confirmModal");
+        const confirmImage = document.getElementById("confirmImage");
+        const confirmDescription = document.getElementById("confirmDescription");
+        const confirmYesBtn = document.getElementById("confirmYesBtn");
+        const confirmNoBtn = document.getElementById("confirmNoBtn");
 
-		const confirmModal = document.getElementById("confirmModal");
-		const confirmImage = document.getElementById("confirmImage");
-		const confirmDescription = document.getElementById("confirmDescription");
-		const confirmYesBtn = document.getElementById("confirmYesBtn");
-		const confirmNoBtn = document.getElementById("confirmNoBtn");
+        // Login slider elements
+        const loginSlider = document.getElementById("loginSlider");
+        const overlay = document.getElementById("overlay");
+        const loginToggle = document.getElementById("loginToggle");
+        const closeSlider = document.getElementById("closeSlider");
+        const loginForm = document.getElementById("loginForm");
+        const loginBtn = document.getElementById("loginBtn");
+        const loginError = document.getElementById("loginError");
+        const loginSuccess = document.getElementById("loginSuccess");
+        const userGreeting = document.getElementById("userGreeting");
+        const logoutBtn = document.getElementById("logoutBtn");
+        
+        // Navigation elements
+        const navMenu = document.getElementById("navMenu");
+        const menuToggle = document.getElementById("menuToggle");
+        const closeNav = document.getElementById("closeNav");
+        const desktopNavLinks = document.querySelectorAll('.desktop-nav-link');
 
-		let currentItem = null;
+        let currentItem = null;
 
-		// Initialize the page
-		document.addEventListener("DOMContentLoaded", function() {
-			// Initialize search functionality
-			initSearch();
-		});
+        // Initialize the page
+        document.addEventListener("DOMContentLoaded", function() {
+            // Initialize search functionality
+            initSearch();
+            
+            // Set up login slider functionality
+            setupLoginSlider();
+            
+            // Set up navigation menu
+            setupNavigation();
+            
+            // Check if user is already logged in
+            checkLoginStatus();
+        });
 
-		// Initialize search functionality
-		function initSearch() {
-			// Search form handler
-			form.addEventListener("submit", async (e) => {
-				e.preventDefault();
-				messageBox.innerHTML = "";
-				resultsContainer.innerHTML = "";
+        // Initialize search functionality
+        function initSearch() {
+            // Search form handler
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                messageBox.innerHTML = "";
+                resultsContainer.innerHTML = "";
 
-				const description = document.getElementById("description").value.trim();
-				if (!description) {
-					messageBox.innerHTML = `<div class="error-message">Please enter a description to search.</div>`;
-					return;
-				}
+                const description = document.getElementById("description").value.trim();
+                if (!description) {
+                    messageBox.innerHTML = `<div class="error-message">Please enter a description to search.</div>`;
+                    return;
+                }
 
-				const btn = document.getElementById("queryBtn");
-				btn.disabled = true;
-				btn.innerHTML = `<div class="spinner"></div> Searching...`;
+                const btn = document.getElementById("queryBtn");
+                btn.disabled = true;
+                btn.innerHTML = `<div class="spinner"></div> Searching...`;
 
-				try {
-					const formData = new FormData();
-					formData.append("description", description);
+                try {
+                    const formData = new FormData();
+                    formData.append("description", description);
 
-					const res = await fetch(`${API_BASE}/items/query`, {
-						method: "POST",
-						body: formData,
-					});
+                    const res = await fetch(`${API_BASE}/items/query`, {
+                        method: "POST",
+                        body: formData,
+                    });
 
-					const data = await res.json();
+                    const data = await res.json();
 
-					if (!res.ok) {
-						messageBox.innerHTML = `<div class="error-message">${data.detail || "No similar items found."}</div>`;
-						return;
-					}
+                    if (!res.ok) {
+                        messageBox.innerHTML = `<div class="error-message">${data.detail || "No similar items found."}</div>`;
+                        return;
+                    }
 
-					if (data.results && data.results.length > 0) {
-						messageBox.innerHTML = `<div class="success-message">Found ${data.results.length} similar item(s)</div>`;
-						
-						// Apply centered layout for 1-2 items, grid for 3+
-						if (data.results.length <= 2) {
-							resultsContainer.className = "results-centered";
-						} else {
-							resultsContainer.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
-						}
+                    if (data.results && data.results.length > 0) {
+                        messageBox.innerHTML = `<div class="success-message">Found ${data.results.length} similar item(s)</div>`;
+                        
+                        // Apply centered layout for 1-2 items, grid for 3+
+                        if (data.results.length <= 2) {
+                            resultsContainer.className = "results-centered";
+                        } else {
+                            resultsContainer.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+                        }
 
-						data.results.forEach(item => {
-							const card = document.createElement("div");
-							card.className = "result-card fade-in";
+                        data.results.forEach(item => {
+                            const card = document.createElement("div");
+                            card.className = "result-card fade-in";
 
-							card.innerHTML = `
-								<img src="${item.image_url}" alt="Item Image" class="result-image" data-view="true" />
-								<div class="result-info">
-									<p class="result-score mb-2.5 text-sm">Similarity: ${item.score}</p>
-									<button class="btn-primary w-full py-2 rounded-lg font-semibold text-white text-sm" data-claim="true">
-										Claim Item
-									</button>
-								</div>
-							`;
+                            card.innerHTML = `
+                                <img src="${item.image_url}" alt="Item Image" class="result-image" data-view="true" />
+                                <div class="result-info">
+                                    <p class="result-score mb-2.5 text-sm">Similarity: ${item.score}</p>
+                                    <button class="btn-primary w-full py-2 rounded-lg font-semibold text-white text-sm" data-claim="true">
+                                        Claim Item
+                                    </button>
+                                </div>
+                            `;
 
-							// View image on image click
-							const img = card.querySelector('[data-view="true"]');
-							img.addEventListener("click", () => openModal(item));
+                            // View image on image click
+                            const img = card.querySelector('[data-view="true"]');
+                            img.addEventListener("click", () => openModal(item));
 
-							// Claim on button click
-							const claimBtn = card.querySelector('[data-claim="true"]');
-							claimBtn.addEventListener("click", (e) => {
-								e.stopPropagation();
-								openConfirmModal(item);
-							});
+                            // Claim on button click
+                            const claimBtn = card.querySelector('[data-claim="true"]');
+                            claimBtn.addEventListener("click", (e) => {
+                                e.stopPropagation();
+                                openConfirmModal(item);
+                            });
 
-							resultsContainer.appendChild(card);
-						});
-					} else {
-						messageBox.innerHTML = `<div class="error-message">No items found matching your description.</div>`;
-					}
-				} catch (error) {
-					messageBox.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
-				} finally {
-					btn.disabled = false;
-					btn.innerHTML = "Search";
-				}
-			});
+                            resultsContainer.appendChild(card);
+                        });
+                    } else {
+                        messageBox.innerHTML = `<div class="error-message">No items found matching your description.</div>`;
+                    }
+                } catch (error) {
+                    messageBox.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = "Search";
+                }
+            });
 
-			// Open image modal
-			function openModal(item) {
-				currentItem = item;
-				modalImage.src = item.image_url;
-				modalAiDescription.textContent = item.gemini_description || "No AI description available";
-				modalScore.textContent = `Similarity Score: ${item.score}`;
-				
-				modal.classList.remove("hidden");
-				setTimeout(() => modal.classList.add("show"), 10);
-			}
+            // Open image modal
+            function openModal(item) {
+                currentItem = item;
+                modalImage.src = item.image_url;
+                modalAiDescription.textContent = item.gemini_description || "No AI description available";
+                modalScore.textContent = `Similarity Score: ${item.score}`;
+                
+                modal.classList.remove("hidden");
+                setTimeout(() => modal.classList.add("show"), 10);
+            }
 
-			// Close image modal
-			function closeModal() {
-				modal.classList.remove("show");
-				setTimeout(() => {
-					modal.classList.add("hidden");
-					currentItem = null;
-				}, 300);
-			}
+            // Close image modal
+            function closeModal() {
+                modal.classList.remove("show");
+                setTimeout(() => {
+                    modal.classList.add("hidden");
+                    currentItem = null;
+                }, 300);
+            }
 
-			closeModalBtn.addEventListener("click", closeModal);
+            closeModalBtn.addEventListener("click", closeModal);
 
-			modal.addEventListener("click", (e) => {
-				if (e.target === modal) {
-					closeModal();
-				}
-			});
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
 
-			// Open confirmation modal
-			function openConfirmModal(item) {
-				currentItem = item;
-				confirmImage.src = item.image_url;
-				confirmDescription.textContent = item.description || "No description available";
-				
-				confirmModal.classList.remove("hidden");
-				setTimeout(() => confirmModal.classList.add("show"), 10);
-			}
+            // Open confirmation modal
+            function openConfirmModal(item) {
+                currentItem = item;
+                confirmImage.src = item.image_url;
+                confirmDescription.textContent = item.description || "No description available";
+                
+                confirmModal.classList.remove("hidden");
+                setTimeout(() => confirmModal.classList.add("show"), 10);
+            }
 
-			// Close confirmation modal
-			function closeConfirmModal() {
-				confirmModal.classList.remove("show");
-				setTimeout(() => {
-					confirmModal.classList.add("hidden");
-					currentItem = null;
-				}, 300);
-			}
+            // Close confirmation modal
+            function closeConfirmModal() {
+                confirmModal.classList.remove("show");
+                setTimeout(() => {
+                    confirmModal.classList.add("hidden");
+                    currentItem = null;
+                }, 300);
+            }
 
-			confirmNoBtn.addEventListener("click", closeConfirmModal);
+            confirmNoBtn.addEventListener("click", closeConfirmModal);
 
-			confirmModal.addEventListener("click", (e) => {
-				if (e.target === confirmModal) {
-					closeConfirmModal();
-				}
-			});
+            confirmModal.addEventListener("click", (e) => {
+                if (e.target === confirmModal) {
+                    closeConfirmModal();
+                }
+            });
 
-			// Confirm claim
-			confirmYesBtn.addEventListener("click", () => {
-				if (currentItem) {
-					// Add your claim API logic here
-					alert(`Item claimed successfully!\nItem ID: ${currentItem.item_id || "N/A"}`);
-					closeConfirmModal();
-				}
-			});
+            // Confirm claim
+            confirmYesBtn.addEventListener("click", () => {
+                if (currentItem) {
+                    // Add your claim API logic here
+                    alert(`Item claimed successfully!\nItem ID: ${currentItem.item_id || "N/A"}`);
+                    closeConfirmModal();
+                }
+            });
 
-			// ESC key to close modals
-			document.addEventListener("keydown", (e) => {
-				if (e.key === "Escape") {
-					if (!confirmModal.classList.contains("hidden")) {
-						closeConfirmModal();
-					} else if (!modal.classList.contains("hidden")) {
-						closeModal();
-					}
-				}
-			});
-		}
-	</script>
+            // ESC key to close modals
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    if (!confirmModal.classList.contains("hidden")) {
+                        closeConfirmModal();
+                    } else if (!modal.classList.contains("hidden")) {
+                        closeModal();
+                    }
+                }
+            });
+        }
+
+        // Setup login slider functionality
+        function setupLoginSlider() {
+            // Open login slider
+            loginToggle.addEventListener("click", function() {
+                loginSlider.classList.add("active");
+                overlay.classList.add("active");
+                document.body.style.overflow = "hidden";
+            });
+            
+            // Close login slider
+            closeSlider.addEventListener("click", closeLoginSlider);
+            overlay.addEventListener("click", closeLoginSlider);
+            
+            // Handle login form submission
+            loginForm.addEventListener("submit", handleLogin);
+            
+            // Handle logout
+            logoutBtn.addEventListener("click", handleLogout);
+        }
+
+        // Setup navigation menu
+        function setupNavigation() {
+            // Open navigation menu
+            menuToggle.addEventListener("click", function() {
+                navMenu.classList.add("active");
+                overlay.classList.add("active");
+                document.body.style.overflow = "hidden";
+            });
+            
+            // Close navigation menu
+            closeNav.addEventListener("click", closeNavMenu);
+            overlay.addEventListener("click", closeNavMenu);
+        }
+
+        // Close login slider
+        function closeLoginSlider() {
+            loginSlider.classList.remove("active");
+            overlay.classList.remove("active");
+            document.body.style.overflow = "";
+            // Reset form and messages
+            loginForm.reset();
+            hideMessage(loginError);
+            hideMessage(loginSuccess);
+        }
+
+        // Close navigation menu
+        function closeNavMenu() {
+            navMenu.classList.remove("active");
+            overlay.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+
+        // Handle login form submission
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const identifier = document.getElementById("identifier").value.trim();
+            const password = document.getElementById("password").value;
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner"></span> Logging in...';
+            hideMessage(loginError);
+            hideMessage(loginSuccess);
+            
+            try {
+                // Make API call to login endpoint
+                const response = await fetch('http://127.0.0.1:8000/api/v1/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        identifier: identifier,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Login successful
+                    showMessage(loginSuccess, "Login successful!");
+                    
+                    // Store user data in localStorage
+                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('user_name', data.name);
+                    
+                    // Update UI to show logged in state
+                    setTimeout(() => {
+                        closeLoginSlider();
+                        updateLoginUI();
+                    }, 1000);
+                } else {
+                    // Login failed
+                    showMessage(loginError, data.detail || "Login failed. Please try again.");
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage(loginError, "An error occurred. Please try again.");
+            } finally {
+                // Reset button state
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Login';
+            }
+        }
+
+        // Handle logout
+        function handleLogout() {
+            // Clear localStorage
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('user_name');
+            
+            // Update UI to show logged out state
+            updateLoginUI();
+        }
+
+        // Check if user is logged in
+        function checkLoginStatus() {
+            const userId = localStorage.getItem('user_id');
+            const userName = localStorage.getItem('user_name');
+            
+            if (userId && userName) {
+                // User is logged in
+                updateLoginUI();
+            }
+        }
+
+        // Update UI based on login status
+        function updateLoginUI() {
+            const userId = localStorage.getItem('user_id');
+            const userName = localStorage.getItem('user_name');
+            
+            if (userId && userName) {
+                // User is logged in
+                const firstName = userName.split(' ')[0]; // Extract first name
+                userGreeting.textContent = `Hi, ${firstName}`;
+                userGreeting.style.display = 'block';
+                logoutBtn.style.display = 'block';
+                loginToggle.style.display = 'none';
+            } else {
+                // User is logged out
+                userGreeting.style.display = 'none';
+                logoutBtn.style.display = 'none';
+                loginToggle.style.display = 'block';
+            }
+        }
+
+        // Helper function to show message
+        function showMessage(element, message) {
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // Helper function to hide message
+        function hideMessage(element) {
+            element.style.display = 'none';
+        }
+    </script>
 </body>
 
 </html>
