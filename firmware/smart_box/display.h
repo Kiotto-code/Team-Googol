@@ -3,7 +3,17 @@
 #include <Arduino.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
+
+#ifndef __has_include
+#define __has_include(x) 0
+#endif
+
+#if __has_include(<qrcode.h>)
+#define SMART_BOX_HAS_QRCODE 1
 #include <qrcode.h>
+#else
+#define SMART_BOX_HAS_QRCODE 0
+#endif
 
 #include "config.h"
 
@@ -42,6 +52,7 @@ public:
     }
     String url = String(SERVER_BASE_URL) + "/upload-page?box_id=" + BOX_ID;
 
+#if SMART_BOX_HAS_QRCODE
     QRCode qrcode;
     uint8_t qrcodeData[qrcode_getBufferSize(3)];
     if (qrcode_initText(&qrcode, qrcodeData, 3, ECC_MEDIUM, url.c_str()) == 0) {
@@ -67,6 +78,9 @@ public:
     } else {
       drawMessage("Scan URL", url);
     }
+#else
+    drawMessage("Scan URL", url);
+#endif
   }
 
 private:
