@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 
 from ..db import get_db
+from typing import List
 from .. import models, schemas
 from ..dependencies.auth import require_roles
 from ..services import audit as audit_service
@@ -435,3 +436,175 @@ def login_user(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
         "user_id": user.user_id,
         "name": user.name
     }
+
+# LEADERBOARD API
+
+@public_router.get("/leaderboard/items-found", response_model=schemas.UserRankingResponse)
+def get_top_items_found(
+    db: Session = Depends(get_db),
+    limit: int = Query(20, ge=1, le=100, description="Number of top users to return")
+):
+    """
+    Get top users by items found
+    """
+    # Get users ordered by items_found descending, excluding deleted users
+    top_users = (
+        db.query(models.User)
+        .filter(
+            models.User.deleted_at.is_(None),
+            models.User.items_found > 0
+        )
+        .order_by(models.User.items_found.desc())
+        .limit(limit)
+        .all()
+    )
+    
+    # Create ranking with actual rank numbers
+    ranking = []
+    current_rank = 1
+    previous_count = None
+    skip_rank = 0
+    
+    for i, user in enumerate(top_users):
+        if user.items_found == previous_count:
+            # Same rank as previous user
+            ranking.append(schemas.UserRanking(
+                user_id=user.user_id,
+                name=user.name,
+                student_id=user.student_id,
+                items_count=user.items_found,
+                rank=current_rank - 1
+            ))
+            skip_rank += 1
+        else:
+            # New rank
+            current_rank += skip_rank
+            skip_rank = 1
+            ranking.append(schemas.UserRanking(
+                user_id=user.user_id,
+                name=user.name,
+                student_id=user.student_id,
+                items_count=user.items_found,
+                rank=current_rank
+            ))
+        previous_count = user.items_found
+    
+    return schemas.UserRankingResponse(ranking=ranking)
+
+
+@public_router.get("/leaderboard/items-lost", response_model=schemas.UserRankingResponse)
+def get_top_items_lost(
+    db: Session = Depends(get_db),
+    limit: int = Query(20, ge=1, le=100, description="Number of top users to return")
+):
+    """
+    Get top users by items lost
+    """
+    # Get users ordered by items_lost descending, excluding deleted users
+    top_users = (
+        db.query(models.User)
+        .filter(
+            models.User.deleted_at.is_(None),
+            models.User.items_lost > 0
+        )
+        .order_by(models.User.items_lost.desc())
+        .limit(limit)
+        .all()
+    )
+    
+    # Create ranking with actual rank numbers
+    ranking = []
+    current_rank = 1
+    previous_count = None
+    skip_rank = 0
+    
+    for i, user in enumerate(top_users):
+        if user.items_lost == previous_count:
+            # Same rank as previous user
+            ranking.append(schemas.UserRanking(
+                user_id=user.user_id,
+                name=user.name,
+                student_id=user.student_id,
+                items_count=user.items_lost,
+                rank=current_rank - 1
+            ))
+            skip_rank += 1
+        else:
+            # New rank
+            current_rank += skip_rank
+            skip_rank = 1
+            ranking.append(schemas.UserRanking(
+                user_id=user.user_id,
+                name=user.name,
+                student_id=user.student_id,
+                items_count=user.items_lost,
+                rank=current_rank
+            ))
+        previous_count = user.items_lost
+    
+    return schemas.UserRankingResponse(ranking=ranking)
+
+
+@public_router.get("/{user_id}/ranking", response_model=schemas.UserPersonalRanking)
+def get_user_ranking(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get user's items lost/found counts and their ranking
+    """
+    user = _get_user_or_404(db, user_id)
+    
+    if user.deleted_at:
+        raise HTTPException(status_code=400, detail="Cannot get ranking for deleted user")
+    
+    # Get total active users count
+    total_users = db.query(models.User).filter(models.User.deleted_at.is_(None)).count()
+    
+    # Calculate rank for items_found
+    found_rank_subquery = (
+        db.query(
+            models.User.user_id,
+            func.rank().over(
+                order_by=models.User.items_found.desc()
+            ).label('rank')
+        )
+        .filter(models.User.deleted_at.is_(None))
+        .subquery()
+    )
+    
+    found_rank_result = (
+        db.query(found_rank_subquery.c.rank)
+        .filter(found_rank_subquery.c.user_id == user_id)
+        .scalar()
+    )
+    found_rank = found_rank_result or total_users
+    
+    # Calculate rank for items_lost
+    lost_rank_subquery = (
+        db.query(
+            models.User.user_id,
+            func.rank().over(
+                order_by=models.User.items_lost.desc()
+            ).label('rank')
+        )
+        .filter(models.User.deleted_at.is_(None))
+        .subquery()
+    )
+    
+    lost_rank_result = (
+        db.query(lost_rank_subquery.c.rank)
+        .filter(lost_rank_subquery.c.user_id == user_id)
+        .scalar()
+    )
+    lost_rank = lost_rank_result or total_users
+    
+    return schemas.UserPersonalRanking(
+        user_id=user.user_id,
+        name=user.name,
+        items_found=user.items_found,
+        items_lost=user.items_lost,
+        found_rank=found_rank,
+        lost_rank=lost_rank,
+        total_users=total_users
+    )

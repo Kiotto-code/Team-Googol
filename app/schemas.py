@@ -18,7 +18,25 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: Optional[str] = None
-    
+
+class UserRanking(BaseModel):
+    user_id: int
+    name: str
+    student_id: int | None = None
+    items_count: int
+    rank: int
+
+class UserRankingResponse(BaseModel):
+    ranking: List[UserRanking]
+
+class UserPersonalRanking(BaseModel):
+    user_id: int
+    name: str
+    items_found: int
+    items_lost: int
+    found_rank: int
+    lost_rank: int
+    total_users: int
 
 class UserLogin(BaseModel):
     # identifier can be a student ID (numeric) or an email address

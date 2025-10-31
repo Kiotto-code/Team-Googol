@@ -173,6 +173,20 @@ if REGISTER_PAGE_DIR.exists():
 def redirect_to_index():
     return RedirectResponse(url="/register-page/")
 
+# LEADERBOARD PAGE
+LEADERBOARD_PAGE_DIR = BASE_DIR / "leaderboard-page"
+
+if LEADERBOARD_PAGE_DIR.exists():
+    app.mount(
+        "/leaderboard-page",
+        StaticFiles(directory=str(LEADERBOARD_PAGE_DIR), html=True),
+        name="leaderboard-page",
+    )
+
+@app.get("/leaderboard")
+def redirect_to_index():
+    return RedirectResponse(url="/leaderboard-page/")
+
 # QUERY PAGE
 QUERY_PAGE_DIR = BASE_DIR / "query-page"
 
