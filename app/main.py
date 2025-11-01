@@ -159,6 +159,20 @@ if HOME_PAGE_DIR.exists():
 def redirect_to_index():
     return RedirectResponse(url="/home-page/")
 
+# COLLECT PAGE
+COLLECT_PAGE_DIR = BASE_DIR / "collect-page"
+
+if COLLECT_PAGE_DIR.exists():
+    app.mount(
+        "/collect-page",
+        StaticFiles(directory=str(COLLECT_PAGE_DIR), html=True),
+        name="collect-page",
+    )
+
+@app.get("/collect")
+def redirect_to_index():
+    return RedirectResponse(url="/collect-page/")
+
 # REGISTER PAGE
 REGISTER_PAGE_DIR = BASE_DIR / "register-page"
 
