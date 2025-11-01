@@ -438,8 +438,8 @@
                         <li>Locate Box <span id="instructionBoxNumber" class="text-blue-400 font-semibold">-</span> using the map below</li>
                         <li>Go to the box location</li>
                         <li>Open the box door</li>
-                        <li>Press "Collect" button below within 5 minutes</li>
-                        <li>Retrieve your item from the box</li>
+                        <li>Press "Collect" button and scan your RFID card at the box</li>
+                        <li>Retrieve your item from the box within 5 minutes</li>
                     </ol>
                 </div>
 
@@ -451,27 +451,27 @@
                     <div class="map-grid">
                         <div class="map-box" data-box="1">
                             <div class="map-box-number">1</div>
-                            <div class="map-box-label">Entrance</div>
+                            <div class="map-box-label">FCI Faculty</div>
                         </div>
                         <div class="map-box" data-box="2">
                             <div class="map-box-number">2</div>
-                            <div class="map-box-label">Lobby</div>
+                            <div class="map-box-label">Dewan Tunku Canselor</div>
                         </div>
                         <div class="map-box" data-box="3">
                             <div class="map-box-number">3</div>
-                            <div class="map-box-label">Cafeteria</div>
+                            <div class="map-box-label">FOM Faculty</div>
                         </div>
                         <div class="map-box" data-box="4">
                             <div class="map-box-number">4</div>
-                            <div class="map-box-label">Library</div>
+                            <div class="map-box-label">MMU Library</div>
                         </div>
                         <div class="map-box" data-box="5">
                             <div class="map-box-number">5</div>
-                            <div class="map-box-label">Gym</div>
+                            <div class="map-box-label">Starbees</div>
                         </div>
                         <div class="map-box" data-box="6">
                             <div class="map-box-number">6</div>
-                            <div class="map-box-label">Admin</div>
+                            <div class="map-box-label">Deen's Cafe</div>
                         </div>
                     </div>
                 </div>
@@ -648,7 +648,7 @@
                     item_id: parseInt(localStorage.getItem('item_id') || 1) // You might need to store this too
                 };
 
-                const response = await fetch(`${API_BASE}/collect`, {
+                const response = await fetch(`${API_BASE}/items/collect`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -700,7 +700,7 @@
                     item_id: parseInt(localStorage.getItem('item_id') || 1)
                 };
 
-                const response = await fetch(`${API_BASE}/cancel`, {
+                const response = await fetch(`${API_BASE}/items/cancel`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
