@@ -1317,7 +1317,6 @@
 					const claimData = {
 						item_id: currentItem.item_id,
 						reciver_id: userId,
-						box_id: currentItem.box_id || 1, // Default box ID if not provided
 						remarks: "Item claimed through FINDR search",
 						status: "claimed"
 					};
@@ -1334,9 +1333,9 @@
 						const result = await response.json();
 
 						// Save case_id and image_url to localStorage
-						localStorage.setItem('case_id', result.case_id || result.id);
+						localStorage.setItem('case_id', result.found_id);
 						localStorage.setItem('claimed_item_image', currentItem.image_url);
-						localStorage.setItem('box_id', currentItem.box_id || 1);
+						localStorage.setItem('box_id', result.box_id || 1);
 
 						console.log('Saved to localStorage:', {
 							case_id: localStorage.getItem('case_id'),

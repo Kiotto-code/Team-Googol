@@ -545,7 +545,7 @@ async def upload_item_public(
         image_embedding=json.dumps(img_emb),  # store as JSON string
         description_embedding=json.dumps(desc_emb),
         image_url=public_url,
-        status="active",  # you can change to "pending_review" if you want moderation
+        status="active", 
         finder_user_id=finder_user_id,
     )
 
@@ -554,6 +554,16 @@ async def upload_item_public(
 
     db.commit()
     db.refresh(new_item)
+    
+    # Creates new case and set status to available
+    new_case = models.Case(
+        box_id=box_id,
+        item_id=new_item.item_id,
+        status="available", 
+    )
+    db.add(new_case)
+    db.commit()
+    db.refresh(new_case)
     
     box = db.query(models.Box).filter(models.Box.box_id == box_id).first()
     if not box:
@@ -633,12 +643,13 @@ async def query_items_public(
     return {"results": top_results}
 
 
-@public_router.post("/claim", response_model=schemas.CaseRead, status_code=status.HTTP_201_CREATED)
+@public_router.post("/claim", response_model=schemas.CaseRead, status_code=status.HTTP_200_OK)
 def claim_item(payload: schemas.CaseCreatePayload, db: Session = Depends(get_db)):
     """
-    Create a new case when an item is claimed.
+    Claim an item by updating the existing case.
     Sets status to 'claimed'.
     """
+
     # Check if item exists
     item = db.query(models.Item).filter(models.Item.item_id == payload.item_id).first()
     if not item:
@@ -654,32 +665,30 @@ def claim_item(payload: schemas.CaseCreatePayload, db: Session = Depends(get_db)
     if not receiver:
         raise HTTPException(status_code=404, detail="Receiver not found")
 
+    # ✅ find existing case
+    case = db.query(models.Case).filter(models.Case.item_id == payload.item_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found for this item")
+
+    # ✅ update item status
     item.status = "claimed"
     db.add(item)
-    
-    # Create new case
-    new_case = models.Case(
-        item_id=payload.item_id,
-        reciver_id=payload.reciver_id,
-        box_id=payload.box_id,
-        status="claimed",
-        remarks=payload.remarks,
-        created_at=datetime.utcnow(),
-    )
 
-    db.add(new_case)
+    # ✅ update case
+    case.status = "claimed"
+    case.reciver_id = payload.reciver_id
+
     db.commit()
-    db.refresh(new_case)
+    db.refresh(case)
 
-    return new_case
-
+    return case
 
 
 @public_router.post("/cancel", response_model=schemas.CaseRead, status_code=status.HTTP_200_OK)
 def cancel_case(payload: schemas.CaseCancelPayload, db: Session = Depends(get_db)):
     """
     Cancel a claimed case:
-    - Sets case.status = 'cancelled'
+    - Sets case.status = 'available'
     - Sets item.status = 'active'
     - Updates case_close_at to now
     """
@@ -694,8 +703,8 @@ def cancel_case(payload: schemas.CaseCancelPayload, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Item not found")
 
     # --- Update both records ---
-    case.status = "cancelled"
-    case.case_close_at = datetime.utcnow()
+    case.status = "available"
+    case.reciver_id = None
     item.status = "active"
 
     db.add_all([case, item])
@@ -750,7 +759,7 @@ def collect_item(payload: schemas.CaseCollectPayload, db: Session = Depends(get_
                 conn.execute(
                     models.Case.__table__.update()
                     .where(models.Case.found_id == payload.case_id)
-                    .values(status="uncollected")
+                    .values(status="available")
                 )
                 conn.execute(
                     models.Item.__table__.update()
