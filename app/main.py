@@ -32,6 +32,9 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN deleted_at DATETIME"))
     result = conn.execute(text("PRAGMA table_info(items)"))
     item_columns = [row[1] for row in result.fetchall()]
+    # Add new nullable columns for backward compatibility
+    if "gemini_description" not in item_columns:
+        conn.execute(text("ALTER TABLE items ADD COLUMN gemini_description TEXT"))
     if "updated_at" not in item_columns:
         conn.execute(text("ALTER TABLE items ADD COLUMN updated_at DATETIME"))
     if "deleted_at" not in item_columns:
@@ -114,8 +117,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Allow your frontend origins
 origins = [
-    "http://127.0.0.1:5501",
-    "http://localhost:5501",
+    # Only allow same-host port 8000
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
 ]
 
 app.add_middleware(

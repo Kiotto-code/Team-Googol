@@ -9,7 +9,10 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-L/14@336px", device=device)
 
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
+# Use the app/uploads directory so URLs served at /uploads map correctly
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+APP_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+UPLOAD_FOLDER = os.path.join(APP_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
