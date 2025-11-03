@@ -14,8 +14,8 @@ from fastapi import (
     HTTPException,
     Query,
     UploadFile,
-    status,
 )
+from fastapi import status
 from sqlalchemy.orm import Session
 from werkzeug.utils import secure_filename
 
@@ -71,49 +71,12 @@ def _schedule_embedding_refresh(
 
 
 def _should_refresh_embeddings(fields: Iterable[str]) -> tuple[bool, bool]:
+    # Decide if embeddings should be recalculated based on updated fields
     refresh_image = any(field in {"image_url"} for field in fields)
     refresh_description = any(
         field in {"description", "gemini_description"} for field in fields
     )
     return refresh_image, refresh_description
-
-
-@admin_router.post("/", response_model=schemas.ItemRead, status_code=status.HTTP_201_CREATED)
-def create_item(
-    item: schemas.ItemCreate,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_admin: models.User = Depends(get_current_admin),
-):
-    db_item = models.Item(**item.model_dump(exclude_unset=True))
-    if db_item.status and not item_service.is_valid_status(db_item.status):
-        raise HTTPException(status_code=400, detail="Invalid status value")
-
-    db.add(db_item)
-    db.flush()
-
-    audit_service.log_item_event(
-        db,
-        actor_id=current_admin.user_id,
-        action="create",
-        item_id=db_item.item_id,
-        metadata={"status": db_item.status},
-    )
-
-    refresh_image, refresh_description = _should_refresh_embeddings(
-        item.model_dump(exclude_unset=True).keys()
-    )
-    db.commit()
-    db.refresh(db_item)
-
-    _schedule_embedding_refresh(
-        background_tasks,
-        db_item.item_id,
-        refresh_image=refresh_image,
-        refresh_description=refresh_description or bool(db_item.description),
-    )
-
-    return db_item
 
 
 def _base_item_query(db: Session, include_deleted: bool):
@@ -438,6 +401,7 @@ async def upload_item(
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     with open(filepath, "wb") as buffer:
         buffer.write(await image.read())
+    public_url = f"http://127.0.0.1:8000/uploads/{filename}"
 
     good, brightness, contrast = is_lighting_good(filepath)
     if not good:
@@ -460,7 +424,7 @@ async def upload_item(
     new_item = models.Item(
         gemini_description=gemini_caption,
         description=combined_caption,
-        image_url=filepath,
+        image_url=public_url,
         status="uploaded",
         finder_user_id=finder_user_id,
     )
@@ -478,6 +442,23 @@ async def upload_item(
 
     db.commit()
     db.refresh(new_item)
+
+    # Create a case and update default box (box_id=1) on admin upload
+    box = db.query(models.Box).filter(models.Box.box_id == 1).first()
+    if box is None:
+        raise HTTPException(status_code=404, detail="Default box (id=1) not found")
+    box.status = True
+    box.door_status = True
+    box.last_accessed = datetime.utcnow()
+
+    new_case = models.Case(
+        item_id=new_item.item_id,
+        box_id=box.box_id,
+        status="stored",
+        created_at=datetime.utcnow(),
+    )
+    db.add(new_case)
+    db.commit()
 
     _schedule_embedding_refresh(
         background_tasks,
@@ -545,7 +526,7 @@ async def upload_item_public(
         image_embedding=json.dumps(img_emb),  # store as JSON string
         description_embedding=json.dumps(desc_emb),
         image_url=public_url,
-        status="active",  # you can change to "pending_review" if you want moderation
+    status="active",
         finder_user_id=finder_user_id,
     )
 
@@ -554,7 +535,8 @@ async def upload_item_public(
 
     db.commit()
     db.refresh(new_item)
-    
+
+    # Validate target box
     box = db.query(models.Box).filter(models.Box.box_id == box_id).first()
     if not box:
         raise HTTPException(status_code=404, detail=f"Box {box_id} not found")
@@ -562,12 +544,18 @@ async def upload_item_public(
     if not box.status:
         raise HTTPException(status_code=409, detail=f"Box {box_id} is disabled")
 
-    async def perform_open_box():
-        box.last_accessed = datetime.now()
-        box.door_status = True
-        db.commit()
+    # Open box and create a case for the uploaded item
+    box.last_accessed = datetime.utcnow()
+    box.door_status = True
 
-    background_tasks.add_task(perform_open_box)
+    new_case = models.Case(
+        item_id=new_item.item_id,
+        box_id=box.box_id,
+        status="stored",
+        created_at=datetime.utcnow(),
+    )
+    db.add(new_case)
+    db.commit()
 
     return new_item
 
