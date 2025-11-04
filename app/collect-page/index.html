@@ -366,6 +366,20 @@
             transition: width 1s linear;
         }
 
+        /* Collection in progress styles */
+        .collection-in-progress .btn-timer {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            cursor: default;
+        }
+
+        .collection-in-progress .btn-timer .timer-display {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #22c55e;
+        }
+
         @media (min-width: 768px) {
             .footer-content {
                 flex-direction: row;
@@ -403,6 +417,8 @@
             </div>
         </div>
     </header>
+	
+	<br><br><br>
 
     <!-- Main Content -->
     <main class="main-content flex-grow">
@@ -437,8 +453,8 @@
                     <ol class="list-decimal list-inside space-y-3 text-gray-300">
                         <li>Locate Box <span id="instructionBoxNumber" class="text-blue-400 font-semibold">-</span> using the map below</li>
                         <li>Go to the box location</li>
-                        <li>Open the box door</li>
-                        <li>Press "Collect" button and scan your RFID card at the box</li>
+                        <li>Once arrived at the box location, Press "Collect Item"</li>
+                        <li>Scan your RFID card at the box and unlock it</li>
                         <li>Retrieve your item from the box within 5 minutes</li>
                     </ol>
                 </div>
@@ -477,7 +493,7 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <div id="actionButtons" class="flex flex-col sm:flex-row gap-4 justify-center">
                     <button 
                         id="collectBtn"
                         class="btn-success px-8 py-4 rounded-lg font-semibold text-white text-lg flex items-center justify-center">
@@ -494,6 +510,24 @@
                         </svg>
                         Cancel Collection
                     </button>
+                </div>
+
+                <!-- Collection in Progress Buttons (Initially Hidden) -->
+                <div id="collectionInProgress" class="hidden">
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl font-semibold mb-2 text-green-400">Collection in Progress</h3>
+                        <p class="text-gray-300">You have <span id="remainingTime" class="font-bold text-green-400">5:00</span> minutes to collect your item</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <button 
+                            id="collectedSuccessfullyBtn"
+                            class="btn-success px-8 py-4 rounded-lg font-semibold text-white text-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Collected Successfully
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -560,6 +594,35 @@
         </div>
     </div>
 
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="text-center mb-6">
+                    <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-semibold mb-4 text-green-400">Collection Successful!</h3>
+                    <div class="text-gray-300 mb-6 space-y-4">
+                        <p class="text-lg">Great news! You've successfully collected your item.</p>
+                        <p class="text-base">We're glad we could help reunite you with your belongings. Remember to take better care of your items in the future to avoid losing them again.</p>
+                        <p class="text-sm text-blue-300">You will be redirected to the home page shortly.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-center">
+                    <button 
+                        id="successModalOkBtn"
+                        class="btn-success px-8 py-3 rounded-lg font-semibold text-white text-lg">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = "http://127.0.0.1:8000/api/v1";
         
@@ -574,6 +637,12 @@
         const timerDisplay = document.getElementById("timerDisplay");
         const progressFill = document.getElementById("progressFill");
         const closeModalBtn = document.getElementById("closeModalBtn");
+        const actionButtons = document.getElementById("actionButtons");
+        const collectionInProgress = document.getElementById("collectionInProgress");
+        const collectedSuccessfullyBtn = document.getElementById("collectedSuccessfullyBtn");
+        const remainingTime = document.getElementById("remainingTime");
+        const successModal = document.getElementById("successModal");
+        const successModalOkBtn = document.getElementById("successModalOkBtn");
 
         // Collection data from localStorage
         let caseId, itemImageUrl, boxId;
@@ -581,6 +650,7 @@
         // Timer variables
         let timerInterval;
         let timeLeft = 300; // 5 minutes in seconds
+        let collectionStarted = false;
 
         // Initialize the page
         document.addEventListener("DOMContentLoaded", function() {
@@ -628,6 +698,8 @@
             collectBtn.addEventListener("click", handleCollect);
             cancelBtn.addEventListener("click", handleCancel);
             closeModalBtn.addEventListener("click", closeCollectModal);
+            collectedSuccessfullyBtn.addEventListener("click", handleCollectedSuccessfully);
+            successModalOkBtn.addEventListener("click", handleSuccessModalOk);
         }
 
         // Handle collect button click
@@ -660,7 +732,6 @@
                     const result = await response.json();
                     showMessage(messageBox, "Box unlocked! You have 5 minutes to collect your item.", "success");
                     openCollectModal();
-                    startTimer();
                 } else {
                     const errorData = await response.json();
                     throw new Error(errorData.detail || "Failed to unlock box. Please try again.");
@@ -743,28 +814,35 @@
             setTimeout(() => collectModal.classList.add("show"), 10);
         }
 
-        // Close collect modal
+        // Close collect modal and start collection process
         function closeCollectModal() {
             collectModal.classList.remove("show");
             setTimeout(() => {
                 collectModal.classList.add("hidden");
+                
+                // Switch to collection in progress view
+                actionButtons.classList.add("hidden");
+                collectionInProgress.classList.remove("hidden");
+                document.querySelector('.glass-card').classList.add('collection-in-progress');
+                
+                // Start the timer
+                startCollectionTimer();
             }, 300);
         }
 
-        // Start the 5-minute timer
-        function startTimer() {
+        // Start the 5-minute timer for collection
+        function startCollectionTimer() {
+            collectionStarted = true;
             timeLeft = 300; // Reset to 5 minutes
-            updateTimerDisplay();
+            updateCollectionTimerDisplay();
             
             timerInterval = setInterval(() => {
                 timeLeft--;
-                updateTimerDisplay();
+                updateCollectionTimerDisplay();
                 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    timerDisplay.textContent = "00:00";
-                    timerDisplay.className = "timer timer-danger";
-                    progressFill.style.width = "0%";
+                    remainingTime.textContent = "0:00";
                     
                     showMessage(messageBox, "Time's up! The box has been locked and your claim has been cancelled.", "error");
                     
@@ -779,24 +857,51 @@
             }, 1000);
         }
 
-        // Update timer display
-        function updateTimerDisplay() {
+        // Update collection timer display
+        function updateCollectionTimerDisplay() {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
-            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const displayText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             
-            // Update progress bar
-            const progressPercentage = (timeLeft / 300) * 100;
-            progressFill.style.width = `${progressPercentage}%`;
+            // Update timer display
+            remainingTime.textContent = displayText;
             
             // Change color based on time left
             if (timeLeft <= 60) {
-                timerDisplay.className = "timer timer-danger";
+                remainingTime.className = "font-bold text-red-500";
             } else if (timeLeft <= 120) {
-                timerDisplay.className = "timer timer-warning";
+                remainingTime.className = "font-bold text-yellow-500";
             } else {
-                timerDisplay.className = "timer";
+                remainingTime.className = "font-bold text-green-400";
             }
+        }
+
+        // Handle collected successfully button click
+        function handleCollectedSuccessfully() {
+            if (!collectionStarted) return;
+            
+            // Clear the timer
+            clearInterval(timerInterval);
+            
+            // Show success modal
+            openSuccessModal();
+        }
+
+        // Open success modal
+        function openSuccessModal() {
+            successModal.classList.remove("hidden");
+            setTimeout(() => successModal.classList.add("show"), 10);
+        }
+
+        // Handle success modal OK button click
+        function handleSuccessModalOk() {
+            // Clear localStorage
+            localStorage.removeItem('case_id');
+            localStorage.removeItem('claimed_item_image');
+            localStorage.removeItem('box_id');
+            
+            // Redirect to home page
+            window.location.href = "http://127.0.0.1:8000/home";
         }
 
         // Disable buttons when no data

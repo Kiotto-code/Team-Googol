@@ -536,6 +536,13 @@ async def upload_item_public(
     db.commit()
     db.refresh(new_item)
     
+    user = db.query(models.User).filter(models.User.user_id == finder_user_id).first()
+    if user:
+        user.items_found = (user.items_found or 0) + 1
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
     # Creates new case and set status to available
     new_case = models.Case(
         box_id=box_id,
@@ -557,12 +564,13 @@ async def upload_item_public(
     box.last_accessed = datetime.utcnow()
     box.door_status = True
 
-    new_case = models.Case(
-        item_id=new_item.item_id,
-        box_id=box.box_id,
-        status="stored",
-        created_at=datetime.utcnow(),
-    )
+    # new_case = models.Case(
+    #     item_id=new_item.item_id,
+    #     box_id=box.box_id,
+    #     status="stored",
+    #     created_at=datetime.utcnow(),
+    # )
+    
     db.add(new_case)
     db.commit()
 
@@ -642,11 +650,6 @@ def claim_item(payload: schemas.CaseCreatePayload, db: Session = Depends(get_db)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    # Check if box exists
-    box = db.query(models.Box).filter(models.Box.box_id == payload.box_id).first()
-    if not box:
-        raise HTTPException(status_code=404, detail="Box not found")
-
     # Check if receiver exists
     receiver = db.query(models.User).filter(models.User.user_id == payload.reciver_id).first()
     if not receiver:
@@ -689,7 +692,7 @@ def cancel_case(payload: schemas.CaseCancelPayload, db: Session = Depends(get_db
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    # --- Update both records ---
+    # --- Update records ---
     case.status = "available"
     case.reciver_id = None
     item.status = "active"

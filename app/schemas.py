@@ -172,8 +172,7 @@ class ItemUpdate(BaseModel):
 class CaseCreatePayload(BaseModel):
     item_id: int
     reciver_id: int
-    box_id: int
-
+    
 class CaseCancelPayload(BaseModel):
     case_id: int
     item_id: int
