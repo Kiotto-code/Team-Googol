@@ -454,7 +454,7 @@ async def upload_item(
     new_case = models.Case(
         item_id=new_item.item_id,
         box_id=box.box_id,
-        status="stored",
+        status="pending",
         created_at=datetime.utcnow(),
     )
     db.add(new_case)
@@ -535,24 +535,7 @@ async def upload_item_public(
 
     db.commit()
     db.refresh(new_item)
-    
-    user = db.query(models.User).filter(models.User.user_id == finder_user_id).first()
-    if user:
-        user.items_found = (user.items_found or 0) + 1
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    
-    # Creates new case and set status to available
-    new_case = models.Case(
-        box_id=box_id,
-        item_id=new_item.item_id,
-        status="available", 
-    )
-    db.add(new_case)
-    db.commit()
-    db.refresh(new_case)
-    
+
     box = db.query(models.Box).filter(models.Box.box_id == box_id).first()
     if not box:
         raise HTTPException(status_code=404, detail=f"Box {box_id} not found")
@@ -564,13 +547,12 @@ async def upload_item_public(
     box.last_accessed = datetime.utcnow()
     box.door_status = True
 
-    # new_case = models.Case(
-    #     item_id=new_item.item_id,
-    #     box_id=box.box_id,
-    #     status="stored",
-    #     created_at=datetime.utcnow(),
-    # )
-    
+    new_case = models.Case(
+        item_id=new_item.item_id,
+        box_id=box.box_id,
+        status="pending",   #stored
+        created_at=datetime.utcnow(),
+    )
     db.add(new_case)
     db.commit()
 

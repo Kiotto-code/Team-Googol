@@ -171,6 +171,27 @@ def complete_deposit(
     )
     db.commit()
     db.refresh(box)
+
+    # Link deposit completion to case lifecycle: set latest pending case for this box to 'stored'
+    pending_case = (
+        db.query(models.Case)
+        .filter(models.Case.box_id == box.box_id, models.Case.status == "pending")
+        .order_by(models.Case.created_at.desc())
+        .first()
+    )
+    if pending_case:
+        pending_case.status = "stored"
+        pending_case.case_close_at = None
+        # If the case has an item, ensure item is 'active' in storage
+        if pending_case.item_id:
+            item = db.query(models.Item).get(pending_case.item_id)
+            if item:
+                item.status = "active"
+                db.add(item)
+        db.add(pending_case)
+        db.commit()
+        db.refresh(pending_case)
+
     response.box_status = box.status
     response.door_status = box.door_status
     return response
