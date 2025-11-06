@@ -1182,14 +1182,23 @@
 					// Check if response is ok
 					if (!res.ok) {
 						let errorMessage = "Network error occurred";
+						let errorDetail = "";
 
 						// Try to parse error response as JSON
 						try {
 							const errorData = await res.json();
-							errorMessage = errorData.detail || `Server error: ${res.status}`;
+							errorDetail = errorData.detail || "";
+							errorMessage = errorDetail || `Server error: ${res.status}`;
 						} catch (jsonError) {
 							// If JSON parsing fails, use status text
 							errorMessage = res.statusText || `Server error: ${res.status}`;
+						}
+
+						// Treat 404 from query API as a clean "no results" state with tips
+						if (res.status === 404) {
+							showMessage(messageBox, "No items found matching your description. Please try different keywords.", "info");
+							showNoResultsHeader();
+							return; // stop further processing
 						}
 
 						throw new Error(errorMessage);
@@ -1246,8 +1255,13 @@
 				} catch (error) {
 					console.error('Search error:', error);
 
-					// Check if it's a "no items found" error
-					if (error.message.includes("No similar items found") || error.message.includes("similarity")) {
+					// Check if it's a "no items found" error (handle various backend messages)
+					if (
+						error.message.includes("No similar items found") ||
+						error.message.includes("similarity") ||
+						error.message.includes("No matching stored items found") ||
+						error.message.includes("No active items found")
+					) {
 						showMessage(messageBox, "No items found matching your description. Please try different keywords.", "info");
 						showNoResultsHeader();
 					} else {

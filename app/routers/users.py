@@ -85,7 +85,7 @@ def create_user(
         student_id=user.student_id,
         rfid_tag=user.rfid_tag,
         items_found=user.items_found or 0,
-        items_find=user.items_find or 0,
+    items_lost=user.items_lost or 0,
         role=user.role if hasattr(user, "role") and user.role else "user",
         password=get_password_hash(user.password) if user.password else None,
     )
@@ -145,7 +145,7 @@ def list_users(
         "email": models.User.email,
         "role": models.User.role,
         "items_found": models.User.items_found,
-        "items_find": models.User.items_find,
+    "items_lost": models.User.items_lost,
     }
 
     sort_key = sort.lstrip("+-")

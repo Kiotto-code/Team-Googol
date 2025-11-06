@@ -15,7 +15,7 @@ from ..services import telemetry as telemetry_service
 
 router = APIRouter(prefix="/api/v1/boxes", tags=["device-boxes"])
 
-DEVICE_ACTOR_EMAIL = "device@system.local"
+DEVICE_ACTOR_EMAIL = "device@system.localdomain"
 DEVICE_ACTOR_NAME = "Smart Box Device"
 
 
@@ -27,6 +27,7 @@ def _get_box(db: Session, box_id: int) -> models.Box:
 
 
 def _get_device_actor(db: Session) -> models.User:
+    # Try current canonical email first
     actor = (
         db.query(models.User)
         .filter(models.User.email == DEVICE_ACTOR_EMAIL)
@@ -34,6 +35,17 @@ def _get_device_actor(db: Session) -> models.User:
     )
     if actor:
         return actor
+    # Back-compat: migrate legacy device email if present
+    legacy = (
+        db.query(models.User)
+        .filter(models.User.email == "device@system.local")
+        .one_or_none()
+    )
+    if legacy:
+        legacy.email = DEVICE_ACTOR_EMAIL
+        db.add(legacy)
+        db.flush()
+        return legacy
     actor = models.User(
         name=DEVICE_ACTOR_NAME,
         email=DEVICE_ACTOR_EMAIL,
@@ -127,7 +139,7 @@ def request_deposit_unlock(
 
 @router.post(
     "/{box_id}/deposit/complete",
-    response_model=schemas.DeviceBoxActionResponse,
+    response_model=bool,
 )
 def complete_deposit(
     box_id: int,
@@ -146,12 +158,12 @@ def complete_deposit(
             detail="Door must be open before completing deposit",
         )
 
-    box.status = False
+    box.status = True
     box.load = payload.load if payload.load is not None else box.load
     box.door_status = not payload.door_closed
     box.last_accessed = datetime.now(timezone.utc)
 
-    response = _record_action(
+    _record_action(
         db,
         box=box,
         action="deposit_complete",
@@ -192,14 +204,12 @@ def complete_deposit(
         db.commit()
         db.refresh(pending_case)
 
-    response.box_status = box.status
-    response.door_status = box.door_status
-    return response
+    return True
 
 
 @router.post(
     "/{box_id}/pickup/validate",
-    response_model=schemas.DeviceBoxActionResponse,
+    response_model=bool,
 )
 def validate_pickup(
     box_id: int,
@@ -207,7 +217,7 @@ def validate_pickup(
     db: Session = Depends(get_db),
 ):
     box = _get_box(db, box_id)
-    if box.status is not False:
+    if box.load is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Box is not holding an item for pickup",
@@ -217,10 +227,15 @@ def validate_pickup(
             status_code=status.HTTP_409_CONFLICT,
             detail="Door already open",
         )
-
+    case_rec = (
+        db.query(models.Case)
+        .filter((models.Case.box_id == 1) & (models.Case.status == "claimed"))
+        .one_or_none()
+    )
+    user_id = case_rec.reciver_id if case_rec else None
     user = (
         db.query(models.User)
-        .filter(models.User.rfid_tag == payload.rfid_uid)
+    .filter((models.User.rfid_tag == payload.rfid_uid) & (models.User.user_id == user_id))
         .one_or_none()
     )
     if not user:
@@ -232,7 +247,7 @@ def validate_pickup(
     box.door_status = True
     box.last_accessed = datetime.now(timezone.utc)
 
-    response = _record_action(
+    _record_action(
         db,
         box=box,
         action="pickup_validate",
@@ -253,10 +268,7 @@ def validate_pickup(
     )
     db.commit()
     db.refresh(box)
-    response.box_status = box.status
-    response.door_status = box.door_status
-    response.user_id = user.user_id
-    return response
+    return True
 
 
 @router.post(
@@ -269,11 +281,6 @@ def complete_pickup(
     db: Session = Depends(get_db),
 ):
     box = _get_box(db, box_id)
-    if box.status is not False:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Box is already available",
-        )
     if box.door_status is not True:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
