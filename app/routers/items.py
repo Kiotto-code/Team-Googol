@@ -709,7 +709,7 @@ def cancel_case(payload: schemas.CaseCancelPayload, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Item not found")
 
     # --- Update records ---
-    case.status = "available"
+    case.status = "stored"  # Change to 'stored' to allow querying
     case.reciver_id = None
     item.status = "active"
 

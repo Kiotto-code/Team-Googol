@@ -788,7 +788,7 @@
                         localStorage.removeItem('case_id');
                         localStorage.removeItem('claimed_item_image');
                         localStorage.removeItem('box_id');
-                        window.location.href = "http://127.0.0.1:8000/query";
+                        window.location.href = "http://127.0.0.1:8000/search";
                     }, 3000);
                 } else {
                     const errorData = await response.json();
@@ -851,7 +851,7 @@
                         localStorage.removeItem('case_id');
                         localStorage.removeItem('claimed_item_image');
                         localStorage.removeItem('box_id');
-                        window.location.href = "http://127.0.0.1:8000/query";
+                        window.location.href = "/search";
                     }, 5000);
                 }
             }, 1000);

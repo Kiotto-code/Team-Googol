@@ -133,6 +133,9 @@ app.add_middleware(
 # Static and templates (resolve relative to this file)
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+# Mount home page static files under /home
+if (BASE_DIR / "home-page").exists():
+    app.mount("/home/static", StaticFiles(directory=str(BASE_DIR / "home-page")), name="home-static")
 ADMIN_PANEL_DIR = BASE_DIR / "admin-panel"
 if ADMIN_PANEL_DIR.exists():
     app.mount(
@@ -152,16 +155,10 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # HOME PAGE
 HOME_PAGE_DIR = BASE_DIR / "home-page"
 
-if HOME_PAGE_DIR.exists():
-    app.mount(
-        "/home-page",
-        StaticFiles(directory=str(HOME_PAGE_DIR), html=True),
-        name="home-page",
-    )
-
 @app.get("/home")
-def redirect_to_index():
-    return RedirectResponse(url="/home-page/")
+async def home_page():
+    if HOME_PAGE_DIR.exists():
+        return FileResponse(str(HOME_PAGE_DIR / "index.html"))
 
 # COLLECT PAGE
 COLLECT_PAGE_DIR = BASE_DIR / "collect-page"
@@ -194,30 +191,26 @@ def redirect_to_index():
 # LEADERBOARD PAGE
 LEADERBOARD_PAGE_DIR = BASE_DIR / "leaderboard-page"
 
-if LEADERBOARD_PAGE_DIR.exists():
-    app.mount(
-        "/leaderboard-page",
-        StaticFiles(directory=str(LEADERBOARD_PAGE_DIR), html=True),
-        name="leaderboard-page",
-    )
-
 @app.get("/leaderboard")
-def redirect_to_index():
-    return RedirectResponse(url="/leaderboard-page/")
+async def leaderboard_page():
+    if LEADERBOARD_PAGE_DIR.exists():
+        return FileResponse(str(LEADERBOARD_PAGE_DIR / "index.html"))
 
-# QUERY PAGE
+# Mount static files
+if LEADERBOARD_PAGE_DIR.exists():
+    app.mount("/leaderboard/static", StaticFiles(directory=str(LEADERBOARD_PAGE_DIR)), name="leaderboard-static")
+
+# SEARCH PAGE
 QUERY_PAGE_DIR = BASE_DIR / "query-page"
 
-if QUERY_PAGE_DIR.exists():
-    app.mount(
-        "/query-page",
-        StaticFiles(directory=str(QUERY_PAGE_DIR), html=True),
-        name="query-page",
-    )
+@app.get("/search")
+async def search_page():
+    if QUERY_PAGE_DIR.exists():
+        return FileResponse(str(QUERY_PAGE_DIR / "index.html"))
 
-@app.get("/query")
-def redirect_to_index():
-    return RedirectResponse(url="/query-page/")
+# Mount static files
+if QUERY_PAGE_DIR.exists():
+    app.mount("/search/static", StaticFiles(directory=str(QUERY_PAGE_DIR)), name="search-static")
 
 # UPLOAD PAGE
 UPLOAD_PAGE_DIR = BASE_DIR / "upload-page"
