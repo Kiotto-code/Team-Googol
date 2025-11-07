@@ -541,7 +541,7 @@ async def upload_item_public(
         raise HTTPException(status_code=404, detail=f"Box {box_id} not found")
 
     if not box.status:
-        raise HTTPException(status_code=409, detail=f"Box {box_id} is disabled")
+        raise HTTPException(status_code=409, detail=f"Box {box_id} already has an active item")
 
     # Open box and create a case for the uploaded item
     box.last_accessed = datetime.utcnow()
@@ -731,7 +731,7 @@ def collect_item(payload: schemas.CaseCollectPayload, db: Session = Depends(get_
                 conn.execute(
                     models.Case.__table__.update()
                     .where(models.Case.found_id == payload.case_id)
-                    .values(status="available")
+                    .values(status="pending")
                 )
                 conn.execute(
                     models.Item.__table__.update()
@@ -769,6 +769,7 @@ def collected_successfully(payload: schemas.CaseCollectedPayload, db: Session = 
 
     # 3️⃣ Update records
     box.door_status = False
+    box.status = True
     case.status = "collected"
     case.case_close_at = datetime.now(timezone.utc)
     item.status = "collected"
