@@ -3,6 +3,7 @@ import { createCard } from '../components/app-card.js';
 import { createTable } from '../components/app-table.js';
 import { createCodeBlock } from '../components/code-block.js';
 import { showToast } from '../components/app-toast.js';
+import { createPieChart, createBarChart } from '../components/app-charts.js';
 
 function createHeader(title, subtitle) {
   const header = document.createElement('div');
@@ -24,6 +25,7 @@ function createHeader(title, subtitle) {
   return header;
 }
 
+
 export const dashboardPage = {
   route: '/dashboard',
   label: 'Dashboard',
@@ -33,28 +35,12 @@ export const dashboardPage = {
     root.className = 'page';
 
     root.appendChild(
-      createHeader('Command Center', 'At-a-glance health across inventory and operations.')
+      createHeader('Command Center', 'At-a-glance test health across inventory and operations.')
     );
 
     const metricsGrid = document.createElement('div');
     metricsGrid.className = 'page__grid';
     root.appendChild(metricsGrid);
-
-    const activitySection = document.createElement('section');
-    activitySection.className = 'grid-col-span-12 card';
-    root.appendChild(activitySection);
-
-    const skeletonCards = ['Users', 'Items', 'Cases', 'Boxes'].map((label) =>
-      createCard({ title: label, value: '—', meta: 'Loading…' })
-    );
-    skeletonCards.forEach((card) => {
-      card.classList.add('grid-col-span-3');
-      metricsGrid.appendChild(card);
-    });
-
-    const loadingState = document.createElement('p');
-    loadingState.textContent = 'Fetching telemetry and activity feed…';
-    activitySection.appendChild(loadingState);
 
     try {
       const [overview, boxes, cases, auditLogs] = await Promise.all([
@@ -65,7 +51,8 @@ export const dashboardPage = {
       ]);
 
       metricsGrid.innerHTML = '';
-      const cards = [
+      // Create summary cards
+      const summaryCards = [
         createCard({
           title: 'Active Users',
           value: overview?.users?.active ?? '—',
@@ -91,14 +78,81 @@ export const dashboardPage = {
           icon: '🗄️',
         }),
       ];
-      cards[0].classList.add('grid-col-span-3');
-      cards[1].classList.add('grid-col-span-3');
-      cards[2].classList.add('grid-col-span-3');
-      cards[3].classList.add('grid-col-span-3');
-      cards.forEach((card) => metricsGrid.appendChild(card));
+      
+      summaryCards.forEach(card => {
+        card.classList.add('grid-col-span-3');
+        metricsGrid.appendChild(card);
+      });
 
-      activitySection.innerHTML = '';
+      // Create charts section
+      // Create stats card with two pie charts
+      const statsContainer = document.createElement('div');
+      statsContainer.style.display = 'flex';
+      statsContainer.style.gap = '20px';
+      statsContainer.style.justifyContent = 'space-between';
 
+      // Create pie chart for item status distribution
+      const itemStatusData = {
+        labels: Object.keys(overview?.items?.by_status || {}),
+        values: Object.values(overview?.items?.by_status || {})
+      };
+      const itemChart = createPieChart(itemStatusData, {
+        title: 'Items by Status',
+        height: '250px',
+        width: '50%'
+      });
+      itemChart.style.flex = '1';
+      statsContainer.appendChild(itemChart);
+
+      // Create pie chart for box status distribution
+      const boxStatusData = {
+        labels: ['Available', 'Unavailable', 'Unknown'],
+        values: [
+          overview?.boxes?.available || 0,
+          overview?.boxes?.unavailable || 0,
+          overview?.boxes?.unknown || 0
+        ]
+      };
+      const boxChart = createPieChart(boxStatusData, {
+        title: 'Box Status Distribution',
+        height: '250px',
+        width: '50%'
+      });
+      boxChart.style.flex = '1';
+      statsContainer.appendChild(boxChart);
+
+      const statsCard = createCard({
+        title: 'System Status Distribution',
+        body: statsContainer
+      });
+      statsCard.classList.add('grid-col-span-6');
+      metricsGrid.appendChild(statsCard);
+
+      // Create bar chart for cases overview
+      const caseData = {
+        labels: ['Open', 'Closed', 'Closed (30 Days)'],
+        values: [
+          overview?.cases?.open || 0,
+          overview?.cases?.closed || 0,
+          overview?.cases?.closed_last_30_days || 0
+        ]
+      };
+      const caseMetricsCard = createCard({
+        title: 'Case Metrics',
+        body: createBarChart(caseData, {
+          title: 'Case Distribution',
+          label: 'Number of Cases',
+          height: '250px',
+          showLegend: true
+        })
+      });
+      caseMetricsCard.classList.add('grid-col-span-6');
+      metricsGrid.appendChild(caseMetricsCard);
+
+      // Create activity section
+      const activitySection = document.createElement('section');
+      activitySection.className = 'grid-col-span-12 card';
+      
       const recentActivity = createTable({
         columns: [
           { label: 'Timestamp', accessor: (row) => new Date(row.created_at).toLocaleString() },
@@ -113,15 +167,7 @@ export const dashboardPage = {
       activityHeader.textContent = 'Recent Administrative Activity';
       activitySection.appendChild(activityHeader);
       activitySection.appendChild(recentActivity);
-
-      const telemetryCard = createCard({
-        title: 'Distribution by Item Status',
-        body: createCodeBlock(overview?.items?.by_status || {}, {
-          label: 'Items by status',
-        }),
-      });
-      telemetryCard.classList.add('grid-col-span-6');
-      metricsGrid.appendChild(telemetryCard);
+      root.appendChild(activitySection);
 
       const casesTable = createTable({
         columns: [
