@@ -183,6 +183,23 @@ export const itemsPage = {
       body.style.flexDirection = 'column';
       body.style.gap = '16px';
 
+      // Add image preview if available
+      if (item.image_url) {
+        const imageContainer = document.createElement('div');
+        imageContainer.style.textAlign = 'center';
+        imageContainer.style.marginBottom = '16px';
+        
+        const img = document.createElement('img');
+        img.src = item.image_url;
+        img.alt = item.description || 'Item image';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '300px';
+        img.style.objectFit = 'contain';
+        
+        imageContainer.appendChild(img);
+        body.appendChild(imageContainer);
+      }
+
       body.appendChild(
         createCodeBlock(item, {
           label: `Item ${item.item_id} payload`,
