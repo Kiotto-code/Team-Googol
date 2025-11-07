@@ -374,6 +374,35 @@ async def ping_box(
     )
 
 
+@router.post(
+    "/{box_id}:mark-empty",
+    response_model=schemas.BoxActionResponse,
+)
+async def mark_box_empty(
+    box_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_roles("admin", "staff")),
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+):
+    box = _get_box(db, box_id)
+
+    async def perform(target: models.Box) -> dict[str, Any]:
+        target.last_accessed = datetime.utcnow()
+        target.load = 0
+        return await box_service.mark_empty(target)
+
+    return await _handle_idempotent_action(
+        db=db,
+        box=box,
+        box_id=box_id,
+        action="mark-empty",
+        idempotency_key=idempotency_key or "",
+        perform_action=perform,
+        audit_actor=current_user,
+    precondition=None,
+    )
+
+
 @ws_router.websocket("/api/v1/admin/ws/boxes")
 async def boxes_ws(
     websocket: WebSocket,

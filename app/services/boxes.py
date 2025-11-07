@@ -46,3 +46,20 @@ async def ping_box(box: models.Box) -> dict[str, Any]:
         "load": box.load,
         "latency_ms": randint(5, 30),
     }
+
+
+async def mark_empty(box: models.Box) -> dict[str, Any]:
+    """Mark the box as empty by setting its load to 0.
+
+    Returns a payload suitable for telemetry recording.
+    """
+    message = "Box marked as empty"
+    if (box.load or 0) == 0:
+        message = "Box already empty"
+    return {
+        "message": message,
+        "timestamp": datetime.utcnow().isoformat(),
+        "load": 0,
+        "status": box.status,
+        "door_status": box.door_status,
+    }

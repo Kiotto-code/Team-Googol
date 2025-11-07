@@ -216,6 +216,15 @@ export const boxesPage = {
       }
     }
 
+    function generateIdempotencyKey() {
+      try {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return window.crypto.randomUUID();
+        }
+      } catch (_) {}
+      return `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
     function showBoxDetails(box) {
       const body = document.createElement('div');
       body.style.display = 'flex';
@@ -249,6 +258,7 @@ export const boxesPage = {
         }, async () =>
           apiClient.request(`admin/boxes/${box.box_id}:${box.door_status ? 'close-door' : 'open-door'}`, {
             method: 'POST',
+            headers: { 'Idempotency-Key': generateIdempotencyKey() },
           })
         );
       });
@@ -256,14 +266,14 @@ export const boxesPage = {
 
       const pingButton = document.createElement('button');
       pingButton.textContent = 'Ping Box';
-      pingButton.addEventListener('click', () => {
+    pingButton.addEventListener('click', () => {
         mutateBox(
           box.box_id,
           {
             optimistic: {},
             message: 'Ping dispatched',
           },
-          async () => apiClient.request(`admin/boxes/${box.box_id}:ping`, { method: 'POST' })
+      async () => apiClient.request(`admin/boxes/${box.box_id}:ping`, { method: 'POST', headers: { 'Idempotency-Key': generateIdempotencyKey() } })
         );
       });
       actions.push(pingButton);
@@ -285,6 +295,24 @@ export const boxesPage = {
         );
       });
       actions.push(statusButton);
+
+      const emptyButton = document.createElement('button');
+      emptyButton.textContent = 'Mark Empty';
+      emptyButton.addEventListener('click', () => {
+        mutateBox(
+          box.box_id,
+          {
+            optimistic: { load: 0, last_accessed: new Date().toISOString() },
+            message: 'Marked as empty',
+          },
+          async () =>
+            apiClient.request(`admin/boxes/${box.box_id}:mark-empty`, {
+              method: 'POST',
+              headers: { 'Idempotency-Key': generateIdempotencyKey() },
+            })
+        );
+      });
+      actions.push(emptyButton);
 
       modal.show({
         title: `Box #${box.box_id}`,

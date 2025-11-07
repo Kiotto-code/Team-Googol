@@ -174,6 +174,21 @@ class ApiClient {
     const finalHeaders = this.buildHeaders(headers);
     const contentType = finalHeaders.get('Content-Type');
 
+    // Auto-add Idempotency-Key for admin box POST action endpoints if missing
+    function generateIdempotencyKey() {
+      try {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return window.crypto.randomUUID();
+        }
+      } catch (_) {}
+      return `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+    const m = (method || 'GET').toUpperCase();
+    const isBoxesAction = m === 'POST' && /\/api\/v1\/admin\/boxes\/[^/]+:.+/.test(url.pathname);
+    if (isBoxesAction && !finalHeaders.has('Idempotency-Key')) {
+      finalHeaders.set('Idempotency-Key', generateIdempotencyKey());
+    }
+
     const response = await fetch(url.toString(), {
       method,
       headers: finalHeaders,

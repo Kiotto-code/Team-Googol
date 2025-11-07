@@ -1,14 +1,14 @@
 from datetime import datetime
 from typing import Any, List, Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 # User Schemas
 class UserBase(BaseModel):
     name: Optional[str] = None
     phone_number: Optional[int] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     student_id: Optional[int] = None
     rfid_tag: Optional[str] = None
     items_found: Optional[int] = 0
@@ -72,7 +72,7 @@ class UserRoleUpdate(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     phone_number: Optional[int] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     student_id: Optional[int] = None
     rfid_tag: Optional[str] = None
     items_found: Optional[int] = None

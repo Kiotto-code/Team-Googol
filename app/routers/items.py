@@ -487,6 +487,16 @@ async def upload_item_public(
     - Saves item in DB and schedules embedding creation.
     """
 
+    # Validate target box BEFORE any file IO or DB writes
+    box = db.query(models.Box).filter(models.Box.box_id == box_id).first()
+    if not box:
+        raise HTTPException(status_code=404, detail=f"Box {box_id} not found")
+    if not box.status:
+        raise HTTPException(status_code=409, detail=f"Box {box_id} is disabled")
+    # New guard: block upload if box currently has load (occupied)
+    if (box.load or 0) > 0:
+        raise HTTPException(status_code=409, detail=f"Box {box_id} is occupied; please try another box")
+
     filename = secure_filename(image.filename)
     filepath = os.path.join(UPLOAD_FOLDER, filename)
 
@@ -574,10 +584,21 @@ async def query_items_public(
     # Generate query embedding
     query_emb = get_text_embedding(description).detach().cpu().numpy().flatten()
 
-    # Get all active items from DB
-    items = db.query(models.Item).filter(models.Item.status == "active").all()
+    # Get items that are active AND have a related case currently in 'stored' status
+    items = (
+        db.query(models.Item)
+        .join(models.Case, models.Case.item_id == models.Item.item_id)
+        .filter(
+            models.Item.status == "active",
+            models.Item.deleted_at.is_(None),
+            models.Case.status == "stored",
+            models.Case.deleted_at.is_(None),
+        )
+        .distinct(models.Item.item_id)
+        .all()
+    )
     if not items:
-        raise HTTPException(status_code=404, detail="No active items found")
+        raise HTTPException(status_code=404, detail="No matching stored items found")
 
     results = []
     for item in items:
@@ -610,9 +631,22 @@ async def query_items_public(
         except Exception:
             continue
 
-    # Sort by descending similarity and take top 3
+    # Sort by descending similarity then deduplicate by image_url (keep best score per image)
     results.sort(key=lambda x: x["score"], reverse=True)
-    top_results = results[:3]
+    deduped: list[dict] = []
+    seen_urls: set[str] = set()
+    for r in results:
+        key = (r.get("image_url") or "").strip().lower()
+        # If no image URL, allow it once by using a synthetic key with item_id
+        if not key:
+            key = f"item:{r.get('item_id')}"
+        if key in seen_urls:
+            continue
+        seen_urls.add(key)
+        deduped.append(r)
+
+    # Take top 3 unique results
+    top_results = deduped[:3]
 
     if not top_results:
         raise HTTPException(status_code=404, detail="No similar items found (similarity > 0.4)")
