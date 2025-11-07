@@ -58,6 +58,23 @@ def _get_device_actor(db: Session) -> models.User:
     return actor
 
 
+@router.get(
+    "/{box_id}/status",
+    response_model=schemas.BoxRead,
+)
+def get_box_status(
+    box_id: int,
+    db: Session = Depends(get_db),
+):
+    """Return current box record details for the given box_id.
+
+    This is a lightweight device/public endpoint that mirrors BoxRead fields
+    without requiring admin authentication.
+    """
+    box = _get_box(db, box_id)
+    return box
+
+
 def _record_action(
     db: Session,
     *,
