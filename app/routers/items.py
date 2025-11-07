@@ -743,6 +743,17 @@ def collect_item(payload: schemas.CaseCollectPayload, db: Session = Depends(get_
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
+    # --- Get receiver from case ---
+    if not case.reciver_id:
+        raise HTTPException(status_code=400, detail="Case has no receiver assigned")
+    
+    receiver = db.query(models.User).filter(models.User.user_id == case.reciver_id).first()
+    if not receiver:
+        raise HTTPException(status_code=404, detail="Receiver not found")
+
+    # --- Increment receiver's items_lost count ---
+    receiver.items_lost = (receiver.items_lost or 0) + 1
+    
     # --- Activate box ---
     box.status = True
     db.commit()
@@ -771,6 +782,12 @@ def collect_item(payload: schemas.CaseCollectPayload, db: Session = Depends(get_
                     models.Item.__table__.update()
                     .where(models.Item.item_id == payload.item_id)
                     .values(status="active")
+                )
+                # Decrement the receiver's items_lost count if not collected
+                conn.execute(
+                    models.User.__table__.update()
+                    .where(models.User.user_id == case.reciver_id)
+                    .values(items_lost=models.User.__table__.c.items_lost - 1)
                 )
                 conn.commit()
 
