@@ -234,9 +234,9 @@ async def upload_page(request: Request):
     file_path = UPLOAD_PAGE_DIR / "index.html"
     return FileResponse(file_path)
 
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/home")
 
 
 # Include API routers
