@@ -2,6 +2,7 @@ import { apiClient } from '../api.js';
 import { createCard } from '../components/app-card.js';
 import { createCodeBlock } from '../components/code-block.js';
 import { showToast } from '../components/app-toast.js';
+import { createPieChart, createBarChart } from '../components/app-charts.js';
 
 export const metricsPage = {
   route: '/metrics',
@@ -41,6 +42,30 @@ export const metricsPage = {
     grid.appendChild(itemsCard);
     grid.appendChild(casesCard);
     grid.appendChild(boxesCard);
+
+    // Add charts section
+    const chartsContainer = document.createElement('div');
+    chartsContainer.style.display = 'flex';
+    chartsContainer.style.gap = '20px';
+    chartsContainer.style.marginBottom = '20px';
+
+    // Create status distribution charts card
+    const statusChartsCard = createCard({
+      title: 'Status Distribution',
+      body: document.createElement('div')
+    });
+    statusChartsCard.classList.add('grid-col-span-6');
+    statusChartsCard.querySelector('.card__body').style.display = 'flex';
+    statusChartsCard.querySelector('.card__body').style.gap = '20px';
+    grid.appendChild(statusChartsCard);
+
+    // Create timeline metrics card
+    const timelineCard = createCard({
+      title: 'Timeline Metrics',
+      body: document.createElement('div')
+    });
+    timelineCard.classList.add('grid-col-span-6');
+    grid.appendChild(timelineCard);
 
     const promCard = createCard({
       title: 'Prometheus Export',
@@ -143,6 +168,64 @@ export const metricsPage = {
         boxesCard.querySelector('.card__body').replaceChildren(boxesBody);
 
   // Timestamp available in payload if needed: generated_at
+        // Create and update charts
+        const statusChartsBody = statusChartsCard.querySelector('.card__body');
+        statusChartsBody.innerHTML = '';
+
+        // User Status Pie Chart
+        const userStatusData = {
+          labels: ['Active', 'Disabled', 'Deleted'],
+          values: [
+            users?.active ?? 0,
+            users?.disabled ?? 0,
+            users?.deleted ?? 0
+          ]
+        };
+        const userChart = createPieChart(userStatusData, {
+          title: 'User Status',
+          height: '200px',
+          width: '50%'
+        });
+        userChart.style.flex = '1';
+        statusChartsBody.appendChild(userChart);
+
+        // Box Status Pie Chart
+        const boxStatusData = {
+          labels: ['Available', 'Unavailable', 'Unknown'],
+          values: [
+            boxes?.available ?? 0,
+            boxes?.unavailable ?? 0,
+            boxes?.unknown ?? 0
+          ]
+        };
+        const boxChart = createPieChart(boxStatusData, {
+          title: 'Box Status',
+          height: '200px',
+          width: '50%'
+        });
+        boxChart.style.flex = '1';
+        statusChartsBody.appendChild(boxChart);
+
+        // Cases Bar Chart
+        const timelineBody = timelineCard.querySelector('.card__body');
+        timelineBody.innerHTML = '';
+        
+        const caseData = {
+          labels: ['Open Cases', 'Closed (Total)', 'Closed (30 Days)', 'With Active Cases'],
+          values: [
+            cases?.open ?? 0,
+            cases?.closed ?? 0,
+            cases?.closed_last_30_days ?? 0,
+            boxes?.with_active_cases ?? 0
+          ]
+        };
+        const caseChart = createBarChart(caseData, {
+          title: 'Case Distribution',
+          label: 'Number of Cases',
+          height: '200px',
+          showLegend: true
+        });
+        timelineBody.appendChild(caseChart);
       } catch (error) {
         console.error('Failed to load overview', error);
         showToast({ title: 'Overview unavailable', message: error.message, type: 'error' });
