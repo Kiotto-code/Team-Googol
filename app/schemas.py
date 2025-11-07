@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, model_validator
 # User Schemas
 class UserBase(BaseModel):
     name: Optional[str] = None
-    phone_number: Optional[int] = None
+    phone_number: Optional[str] = None
     email: Optional[str] = None
     student_id: Optional[int] = None
     rfid_tag: Optional[str] = None
