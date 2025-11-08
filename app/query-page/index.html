@@ -934,11 +934,20 @@
 
 				<form id="queryForm" class="flex flex-col md:flex-row gap-4">
 					<input type="text" id="description" placeholder="e.g. black Nike water bottle"
-						class="flex-1 px-4 py-3 rounded-lg text-base" required />
-					<button type="submit" id="queryBtn"
-						class="btn-primary px-8 py-3 rounded-lg font-semibold text-white whitespace-nowrap">
-						Search
-					</button>
+						class="flex-1 px-4 py-3 rounded-lg text-base" />
+
+					<input id="imageFile" type="file" accept="image/*" class="hidden" />
+
+					<div class="flex items-center gap-2">
+						<button type="submit" id="queryBtn"
+							class="btn-primary px-6 py-3 rounded-lg font-semibold text-white whitespace-nowrap">
+							Search
+						</button>
+						<button type="button" id="imageQueryBtn"
+							class="btn-primary px-4 py-3 rounded-lg font-semibold text-white whitespace-nowrap">
+							Image Search
+						</button>
+					</div>
 				</form>
 			</div>
 		</div>
@@ -1271,6 +1280,105 @@
 				} finally {
 					btn.disabled = false;
 					btn.innerHTML = "Search";
+				}
+			});
+
+			// Image search handler: pressing Image Search will open the file picker
+			// and automatically perform the search when a file is selected.
+			const imageFileInput = document.getElementById('imageFile');
+			const imageQueryBtn = document.getElementById('imageQueryBtn');
+
+			// When Image Search is pressed, open the native file picker
+			imageQueryBtn.addEventListener('click', (e) => {
+				e.preventDefault();
+				imageFileInput.click();
+			});
+
+			// When a file is selected, immediately upload and search
+			imageFileInput.addEventListener('change', async () => {
+				if (!imageFileInput.files || imageFileInput.files.length === 0) {
+					return;
+				}
+
+				messageBox.innerHTML = '';
+				clearResultsHeader();
+				resultsContainer.innerHTML = '';
+
+				const file = imageFileInput.files[0];
+				imageQueryBtn.disabled = true;
+				imageQueryBtn.innerHTML = '<div class="spinner"></div> Searching...';
+
+				try {
+					const formData = new FormData();
+					formData.append('image', file);
+
+					const res = await fetch(`${API_BASE}/items/image-query`, {
+						method: 'POST',
+						body: formData,
+					});
+
+					if (!res.ok) {
+						let errorMessage = 'Network error occurred';
+						try {
+							const errorData = await res.json();
+							errorMessage = errorData.detail || errorData || `Server error: ${res.status}`;
+						} catch (jsonError) {
+							errorMessage = res.statusText || `Server error: ${res.status}`;
+						}
+						throw new Error(errorMessage);
+					}
+
+					const data = await res.json();
+
+					if (!data.results || data.results.length === 0) {
+						showMessage(messageBox, 'No items found matching your image. Please try a different photo.', 'info');
+						showNoResultsHeader();
+						return;
+					}
+
+					showMessage(messageBox, `Image search completed! Found ${data.results.length} item(s).`, 'success');
+
+					showResultsCountHeader(data.results.length);
+
+					if (data.results.length <= 2) {
+						resultsContainer.className = 'results-centered';
+					} else {
+						resultsContainer.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
+					}
+
+					data.results.forEach(item => {
+						const card = document.createElement('div');
+						card.className = 'result-card fade-in';
+
+						card.innerHTML = `\
+							<img src="${item.image_url}" alt="Item Image" class="result-image" data-view="true" />\
+							<div class="result-info">\
+								<button class="btn-primary w-full py-2 rounded-lg font-semibold text-white text-sm" data-claim="true">\
+									Claim Item\
+								</button>\
+							</div>\
+						`;
+
+						const img = card.querySelector('[data-view="true"]');
+						img.addEventListener('click', () => openModal(item));
+
+						const claimBtn = card.querySelector('[data-claim="true"]');
+						claimBtn.addEventListener('click', (e) => {
+							e.stopPropagation();
+							openConfirmModal(item);
+						});
+
+						resultsContainer.appendChild(card);
+					});
+
+				} catch (error) {
+					console.error('Image search error:', error);
+					showMessage(messageBox, `Error: ${error.message}`, 'error');
+				} finally {
+					imageQueryBtn.disabled = false;
+					imageQueryBtn.innerHTML = 'Image Search';
+					// Clear the file input so re-selecting the same file will trigger change
+					imageFileInput.value = '';
 				}
 			});
 

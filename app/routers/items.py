@@ -654,6 +654,95 @@ async def query_items_public(
     return {"results": top_results}
 
 
+@public_router.post("/image-query", status_code=status.HTTP_200_OK)
+async def image_query_public(
+    image: UploadFile,
+    db: Session = Depends(get_db),
+):
+    """
+    Public image-query endpoint:
+    - Accepts an image UploadFile.
+    - Generates an image embedding for the query image.
+    - Compares only against stored `image_embedding` of items (status='active' and case.status='stored').
+    - Returns top 3 similar items with scores (threshold > 0.75).
+    """
+
+    # Save uploaded image temporarily so we can pass a filepath to the embedding helper
+    # Use a UID based on current time (milliseconds) to avoid name collisions
+    timestamp_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    original_name = secure_filename(image.filename) or "upload"
+    filename = f"{timestamp_ms}_{original_name}"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    with open(filepath, "wb") as buffer:
+        buffer.write(await image.read())
+
+    try:
+        # Compute query image embedding
+        query_emb = get_image_embedding(filepath).detach().cpu().numpy().flatten()
+
+        # Find candidate items (must be active and have a case in 'stored')
+        items = (
+            db.query(models.Item)
+            .join(models.Case, models.Case.item_id == models.Item.item_id)
+            .filter(
+                models.Item.status == "active",
+                models.Item.deleted_at.is_(None),
+                models.Case.status == "stored",
+                models.Case.deleted_at.is_(None),
+            )
+            .distinct(models.Item.item_id)
+            .all()
+        )
+
+        if not items:
+            raise HTTPException(status_code=404, detail="No matching stored items found")
+
+        results = []
+        for item in items:
+            try:
+                if not item.image_embedding:
+                    continue
+                img_emb = np.array(json.loads(item.image_embedding), dtype=np.float32)
+                score = float(np.dot(query_emb, img_emb))
+                if score > 0.75:
+                    results.append({
+                        "item_id": item.item_id,
+                        "description": item.description,
+                        "gemini_description": item.gemini_description,
+                        "image_url": item.image_url,
+                        "score": round(score, 4),
+                    })
+            except Exception:
+                # Skip items with invalid embeddings
+                continue
+
+        # Sort, dedupe by image_url, and take top 3 (same logic as text query)
+        results.sort(key=lambda x: x["score"], reverse=True)
+        deduped: list[dict] = []
+        seen_urls: set[str] = set()
+        for r in results:
+            key = (r.get("image_url") or "").strip().lower()
+            if not key:
+                key = f"item:{r.get('item_id')}"
+            if key in seen_urls:
+                continue
+            seen_urls.add(key)
+            deduped.append(r)
+
+        top_results = deduped[:3]
+
+        if not top_results:
+            raise HTTPException(status_code=404, detail="No similar items found (similarity > 0.45)")
+
+        return {"results": top_results}
+    finally:
+        # cleanup temporary file
+        try:
+            os.remove(filepath)
+        except Exception:
+            pass
+
+
 @public_router.post("/claim", response_model=schemas.CaseRead, status_code=status.HTTP_200_OK)
 def claim_item(payload: schemas.CaseCreatePayload, db: Session = Depends(get_db)):
     """
