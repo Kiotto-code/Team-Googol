@@ -1,4 +1,5 @@
-# FINDR. - Lost & Found Made Easy (3rd Place Winner, Hardware Track, Code Nection MMU 2025)
+# FINDR. - Lost & Found Made Easy 
+# (3rd Place Winner, Hardware Track, Code Nection MMU 2025)
 
 FINDR is a smart automated box + AI-powered web app that simplifies the lost-and-found process on university campuses. Users can deposit found items securely and owners can search, match, and retrieve their belongings through an AI-driven system with RFID-based authentication.
 
@@ -7,6 +8,7 @@ FINDR is a smart automated box + AI-powered web app that simplifies the lost-and
 - 📷 Accessibility – Easy item drop off and easy item search anytime, anywhere
 - 🤖 AI Matching – Lost item descriptions are matched with stored items using CLIP embeddings + LLM (Gemini 2.5 Flash).
 - 🔐 24/7 Secure Retrieval – RFID card authentication ensures only the rightful owner can unlock the box.
+- 💡 Centralized Admin Panel - Able to control and manage multiple FINDR boxes with just a centralized admin panel
 - 📊 Transparency – Snapshots and logs track every deposit and retrieval.
 - 🌍 Scalability – Multiple FINDR boxes can be deployed across campus, making it very accessible for students to drop-off/collect anywhere
 - 🛠️ Modular Design – Easy to maintain and upgrade with modular hardware components.
@@ -26,10 +28,45 @@ FINDR is a smart automated box + AI-powered web app that simplifies the lost-and
 [![Watch the video](https://img.youtube.com/vi/-d-M06xUAgM/0.jpg)](https://youtu.be/-d-M06xUAgM)
 
 ## 📑 Prototype Slides
-[View the full report (PDF)](./Team_Googol_Slides.pdf)
+[View the full report (PDF)](./docs/Team_Googol_Slides.pdf)
+
+## Finalist Presentation Slides
+[View the finalist presentation slides (PDF)](./docs/Final_Presentation_FINDR.pdf)
 
 ## Final Demo Video
 [![Watch the final demo video](https://img.youtube.com/vi/GA4SrxnzHnM/0.jpg)](https://youtu.be/GA4SrxnzHnM)
+
+## Screenshots
+
+Below are a few screenshots from the web app (click to view full size):
+
+- Home page
+
+   ![Home page](./screenshots/Home-page.png)
+
+- Upload page
+
+   ![Upload page](./screenshots/Upload-page.png)
+
+- Search page (examples)
+
+   ![Search page 1](./screenshots/Search-page-1.png)
+
+   ![Search page 2](./screenshots/Search-page-2.png)
+
+- Collect page
+
+   ![Collect page](./screenshots/Collect-page.png)
+
+- Leaderboard
+
+   ![Leaderboard page](./screenshots/Leaderboard-page.png)
+
+- Admin panel (examples)
+
+   ![Admin page 1](./screenshots/Admin-page-1.png)
+
+   ![Admin page 2](./screenshots/Admin-page-2.png)
 
 
 ## Quick Start
@@ -42,74 +79,14 @@ FINDR is a smart automated box + AI-powered web app that simplifies the lost-and
    pip install -r requirements.txt
    ```
 
-2. **Start Backend:**
-   ```bash
-   cd backend
-   python app.py
+2. **Start App:**
+ ```
+ 	uvicorn app.main:app --reload --port 8000
    ```
-
-3. **Open Frontend:**
-   Open `frontend/index.html` in a web browser
-
-## API Endpoints
-
-### User Management (Separated)
-- `POST /finder/register` - Register a new finder with RFID
-- `POST /collector/register` - Register a new collector with student ID
-- `GET /finder/rfid/<tag>` - Quick finder lookup by RFID
-- `GET /user/search` - Cross-table user search by email
-
-### Item Management
-- `POST /upload` - Upload a lost item image (with finder reference)
-- `POST /search` - Search for items using image or text
-- `POST /collect` - Collect found items (with RFID integration)
-- `POST /claim` - Claim a found item (with collector verification)
-- `DELETE /delete/<filename>` - Delete an item
-
-### System Statistics
-- `GET /users/stats` - Get system-wide user statistics
-
-## Testing
-
-All testing scripts are located in the `tests/` folder:
-
-```bash
-# Run all tests
-python tests/run_tests.py
-
-# Run specific tests
-python tests/test_collect.py
-
-# Run migration utility
-python tests/migrate_data.py
-```
-
-See `tests/README.md` for detailed testing documentation.
-
-## Database Management
-
-The system uses separated user management with automatic migration:
-
-```bash
-# Database CLI tools
-python backend/db_manager.py --help
-python backend/db_manager.py list
-python backend/db_manager.py clear
-
-# Manual migration (if needed)
-python backend/migrate_data.py
-```
-
-### Database Schema (Updated)
-- **FINDERS**: Separate table for people who find items (with RFID support)
-- **COLLECTORS**: Separate table for people claiming items (with student ID)
-- **FOUND_ITEMS**: Links to both FINDERS (finder_id) and COLLECTORS (claimed_by)
-- **COLLECTED_ITEMS**: References FINDERS for collection tracking
 
 ## Documentation
 
-Complete documentation is available in the `docs/` folder:
-- **[System Architecture](docs/system-architecture-diagram.md)** - Complete system overview with separated user flow
+- Check out documentation.txt for more information on software API
 
 ## Presentation Deck
 
