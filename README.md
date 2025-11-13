@@ -1,126 +1,120 @@
-# Team-Googol FastAPI app
+# FINDR. - Lost & Found Made Easy (3rd Place Winner, Hardware Track, Code Nection MMU 2025)
 
-Simple FastAPI backend + Jinja2 frontend served from the same server, using SQLite.
+FINDR is a smart automated box + AI-powered web app that simplifies the lost-and-found process on university campuses. Users can deposit found items securely and owners can search, match, and retrieve their belongings through an AI-driven system with RFID-based authentication.
 
-## Run locally (Python 3.10.12)
+## 🚀 Key Features
+
+- 📷 Accessibility – Easy item drop off and easy item search anytime, anywhere
+- 🤖 AI Matching – Lost item descriptions are matched with stored items using CLIP embeddings + LLM (Gemini 2.5 Flash).
+- 🔐 24/7 Secure Retrieval – RFID card authentication ensures only the rightful owner can unlock the box.
+- 📊 Transparency – Snapshots and logs track every deposit and retrieval.
+- 🌍 Scalability – Multiple FINDR boxes can be deployed across campus, making it very accessible for students to drop-off/collect anywhere
+- 🛠️ Modular Design – Easy to maintain and upgrade with modular hardware components.
+
+
+## 🛠️ Hardware Components used in the final prototype
+
+- ESP32-CAM - Captures images and handles communication with the server.
+- LCD Display (LCD1) - Displays QR code for user login and shows the status of the box.
+- PCF8575 I/O - Provides 16 additional GPIO pins to the ESP32 via I2C for connecting to low-speed devices.
+- IR Sensor - Detects presence or movement of a person in front of the box.
+- RFID Sensor - Allows users to unlock the box using their student card.
+- Switch Sensor - Detects whether the box is open or closed.
+- DC-DC Step-Down Converter - Provides regulated power supply to the entire circuit.
+
+## 📺 Prototype Video
+[![Watch the video](https://img.youtube.com/vi/-d-M06xUAgM/0.jpg)](https://youtu.be/-d-M06xUAgM)
+
+## 📑 Prototype Slides
+[View the full report (PDF)](./Team_Googol_Slides.pdf)
+
+## Final Demo Video
+[![Watch the final demo video](https://img.youtube.com/vi/GA4SrxnzHnM/0.jpg)](https://youtu.be/GA4SrxnzHnM)
+
+
+## Quick Start
+
+- Python Version : Python 3.10.12
+
+1. **Setup Environment:**
+   ```bash
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **Start Backend:**
+   ```bash
+   cd backend
+   python app.py
+   ```
+
+3. **Open Frontend:**
+   Open `frontend/index.html` in a web browser
+
+## API Endpoints
+
+### User Management (Separated)
+- `POST /finder/register` - Register a new finder with RFID
+- `POST /collector/register` - Register a new collector with student ID
+- `GET /finder/rfid/<tag>` - Quick finder lookup by RFID
+- `GET /user/search` - Cross-table user search by email
+
+### Item Management
+- `POST /upload` - Upload a lost item image (with finder reference)
+- `POST /search` - Search for items using image or text
+- `POST /collect` - Collect found items (with RFID integration)
+- `POST /claim` - Claim a found item (with collector verification)
+- `DELETE /delete/<filename>` - Delete an item
+
+### System Statistics
+- `GET /users/stats` - Get system-wide user statistics
+
+## Testing
+
+All testing scripts are located in the `tests/` folder:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+# Run all tests
+python tests/run_tests.py
+
+# Run specific tests
+python tests/test_collect.py
+
+# Run migration utility
+python tests/migrate_data.py
 ```
 
-Open http://127.0.0.1:8000 for a minimal UI.
+See `tests/README.md` for detailed testing documentation.
 
-## Web URLs (local)
+## Database Management
 
-- Home page: http://127.0.0.1:8000/
-- Admin Panel (SPA): http://127.0.0.1:8000/admin-panel/
-- Finder/Upload page: http://127.0.0.1:8000/upload (redirects to /upload-page/)
-- Swagger API docs: http://127.0.0.1:8000/docs
-- ReDoc docs: http://127.0.0.1:8000/redoc
-- Health check: http://127.0.0.1:8000/api/v1/healthz
-- Readiness check: http://127.0.0.1:8000/api/v1/readyz
-- Public image uploads: http://127.0.0.1:8000/uploads/
-- Static assets: http://127.0.0.1:8000/static/
+The system uses separated user management with automatic migration:
 
-Public APIs commonly used by web UI:
-- Items (public): /api/v1/items/...
-- Boxes (public): /api/v1/boxes/{box_id}
-- Users (public): /api/v1/users/register, /api/v1/users/login
+```bash
+# Database CLI tools
+python backend/db_manager.py --help
+python backend/db_manager.py list
+python backend/db_manager.py clear
 
-Admin APIs (require admin/staff role):
-- Users: /api/v1/admin/users
-- Items: /api/v1/admin/items
-- Boxes: /api/v1/admin/boxes
-- Cases: /api/v1/admin/cases
-- Audit Logs: /api/v1/admin/audit-logs
-- Metrics & Reports: /api/v1/admin/metrics, /api/v1/admin/reports
-
-## API
-
-- Users: GET/POST /users
-- Items: GET/POST /items
-- Boxes: GET/POST /boxes
-- Cases: GET/POST /cases
-
-### Smart box firmware API
-
-ESP32 smart boxes interact with the backend through `/api/v1/boxes` endpoints. Each handler
-returns a `DeviceBoxActionResponse` payload:
-
-```json
-{
-  "box_id": 1,
-  "action": "deposit_unlock",
-  "box_status": true,
-  "door_status": true,
-  "telemetry_id": 42,
-  "user_id": null,
-  "metadata": {"request_id": "req-123"}
-}
+# Manual migration (if needed)
+python backend/migrate_data.py
 ```
 
-Endpoints and request bodies:
+### Database Schema (Updated)
+- **FINDERS**: Separate table for people who find items (with RFID support)
+- **COLLECTORS**: Separate table for people claiming items (with student ID)
+- **FOUND_ITEMS**: Links to both FINDERS (finder_id) and COLLECTORS (claimed_by)
+- **COLLECTED_ITEMS**: References FINDERS for collection tracking
 
-| Endpoint | Purpose | Request body |
-| --- | --- | --- |
-| `POST /api/v1/boxes/{box_id}/deposit/unlock` | Unlock door for a deposit when the box is available. | `{"request_id": "req-123", "device_id": "ESP32-01"}` |
-| `POST /api/v1/boxes/{box_id}/deposit/complete` | Mark the deposit complete, close the door, and flip the box to FULL. | `{"request_id": "req-124", "load": 1, "door_closed": true}` |
-| `POST /api/v1/boxes/{box_id}/pickup/validate` | Validate a pickup via RFID and unlock the door. | `{"request_id": "req-200", "rfid_uid": "RF123"}` |
-| `POST /api/v1/boxes/{box_id}/pickup/complete` | Mark a pickup as completed and return the box to AVAILABLE (optional photo metadata allowed). | `{"request_id": "req-201", "rfid_uid": "RF123", "photo_url": "https://..."}` |
-| `POST /api/v1/boxes/{box_id}/door-timeout` | Log a door-open timeout with duration information. | `{"request_id": "req-300", "duration_seconds": 120, "door_open": true}` |
-| `POST /api/v1/boxes/{box_id}/activity` | Record IR sensor activity while the door is closed. | `{"request_id": "req-400", "triggered": true, "sensor_value": 512}` |
+## Documentation
 
-All device endpoints enforce the following invariants:
+Complete documentation is available in the `docs/` folder:
+- **[System Architecture](docs/system-architecture-diagram.md)** - Complete system overview with separated user flow
 
-- A box must be AVAILABLE (`box.status == true`) to start a deposit flow.
-- A box must be FULL (`box.status == false`) to start a pickup flow.
-- Door state transitions (`door_status`) always mirror the hardware request and are recorded in box telemetry and audit logs.
+## Presentation Deck
 
-Example create payloads:
+- **[Flow Chart](https://www.mermaidchart.com/app/projects/dd0eea15-bc63-4a02-a0c7-3440051f175d/diagrams/5ef3004c-5b21-40b7-9589-12ee9d861a6f/version/v0.1/edit)** - Complete System Flow Chart
 
-- POST /users
-```json
-{
-  "name": "Alice",
-  "email": "alice@example.com",
-  "password": "secret",
-  "rfid_tag": "RF123"
-}
-```
+- **[Item upload and query pipeline](https://www.mermaidchart.com/app/projects/a605fc72-a4c5-45d0-abd0-827c4456da58/diagrams/9ac1802e-2a3a-4f5b-bafa-9e888fa3b06f/version/v0.1/edit)** - How we implement AI in image processing/query
 
-- POST /items
-```json
-{ "description": "Black wallet", "status": "available" }
-```
-
-- POST /boxes
-```json
-{ "location": "Lobby", "status": true }
-```
-
-- POST /cases
-```json
-{ "box_id": 1, "item_id": 1, "status": "available" }
-```
-
-## DB Schema
-
-The SQLite DB is created automatically at startup with tables: users, items, boxes, cases, matching the provided design (auto-increment PKs, FKs, uniques, timestamps with default now()).
-
-## Smart Box Firmware (ESP32-S3-CAM)
-
-An Arduino sketch for the ESP32-S3 smart locker lives in `firmware/smart_box/`. The firmware drives the TFT, RFID, PCF8575 I/O expander, MFRC522 reader, and on-board camera using non-blocking timers and the shared SPI bus.
-
-### Building with Arduino IDE
-
-1. Install the ESP32 board package v2.0.11 or newer from Espressif.
-2. Open `firmware/smart_box/SmartBox.ino` in Arduino IDE.
-3. From **Tools → Board**, pick **ESP32S3 Dev Module**.
-4. Enable PSRAM (Tools → PSRAM → Enabled) and choose QSPI mode if available. Leave Flash at 80 MHz and `Huge APP` partition for camera buffers.
-5. Install required libraries if prompted: `Adafruit ST7735 and ST7789 Library`, `Adafruit GFX Library`, `MFRC522`, and `QRCode`.
-6. Connect the ESP32-S3-CAM board via USB, select the correct port, then click **Upload**.
-
-On boot, the display shows Wi-Fi status and a QR code for `/upload-page?box_id=SMART_BOX_001`. Further validation steps are listed in `firmware/smart_box/TEST_PLAN.md`.
+- **[Schematic Diagram](docs/FINDR_schematic_diagram.jpg)** - Schematic Diagram for this diagram
