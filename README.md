@@ -1,5 +1,5 @@
 # FINDR. - Lost & Found Made Easy 
-# (3rd Place Winner, Hardware Track, Code Nection MMU 2025)
+# (3rd Place Winner, CodeNection MMU 2025)
 
 FINDR is a smart automated box + AI-powered web app that simplifies the lost-and-found process on university campuses. Users can deposit found items securely and owners can search, match, and retrieve their belongings through an AI-driven system with RFID-based authentication.
 
@@ -83,6 +83,10 @@ Below are a few screenshots from the web app (click to view full size):
  ```
  	uvicorn app.main:app --reload --port 8000
    ```
+
+3. **Access the Web App:**
+   Open your browser and navigate to `http://localhost:8000`
+   To go to upload page directly, go to `http://localhost:8000/upload`
 
 ## Documentation
 
