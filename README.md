@@ -1,5 +1,5 @@
 # FINDR. - Lost & Found Made Easy 
-# (3rd Place Winner, CodeNection MMU 2025)
+# (3rd Place Winner, Hardware Track, CodeNection MMU 2025)
 
 FINDR is a smart automated box + AI-powered web app that simplifies the lost-and-found process on university campuses. Users can deposit found items securely and owners can search, match, and retrieve their belongings through an AI-driven system with RFID-based authentication.
 
