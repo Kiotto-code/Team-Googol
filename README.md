@@ -1,14 +1,14 @@
-<h1 align="center" style="font-size:50px; font-weight:800; color:#2198FF;">
-  FINDR.
-</h1>
+<p align="center">
+  <img src="./docs/findr-logo.png" alt="Findr. Lost and Found Made Easy" style="max-width: 100%; border-radius: 12px;" />
+</p>
 <div align="center" style="margin-top:10px;">
-  <img src="https://readme-typing-svg.demolab.com?font=Bitcount+Prop+Single&weight=500&size=50&pause=1000&color=2198FF&center=true&vCenter=true&width=435&lines=Lost+and+Found+Made+Easy." alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Bitcount+Prop+Single&weight=500&size=30&pause=1000&color=2198FF&center=true&vCenter=true&width=435&lines=Lost+and+Found+Made+Easy." alt="Typing SVG" />
 </div>
 
 
-<div align="center" style="color:white; font-size:40px; margin-top:5px; margin-bottom:20px;">
+<h2 align="center" style="color:white; font-size:40px; margin-top:5px; margin-bottom:20px;">
   (3rd Place Winner, Hardware Track, CodeNection MMU 2025)
-</div>
+</h2>
 
 ## 📚 Overview
 
